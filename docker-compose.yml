@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: fika-db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: fikadb
+    ports:
+      - "5432:5432"
+    volumes:
+      - fika_postgres_data:/var/lib/postgresql/data
+    restart: "no"
+volumes:
+  fika_postgres_data:
