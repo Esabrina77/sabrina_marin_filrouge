@@ -3,7 +3,7 @@ services:
     image: postgres:17-alpine
     container_name: fika-db
     environment:
-      POSTGRES_USER: ${DB_USER}
+      POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: fikadb
     ports:
