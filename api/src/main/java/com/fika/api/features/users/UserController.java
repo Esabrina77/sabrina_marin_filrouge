@@ -24,18 +24,20 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final UserMapper userMapper;
 
     /**
      * Crée un nouvel utilisateur dans le système.
      *
-     * @param userRequest DTO contenant les informations de l'utilisateur (validé par @Valid).
+     * @param userRequest DTO contenant les informations de l'utilisateur (validé
+     *                    par @Valid).
      * @return UserResponse contenant les données de l'utilisateur créé.
      * @status 201 Created
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse createUser(@Valid @RequestBody UserRequest userRequest) {
-        return userService.createUser(userRequest);
+        return userMapper.toResponse(userService.createUser(userRequest));
     }
 
     /**
@@ -84,5 +86,15 @@ public class UserController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
+    }
+
+    /**
+     * Supprime tous les utilisateurs du système.
+     * @status 204 No Content
+     */
+    @DeleteMapping("/all")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAllUser() {
+        userService.deleteUsers();
     }
 }

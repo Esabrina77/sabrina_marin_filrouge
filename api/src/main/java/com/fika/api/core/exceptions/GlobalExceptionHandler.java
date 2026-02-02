@@ -78,8 +78,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    /**
+     * Gère les échecs d'authentification (mauvais mot de passe ou email inexistant).
+     * Renvoie une réponse 401 Unauthorized pour éviter de donner trop d'indices
+     * sur la raison exacte de l'échec (sécurité).
+     *
+     * @return Une {@link ResponseEntity} contenant les détails de l'erreur au format {@link ErrorResponse}.
+     */
     @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentials(org.springframework.security.authentication.BadCredentialsException ex) {
+    public ResponseEntity<ErrorResponse> handleBadCredentials() {
         ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
