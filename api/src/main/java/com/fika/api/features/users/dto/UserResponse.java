@@ -1,6 +1,6 @@
-package com.fika.api.dto.user;
+package com.fika.api.features.users.dto;
 
-import com.fika.api.model.Role;
+import com.fika.api.features.users.model.Role;
 
 import java.util.UUID;
 

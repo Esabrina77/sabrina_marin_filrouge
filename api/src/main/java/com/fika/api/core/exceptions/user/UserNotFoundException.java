@@ -1,4 +1,4 @@
-package com.fika.api.exception.user;
+package com.fika.api.core.exceptions.user;
 
 import java.util.UUID;
 

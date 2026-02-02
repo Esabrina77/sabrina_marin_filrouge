@@ -1,4 +1,4 @@
-package com.fika.api.model;
+package com.fika.api.features.users.model;
 
 
 import jakarta.persistence.*;

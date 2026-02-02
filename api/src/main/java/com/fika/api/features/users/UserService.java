@@ -1,13 +1,12 @@
-package com.fika.api.service;
+package com.fika.api.features.users;
 
-import com.fika.api.dto.user.UserRequest;
-import com.fika.api.dto.user.UserResponse;
-import com.fika.api.exception.user.EmailAlreadyExistsException;
-import com.fika.api.exception.user.UserNotFoundException;
-import com.fika.api.mapper.UserMapper;
-import com.fika.api.model.User;
-import com.fika.api.repository.UserRepository;
+import com.fika.api.features.users.dto.UserRequest;
+import com.fika.api.features.users.dto.UserResponse;
+import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
+import com.fika.api.core.exceptions.user.UserNotFoundException;
+import com.fika.api.features.users.model.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +23,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+
 
     /**
      * Récupère la liste de tous les utilisateurs enregistrés.
@@ -59,6 +60,7 @@ public class UserService {
             throw new EmailAlreadyExistsException("L'email " + userRequest.email() + " est déjà utilisé.");
         }
         User userToCreate = userMapper.toEntity(userRequest);
+        userToCreate.setPassword(passwordEncoder.encode(userRequest.password()));
         User userSaved = userRepository.save(userToCreate);
         return userMapper.toResponse(userSaved);
     }
@@ -88,8 +90,7 @@ public class UserService {
         userToUpdate.setEmail(userRequest.email());
         userToUpdate.setFirstName(userRequest.firstName());
         userToUpdate.setLastName(userRequest.lastName());
-        // TODO: Hacher le mot de passe
-        userToUpdate.setPassword(userRequest.password());
+        userToUpdate.setPassword(passwordEncoder.encode(userRequest.password()));
 
         User updatedUser = userRepository.save(userToUpdate);
         return userMapper.toResponse(updatedUser);

@@ -1,9 +1,9 @@
-package com.fika.api.mapper;
+package com.fika.api.features.users;
 
-import com.fika.api.dto.user.UserRequest;
-import com.fika.api.dto.user.UserResponse;
-import com.fika.api.model.Role;
-import com.fika.api.model.User;
+import com.fika.api.features.users.dto.UserRequest;
+import com.fika.api.features.users.dto.UserResponse;
+import com.fika.api.features.users.model.Role;
+import com.fika.api.features.users.model.User;
 import org.springframework.stereotype.Component;
 
 /**

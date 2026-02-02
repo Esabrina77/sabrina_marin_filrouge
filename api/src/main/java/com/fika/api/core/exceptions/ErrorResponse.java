@@ -1,4 +1,4 @@
-package com.fika.api.exception;
+package com.fika.api.core.exceptions;
 
 import java.time.LocalDateTime;
 

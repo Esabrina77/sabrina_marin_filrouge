@@ -1,4 +1,4 @@
-package com.fika.api.exception.user;
+package com.fika.api.core.exceptions.user;
 
 public class EmailAlreadyExistsException extends RuntimeException{
     public EmailAlreadyExistsException(String message){

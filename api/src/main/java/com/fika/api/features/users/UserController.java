@@ -1,8 +1,7 @@
-package com.fika.api.controller;
+package com.fika.api.features.users;
 
-import com.fika.api.dto.user.UserRequest;
-import com.fika.api.dto.user.UserResponse;
-import com.fika.api.service.UserService;
+import com.fika.api.features.users.dto.UserRequest;
+import com.fika.api.features.users.dto.UserResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
