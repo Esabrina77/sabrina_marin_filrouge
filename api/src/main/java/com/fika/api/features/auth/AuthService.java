@@ -1,9 +1,8 @@
 package com.fika.api.features.auth;
 
 import com.fika.api.core.jwt.JwtService;
-import com.fika.api.features.auth.dto.LoginRequest;
-import com.fika.api.features.auth.dto.LoginResponse;
-import com.fika.api.features.auth.dto.RegisterRequest;
+import com.fika.api.features.auth.dto.*;
+import com.fika.api.features.auth.model.RefreshToken;
 import com.fika.api.features.users.dto.UserResponse;
 import com.fika.api.features.users.UserService;
 import com.fika.api.features.users.dto.UserRequest;
@@ -28,12 +27,13 @@ public class AuthService {
     private final AuthMapper authMapper;
     private final UserService userService;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
 
     /**
      * Authentifie un utilisateur en vérifiant son email et son mot de passe.
      *
      * @param loginRequest Les informations de connexion fournies par l'utilisateur.
-     * @return Une réponse contenant les détails de l'utilisateur et un jeton
+     * @return Une réponse contenant les détails de l'utilisateur et les jetons
      *         d'authentification.
      * @throws BadCredentialsException Si l'email n'existe pas ou si le mot de passe
      *                                 est incorrect.
@@ -45,7 +45,8 @@ public class AuthService {
             throw new BadCredentialsException("Email ou mot de passe incorrect");
         }
         String token = jwtService.generateToken(user);
-        return authMapper.toResponse(user, token);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+        return authMapper.toResponse(user, token, refreshToken.getToken());
     }
 
     /**
@@ -53,15 +54,8 @@ public class AuthService {
      *
      * @param registerRequest Les informations d'inscription fournies par
      *                        l'utilisateur.
-     * @return Une réponse contenant les détails de l'utilisateur créé et un jeton
+     * @return Une réponse contenant les détails de l'utilisateur créé et les jetons
      *         d'authentification.
-     * @throws com.fika.api.core.exceptions.user.EmailAlreadyExistsException Si
-     *                                                                       l'email
-     *                                                                       est
-     *                                                                       déjà
-     *                                                                       utilisé
-     *                                                                       (via
-     *                                                                       userService.createUser).
      */
     public LoginResponse register(RegisterRequest registerRequest) {
         UserRequest userRequest = new UserRequest(
@@ -72,9 +66,39 @@ public class AuthService {
                 null);
 
         UserResponse userResponse = userService.createUser(userRequest);
-        User user = userRepository.findByEmail(userResponse.email())
-                .orElseThrow(() -> new RuntimeException("User not found after creation"));
+        User user = userRepository.findByEmail(userResponse.email()).orElseThrow(() -> new RuntimeException("User not found after creation"));
         String token = jwtService.generateToken(user);
-        return authMapper.toResponse(user, token);
+        com.fika.api.features.auth.model.RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+        return authMapper.toResponse(user, token, refreshToken.getToken());
+    }
+
+    /**
+     * Renouvelle un jeton d'accès (JWT) à partir d'un jeton de rafraîchissement.
+     * <p>
+     * Vérifie la validité du jeton de rafraîchissement et génère un nouveau JWT
+     * pour l'utilisateur associé.
+     * </p>
+     *
+     * @param request Le DTO contenant le jeton de rafraîchissement.
+     * @return Une réponse contenant le nouveau JWT et le jeton de rafraîchissement.
+     * @throws com.fika.api.core.exceptions.auth.RefreshTokenNotFoundException Si le
+     *                                                                         jeton
+     *                                                                         n'existe
+     *                                                                         pas.
+     * @throws com.fika.api.core.exceptions.auth.RefreshTokenExpiredException  Si le
+     *                                                                         jeton
+     *                                                                         a
+     *                                                                         expiré.
+     */
+    public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
+        String requestRefreshToken = request.refreshToken();
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(com.fika.api.features.auth.model.RefreshToken::getUser)
+                .map(user -> {
+                    String token = jwtService.generateToken(user);
+                    return new com.fika.api.features.auth.dto.TokenRefreshResponse(token, requestRefreshToken);
+                })
+                .orElseThrow(() -> new com.fika.api.core.exceptions.auth.RefreshTokenNotFoundException("Le jeton de rafraîchissement est introuvable."));
     }
 }

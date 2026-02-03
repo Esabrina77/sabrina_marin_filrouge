@@ -34,12 +34,13 @@ public class UserController {
     private final UserService userService;
 
     /**
-     * Crée un nouvel utilisateur dans le système.
+     * Récupère le profil de l'utilisateur actuellement authentifié.
+     * <p>
+     * Utilise le contexte de sécurité pour identifier l'utilisateur via son JWT.
+     * </p>
      *
-     * @param userRequest DTO contenant les informations de l'utilisateur (validé
-     *                    par @Valid).
-     * @return UserResponse contenant les données de l'utilisateur créé.
-     * @status 201 Created
+     * @return UserResponse contenant les détails de l'utilisateur connecté.
+     * @status 200 OK
      */
     @Operation(summary = "Récupérer mon profil", description = "Récupère les détails de l'utilisateur actuellement connecté.")
     @GetMapping("/me")
@@ -49,6 +50,14 @@ public class UserController {
         return userService.getCurrentUser(currentPrincipalName);
     }
 
+    /**
+     * Crée un nouvel utilisateur dans le système.
+     *
+     * @param userRequest DTO contenant les informations de l'utilisateur (validé
+     *                    par @Valid).
+     * @return UserResponse contenant les données de l'utilisateur créé.
+     * @status 201 Created
+     */
     @Operation(summary = "Créer un utilisateur", description = "Crée un nouvel utilisateur avec le rôle CLIENT par défaut.")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

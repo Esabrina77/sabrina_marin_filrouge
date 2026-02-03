@@ -9,19 +9,20 @@ import org.springframework.stereotype.Component;
 public class AuthMapper {
 
     /**
-     * Transforme un utilisateur et son jeton d'accès en une réponse de connexion
-     * complète.
+     * Transforme un utilisateur et ses jetons en une réponse de connexion complète.
+     * <p>
      * Cette méthode encapsule les informations de profil dans une
-     * {@link UserResponse}
-     * pour assurer la cohérence des données renvoyées au client.
+     * {@link UserResponse} pour assurer la cohérence des données renvoyées au
+     * client.
+     * </p>
      *
-     * @param user  L'entité utilisateur récupérée de la base de données.
-     * @param token Le jeton d'authentification (JWT) généré pour la session.
-     * @return Une {@link LoginResponse} contenant les infos utilisateur et le
-     *         token,
-     *         ou {@code null} si l'utilisateur est nul.
+     * @param user         L'entité utilisateur récupérée de la base de données.
+     * @param token        Le jeton d'accès (JWT) généré pour la session.
+     * @param refreshToken Le jeton de rafraîchissement généré pour la session.
+     * @return Une {@link LoginResponse} contenant les infos utilisateur et les
+     *         jetons, ou {@code null} si l'utilisateur est nul.
      */
-    public LoginResponse toResponse(User user, String token) {
+    public LoginResponse toResponse(User user, String token, String refreshToken) {
         if (user == null)
             return null;
 
@@ -32,6 +33,7 @@ public class AuthMapper {
                         user.getLastName(),
                         user.getEmail(),
                         user.getRole()),
-                token);
+                token,
+                refreshToken);
     }
 }

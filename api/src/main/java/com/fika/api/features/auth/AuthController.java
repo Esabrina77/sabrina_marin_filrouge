@@ -1,8 +1,6 @@
 package com.fika.api.features.auth;
 
-import com.fika.api.features.auth.dto.LoginRequest;
-import com.fika.api.features.auth.dto.LoginResponse;
-import com.fika.api.features.auth.dto.RegisterRequest;
+import com.fika.api.features.auth.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -50,5 +48,11 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public LoginResponse register(@Valid @RequestBody RegisterRequest registerRequest) {
         return authService.register(registerRequest);
+    }
+
+    @PostMapping("/refresh-token")
+    @ResponseStatus(HttpStatus.OK)
+    public TokenRefreshResponse refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
+        return authService.refreshToken(request);
     }
 }

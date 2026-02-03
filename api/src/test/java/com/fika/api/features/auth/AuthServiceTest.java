@@ -1,5 +1,6 @@
 package com.fika.api.features.auth;
 
+import com.fika.api.core.jwt.JwtService;
 import com.fika.api.features.auth.dto.LoginRequest;
 import com.fika.api.features.auth.dto.LoginResponse;
 import com.fika.api.features.auth.dto.RegisterRequest;
@@ -44,6 +45,12 @@ class AuthServiceTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private RefreshTokenService refreshTokenService;
+
+    @Mock
+    private JwtService jwtService;
+
     @InjectMocks
     private AuthService authService;
 
@@ -65,7 +72,7 @@ class AuthServiceTest {
         loginRequest = new LoginRequest("test@example.com", "password123");
         registerRequest = new RegisterRequest("John", "Doe", "test@example.com", "password123");
         userResponse = new UserResponse(UUID.randomUUID(), "John", "Doe", "test@example.com", Role.CLIENT);
-        loginResponse = new LoginResponse(userResponse, "Fake-token");
+        loginResponse = new LoginResponse(userResponse, "Fake-token", "Fake-refresh-token");
     }
 
     @Test
@@ -73,7 +80,12 @@ class AuthServiceTest {
     void loginSuccess() {
         given(userRepository.findByEmail(loginRequest.email())).willReturn(Optional.of(user));
         given(passwordEncoder.matches(loginRequest.password(), user.getPassword())).willReturn(true);
-        given(authMapper.toResponse(eq(user), any(String.class))).willReturn(loginResponse);
+        given(jwtService.generateToken(any())).willReturn("Fake-token");
+        com.fika.api.features.auth.model.RefreshToken rt = new com.fika.api.features.auth.model.RefreshToken();
+        rt.setToken("Fake-refresh-token");
+        given(refreshTokenService.createRefreshToken(any())).willReturn(rt);
+        given(authMapper.toResponse(eq(user), eq("Fake-token"), eq("Fake-refresh-token"))).willReturn(loginResponse);
+
         LoginResponse result = authService.login(loginRequest);
         assertThat(result).isEqualTo(loginResponse);
     }
@@ -102,7 +114,11 @@ class AuthServiceTest {
     void registerSuccess() {
         given(userService.createUser(any(UserRequest.class))).willReturn(userResponse);
         given(userRepository.findByEmail(userResponse.email())).willReturn(Optional.of(user));
-        given(authMapper.toResponse(eq(user), any(String.class))).willReturn(loginResponse);
+        given(jwtService.generateToken(any())).willReturn("Fake-token");
+        com.fika.api.features.auth.model.RefreshToken rt = new com.fika.api.features.auth.model.RefreshToken();
+        rt.setToken("Fake-refresh-token");
+        given(refreshTokenService.createRefreshToken(any())).willReturn(rt);
+        given(authMapper.toResponse(eq(user), eq("Fake-token"), eq("Fake-refresh-token"))).willReturn(loginResponse);
 
         LoginResponse result = authService.register(registerRequest);
 

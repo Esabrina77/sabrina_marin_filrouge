@@ -9,6 +9,15 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+/**
+ * Composant responsable de l'initialisation des données (seeding) au démarrage
+ * de
+ * l'application.
+ * <p>
+ * Crée automatiquement des comptes administrateurs par défaut si la base de
+ * données est vide ou si ces comptes n'existent pas encore.
+ * </p>
+ */
 @Configuration
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
@@ -17,7 +26,7 @@ public class DataSeeder implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public void run(String @NonNull ... args) {
+    public void run(String @NonNull... args) {
         if (!userRepository.existsByEmail("marin@example.com")) {
             User admin = User.builder()
                     .firstName("Marin")

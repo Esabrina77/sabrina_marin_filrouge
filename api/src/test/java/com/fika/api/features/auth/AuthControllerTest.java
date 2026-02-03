@@ -47,8 +47,9 @@ class AuthControllerTest {
     void setUp() {
         loginRequest = new LoginRequest("test@example.com", "password123");
         registerRequest = new RegisterRequest("John", "Doe", "test@example.com", "password123");
-        UserResponse userResponse = new UserResponse(java.util.UUID.randomUUID(), "John", "Doe", "test@example.com", Role.CLIENT);
-        loginResponse = new LoginResponse(userResponse, "Fake-token");
+        UserResponse userResponse = new UserResponse(java.util.UUID.randomUUID(), "John", "Doe", "test@example.com",
+                Role.CLIENT);
+        loginResponse = new LoginResponse(userResponse, "Fake-token", "Fake-refresh-token");
     }
 
     @Test

@@ -128,6 +128,56 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Gère l'exception lorsqu'un jeton de rafraîchissement a expiré.
+     *
+     * @param ex L'exception capturée.
+     * @return Une réponse HTTP 401 (Unauthorized) au format standard.
+     */
+    @ExceptionHandler(com.fika.api.core.exceptions.auth.RefreshTokenExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleRefreshTokenExpiredException(
+            com.fika.api.core.exceptions.auth.RefreshTokenExpiredException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                "Refresh Token Expired",
+                ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
+
+    /**
+     * Gère l'exception lorsqu'un jeton de rafraîchissement est introuvable.
+     *
+     * @param ex L'exception capturée.
+     * @return Une réponse HTTP 400 (Bad Request) au format standard.
+     */
+    @ExceptionHandler(com.fika.api.core.exceptions.auth.RefreshTokenNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRefreshTokenNotFoundException(
+            com.fika.api.core.exceptions.auth.RefreshTokenNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Refresh Token Not Found",
+                ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * Gère les exceptions de type Runtime non explicitées.
+     *
+     * @param ex L'exception capturée.
+     * @return Une réponse HTTP 400 (Bad Request) au format standard.
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
      * Gère toutes les autres exceptions non traitées explicitement (Erreur 500).
      *
      * @param ex L'exception capturée.
