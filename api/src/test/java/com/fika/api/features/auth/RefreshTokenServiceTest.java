@@ -77,8 +77,7 @@ class RefreshTokenServiceTest {
     @DisplayName("Vérification : Échec si expiré")
     void verifyExpirationFail() {
         refreshToken.setExpiryDate(Instant.now().minusMillis(1000));
-        assertThatThrownBy(() -> refreshTokenService.verifyExpiration(refreshToken))
-                .isInstanceOf(RefreshTokenExpiredException.class);
+        assertThatThrownBy(() -> refreshTokenService.verifyExpiration(refreshToken)).isInstanceOf(RefreshTokenExpiredException.class);
         verify(refreshTokenRepository).delete(refreshToken);
     }
 

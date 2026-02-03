@@ -1,8 +1,9 @@
 package com.fika.api.features.auth.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record TokenRefreshResponse(
-        @Schema(description = "Le nouveau jeton d'accès (JWT)") String accessToken,
-        @Schema(description = "Le même jeton de rafraîchissement ou un nouveau (rotation)") String refreshToken) {
+                @Schema(description = "Le nouveau jeton d'accès (JWT)") String accessToken,
+                @Schema(description = "Le même jeton de rafraîchissement ou un nouveau (rotation)") @JsonIgnore String refreshToken) {
 }

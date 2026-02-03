@@ -1,9 +1,9 @@
 package com.fika.api.features.auth;
 
+import com.fika.api.core.exceptions.auth.RefreshTokenNotFoundException;
 import com.fika.api.core.jwt.JwtService;
-import com.fika.api.features.auth.dto.LoginRequest;
-import com.fika.api.features.auth.dto.LoginResponse;
-import com.fika.api.features.auth.dto.RegisterRequest;
+import com.fika.api.features.auth.dto.*;
+import com.fika.api.features.auth.model.RefreshToken;
 import com.fika.api.features.users.UserRepository;
 import com.fika.api.features.users.UserService;
 import com.fika.api.features.users.dto.UserRequest;
@@ -80,7 +80,7 @@ class AuthServiceTest {
         given(userRepository.findByEmail(loginRequest.email())).willReturn(Optional.of(user));
         given(passwordEncoder.matches(loginRequest.password(), user.getPassword())).willReturn(true);
         given(jwtService.generateToken(any())).willReturn("Fake-token");
-        com.fika.api.features.auth.model.RefreshToken rt = new com.fika.api.features.auth.model.RefreshToken();
+        RefreshToken rt = new RefreshToken();
         rt.setToken("Fake-refresh-token");
         given(refreshTokenService.createRefreshToken(any())).willReturn(rt);
         given(authMapper.toResponse(user, "Fake-token", "Fake-refresh-token")).willReturn(loginResponse);
@@ -114,7 +114,7 @@ class AuthServiceTest {
         given(userService.createUser(any(UserRequest.class))).willReturn(userResponse);
         given(userRepository.findByEmail(userResponse.email())).willReturn(Optional.of(user));
         given(jwtService.generateToken(any())).willReturn("Fake-token");
-        com.fika.api.features.auth.model.RefreshToken rt = new com.fika.api.features.auth.model.RefreshToken();
+        RefreshToken rt = new RefreshToken();
         rt.setToken("Fake-refresh-token");
         given(refreshTokenService.createRefreshToken(any())).willReturn(rt);
         given(authMapper.toResponse(user, "Fake-token", "Fake-refresh-token")).willReturn(loginResponse);
@@ -128,14 +128,13 @@ class AuthServiceTest {
     @DisplayName("RefreshToken : Succès")
     void refreshTokenSuccess() {
         String oldRefreshToken = "Fake-refresh-token";
-        com.fika.api.features.auth.dto.TokenRefreshRequest request = new com.fika.api.features.auth.dto.TokenRefreshRequest(
-                oldRefreshToken);
+        TokenRefreshRequest request = new TokenRefreshRequest(oldRefreshToken);
 
-        com.fika.api.features.auth.model.RefreshToken rt = new com.fika.api.features.auth.model.RefreshToken();
+        RefreshToken rt = new RefreshToken();
         rt.setToken(oldRefreshToken);
         rt.setUser(user);
 
-        com.fika.api.features.auth.model.RefreshToken newRt = new com.fika.api.features.auth.model.RefreshToken();
+       RefreshToken newRt = new RefreshToken();
         newRt.setToken("New-refresh-token");
 
         given(refreshTokenService.findByToken(oldRefreshToken)).willReturn(Optional.of(rt));
@@ -143,8 +142,7 @@ class AuthServiceTest {
         given(jwtService.generateToken(user)).willReturn("New-access-token");
         given(refreshTokenService.createRefreshToken(user)).willReturn(newRt);
 
-        com.fika.api.features.auth.dto.TokenRefreshResponse result = authService.refreshToken(request);
-
+       TokenRefreshResponse result = authService.refreshToken(request);
         assertThat(result.accessToken()).isEqualTo("New-access-token");
         assertThat(result.refreshToken()).isEqualTo("New-refresh-token");
     }
@@ -153,12 +151,8 @@ class AuthServiceTest {
     @DisplayName("RefreshToken : Échec (jeton introuvable)")
     void refreshTokenFailNotFound() {
         String token = "invalid-token";
-        com.fika.api.features.auth.dto.TokenRefreshRequest request = new com.fika.api.features.auth.dto.TokenRefreshRequest(
-                token);
-
+        TokenRefreshRequest request = new TokenRefreshRequest(token);
         given(refreshTokenService.findByToken(token)).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> authService.refreshToken(request))
-                .isInstanceOf(com.fika.api.core.exceptions.auth.RefreshTokenNotFoundException.class);
+        assertThatThrownBy(() -> authService.refreshToken(request)).isInstanceOf(RefreshTokenNotFoundException.class);
     }
 }
