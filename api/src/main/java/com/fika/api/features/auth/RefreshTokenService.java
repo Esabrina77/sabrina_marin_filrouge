@@ -5,12 +5,12 @@ import com.fika.api.features.auth.model.RefreshToken;
 import com.fika.api.features.users.UserRepository;
 import com.fika.api.features.users.model.User;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -23,6 +23,7 @@ import java.util.UUID;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RefreshTokenService {
 
     @Value("${application.security.jwt.refresh-token.expiration}")
@@ -41,8 +42,17 @@ public class RefreshTokenService {
      * @param user L'utilisateur pour lequel créer le jeton.
      * @return Le RefreshToken créé et sauvegardé.
      */
+    @Transactional
     public RefreshToken createRefreshToken(User user) {
-        refreshTokenRepository.deleteByUser(Optional.ofNullable(user));
+        log.debug("Création d'un refresh token pour l'utilisateur: {}", user.getEmail());
+
+        // On cherche un token existant pour cet utilisateur
+        refreshTokenRepository.findByUser(user).ifPresent(token -> {
+            log.debug("Suppression de l'ancien token pour: {}", user.getEmail());
+            refreshTokenRepository.delete(token);
+            refreshTokenRepository.flush(); // Force la suppression en base immédiatement
+        });
+
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
                 .token(UUID.randomUUID().toString())
@@ -58,12 +68,14 @@ public class RefreshTokenService {
      * exception est levée.
      * </p>
      *
-     * @param token Le jeton à vérifier.
+     * @param token Le jeton
      * @return Le jeton s'il est encore valide.
      * @throws RefreshTokenExpiredException Si le jeton est expiré.
      */
+    @Transactional
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().isBefore(Instant.now())) {
+            log.warn("Le refresh token a expiré pour l'utilisateur: {}", token.getUser().getEmail());
             refreshTokenRepository.delete(token);
             throw new RefreshTokenExpiredException(token.getToken(), "Veuillez vous reconnecter.");
         }
@@ -73,13 +85,14 @@ public class RefreshTokenService {
     /**
      * Supprime tous les jetons de rafraîchissement associés à un ID utilisateur.
      *
-     * @param userId L'UUID de l'utilisateur.
-     * @return Le nombre de jetons supprimés.
+     * @param userId UUID de l'utilisateur.
      */
     @Transactional
-    public int deleteByUserId(UUID userId) {
-        Optional<User> user = userRepository.findById(userId);
-        return refreshTokenRepository.deleteByUser(user);
+    public void deleteByUserId(UUID userId) {
+        log.debug("Suppression des tokens pour l'utilisateur ID: {}", userId);
+        userRepository.findById(userId)
+                .ifPresent(user -> refreshTokenRepository.findByUser(user)
+                        .ifPresent(refreshTokenRepository::delete));
     }
 
     /**
@@ -90,5 +103,15 @@ public class RefreshTokenService {
      */
     public java.util.Optional<RefreshToken> findByToken(String token) {
         return refreshTokenRepository.findByToken(token);
+    }
+
+    /**
+     * Supprime un jeton de rafraîchissement spécifique.
+     *
+     * @param refreshToken Le jeton à supprimer.
+     */
+    @Transactional
+    public void deleteToken(RefreshToken refreshToken) {
+        refreshTokenRepository.delete(refreshToken);
     }
 }

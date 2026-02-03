@@ -26,7 +26,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
@@ -84,7 +83,7 @@ class AuthServiceTest {
         com.fika.api.features.auth.model.RefreshToken rt = new com.fika.api.features.auth.model.RefreshToken();
         rt.setToken("Fake-refresh-token");
         given(refreshTokenService.createRefreshToken(any())).willReturn(rt);
-        given(authMapper.toResponse(eq(user), eq("Fake-token"), eq("Fake-refresh-token"))).willReturn(loginResponse);
+        given(authMapper.toResponse(user, "Fake-token", "Fake-refresh-token")).willReturn(loginResponse);
 
         LoginResponse result = authService.login(loginRequest);
         assertThat(result).isEqualTo(loginResponse);
@@ -118,7 +117,7 @@ class AuthServiceTest {
         com.fika.api.features.auth.model.RefreshToken rt = new com.fika.api.features.auth.model.RefreshToken();
         rt.setToken("Fake-refresh-token");
         given(refreshTokenService.createRefreshToken(any())).willReturn(rt);
-        given(authMapper.toResponse(eq(user), eq("Fake-token"), eq("Fake-refresh-token"))).willReturn(loginResponse);
+        given(authMapper.toResponse(user, "Fake-token", "Fake-refresh-token")).willReturn(loginResponse);
 
         LoginResponse result = authService.register(registerRequest);
 
@@ -136,14 +135,18 @@ class AuthServiceTest {
         rt.setToken(oldRefreshToken);
         rt.setUser(user);
 
+        com.fika.api.features.auth.model.RefreshToken newRt = new com.fika.api.features.auth.model.RefreshToken();
+        newRt.setToken("New-refresh-token");
+
         given(refreshTokenService.findByToken(oldRefreshToken)).willReturn(Optional.of(rt));
         given(refreshTokenService.verifyExpiration(rt)).willReturn(rt);
         given(jwtService.generateToken(user)).willReturn("New-access-token");
+        given(refreshTokenService.createRefreshToken(user)).willReturn(newRt);
 
         com.fika.api.features.auth.dto.TokenRefreshResponse result = authService.refreshToken(request);
 
         assertThat(result.accessToken()).isEqualTo("New-access-token");
-        assertThat(result.refreshToken()).isEqualTo(oldRefreshToken);
+        assertThat(result.refreshToken()).isEqualTo("New-refresh-token");
     }
 
     @Test

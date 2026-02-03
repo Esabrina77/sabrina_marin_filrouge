@@ -3,13 +3,22 @@ package com.fika.api.features.users;
 import com.fika.api.features.users.dto.UserRequest;
 import com.fika.api.features.users.dto.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +37,8 @@ import java.util.UUID;
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
-@Tag(name = "Users", description = "Gestion des utilisateurs")
+@Tag(name = "Users", description = "Gestion des comptes utilisateurs")
+@Slf4j
 public class UserController {
 
     private final UserService userService;
@@ -42,12 +52,13 @@ public class UserController {
      * @return UserResponse contenant les détails de l'utilisateur connecté.
      * @status 200 OK
      */
-    @Operation(summary = "Récupérer mon profil", description = "Récupère les détails de l'utilisateur actuellement connecté.")
     @GetMapping("/me")
-    public UserResponse getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentPrincipalName = authentication.getName();
-        return userService.getCurrentUser(currentPrincipalName);
+    @Operation(summary = "Mon profil", description = "Récupère les informations de l'utilisateur actuellement connecté.")
+    @ApiResponse(responseCode = "200", description = "Profil récupéré")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    public UserResponse getCurrentUser(@AuthenticationPrincipal String email) {
+        log.debug("Récupération du profil pour l'utilisateur: {}", email);
+        return userService.getCurrentUser(email);
     }
 
     /**
@@ -58,9 +69,12 @@ public class UserController {
      * @return UserResponse contenant les données de l'utilisateur créé.
      * @status 201 Created
      */
-    @Operation(summary = "Créer un utilisateur", description = "Crée un nouvel utilisateur avec le rôle CLIENT par défaut.")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Créer un utilisateur", description = "Crée un nouveau compte utilisateur dans le système.")
+    @ApiResponse(responseCode = "201", description = "Utilisateur créé avec succès")
+    @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content(schema = @Schema(implementation = com.fika.api.core.exceptions.FormErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "L'email existe déjà", content = @Content(schema = @Schema(implementation = com.fika.api.core.exceptions.ErrorResponse.class)))
     public UserResponse createUser(@Valid @RequestBody UserRequest userRequest) {
         return userService.createUser(userRequest);
     }
@@ -71,10 +85,13 @@ public class UserController {
      * @return Liste de UserResponse.
      * @status 200 OK
      */
-    @Operation(summary = "Lister les utilisateurs", description = "Récupère la liste de tous les utilisateurs (Admin uniquement recommandé).")
     @GetMapping
-    public List<UserResponse> getAllUsers() {
-        return userService.getAllUsers();
+    @Operation(summary = "Lister les utilisateurs", description = "Récupère une page de tous les utilisateurs (Réservé aux ADMINS).")
+    @ApiResponse(responseCode = "200", description = "Liste récupérée avec succès")
+    @ApiResponse(responseCode = "403", description = "Accès refusé - Rôle ADMIN requis")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<UserResponse> getAllUsers(@ParameterObject Pageable pageable) {
+        return userService.getAllUsers(pageable);
     }
 
     /**
@@ -84,9 +101,12 @@ public class UserController {
      * @return UserResponse de l'utilisateur trouvé.
      * @status 200 OK ou 404 Not Found (via GlobalExceptionHandler)
      */
-    @Operation(summary = "Récupérer un utilisateur", description = "Récupère les détails d'un utilisateur par son UUID.")
     @GetMapping("/{id}")
-    public UserResponse getUserById(@PathVariable UUID id) {
+    @Operation(summary = "Récupérer un utilisateur", description = "Récupère les détails d'un utilisateur par son ID.")
+    @ApiResponse(responseCode = "200", description = "Utilisateur trouvé")
+    @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé", content = @Content(schema = @Schema(implementation = com.fika.api.core.exceptions.ErrorResponse.class)))
+    public UserResponse getUserById(
+            @Parameter(description = "ID unique de l'utilisateur", example = "550e8400-e29b-41d4-a716-446655440000") @PathVariable UUID id) {
         return userService.getUserById(id);
     }
 
@@ -98,9 +118,14 @@ public class UserController {
      * @return UserResponse de l'utilisateur mis à jour.
      * @status 200 OK
      */
-    @Operation(summary = "Modifier un utilisateur", description = "Met à jour les informations d'un utilisateur existant.")
     @PutMapping("/{id}")
-    public UserResponse updateUser(@PathVariable UUID id, @Valid @RequestBody UserRequest userRequest) {
+    @Operation(summary = "Mettre à jour un utilisateur", description = "Met à jour les informations d'un utilisateur existant.")
+    @ApiResponse(responseCode = "200", description = "Utilisateur mis à jour")
+    @ApiResponse(responseCode = "400", description = "Données invalides")
+    @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
+    public UserResponse updateUser(
+            @Parameter(description = "ID de l'utilisateur à modifier") @PathVariable UUID id,
+            @Valid @RequestBody UserRequest userRequest) {
         return userService.updateUser(id, userRequest);
     }
 
@@ -110,11 +135,13 @@ public class UserController {
      * @param id Identifiant UUID de l'utilisateur à supprimer.
      * @status 204 No Content
      */
-    @Operation(summary = "Supprimer un utilisateur", description = "Supprime un utilisateur par son UUID (ADMIN uniquement).")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@PathVariable UUID id) {
+    @Operation(summary = "Supprimer un utilisateur", description = "Supprime un utilisateur du système par son ID.")
+    @ApiResponse(responseCode = "204", description = "Utilisateur supprimé")
+    @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
+    public void deleteUser(@Parameter(description = "ID de l'utilisateur à supprimer") @PathVariable UUID id) {
         userService.deleteUser(id);
     }
 

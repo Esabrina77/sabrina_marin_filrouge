@@ -28,92 +28,106 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Controller : Authentification")
 class AuthControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @MockitoBean
-    private AuthService authService;
+        @MockitoBean
+        private AuthService authService;
 
-    @MockitoBean
-    private com.fika.api.core.jwt.JwtService jwtService;
+        @MockitoBean
+        private com.fika.api.core.jwt.JwtService jwtService;
 
-    @MockitoBean
-    private com.fika.api.core.jwt.JwtFilter jwtFilter;
+        @MockitoBean
+        private com.fika.api.core.jwt.JwtFilter jwtFilter;
 
-    @MockitoBean
-    private com.fika.api.core.exceptions.JwtExceptionHandler jwtExceptionHandler;
+        @MockitoBean
+        private com.fika.api.core.exceptions.JwtExceptionHandler jwtExceptionHandler;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    private LoginRequest loginRequest;
-    private RegisterRequest registerRequest;
-    private LoginResponse loginResponse;
+        private LoginRequest loginRequest;
+        private RegisterRequest registerRequest;
+        private LoginResponse loginResponse;
 
-    @BeforeEach
-    void setUp() {
-        loginRequest = new LoginRequest("test@example.com", "password123");
-        registerRequest = new RegisterRequest("John", "Doe", "test@example.com", "password123");
-        UserResponse userResponse = new UserResponse(java.util.UUID.randomUUID(), "John", "Doe", "test@example.com", Role.CLIENT);
-        loginResponse = new LoginResponse(userResponse, "Fake-token", "Fake-refresh-token");
-    }
+        @BeforeEach
+        void setUp() {
+                loginRequest = new LoginRequest("test@example.com", "password123");
+                registerRequest = new RegisterRequest("John", "Doe", "test@example.com", "password123");
+                UserResponse userResponse = new UserResponse(java.util.UUID.randomUUID(), "John", "Doe",
+                                "test@example.com", Role.CLIENT);
+                loginResponse = new LoginResponse(userResponse, "Fake-token", "Fake-refresh-token");
+        }
 
-    @Test
-    @WithMockUser
-    @DisplayName("Login : Succès avec identifiants valides")
-    void loginSuccess() throws Exception {
-        given(authService.login(any(LoginRequest.class))).willReturn(loginResponse);
+        @Test
+        @WithMockUser
+        @DisplayName("Login : Succès avec identifiants valides")
+        void loginSuccess() throws Exception {
+                given(authService.login(any(LoginRequest.class))).willReturn(loginResponse);
 
-        mockMvc.perform(post("/api/v1/auth/login")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("Fake-token"))
-                .andExpect(jsonPath("$.user.email").value("test@example.com"));
-    }
+                mockMvc.perform(post("/api/v1/auth/login")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.token").value("Fake-token"))
+                                .andExpect(jsonPath("$.user.email").value("test@example.com"));
+        }
 
-    @Test
-    @WithMockUser
-    @DisplayName("Login : Échec avec identifiants invalides")
-    void loginFail() throws Exception {
-        given(authService.login(any(LoginRequest.class)))
-                .willThrow(new BadCredentialsException("Email ou mot de passe incorrect"));
-        mockMvc.perform(post("/api/v1/auth/login")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Email ou mot de passe incorrect"));
-    }
+        @Test
+        @WithMockUser
+        @DisplayName("Login : Échec avec identifiants invalides")
+        void loginFail() throws Exception {
+                given(authService.login(any(LoginRequest.class)))
+                                .willThrow(new BadCredentialsException("Email ou mot de passe incorrect"));
+                mockMvc.perform(post("/api/v1/auth/login")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest)))
+                                .andExpect(status().isUnauthorized())
+                                .andExpect(jsonPath("$.message").value("Email ou mot de passe incorrect"));
+        }
 
-    @Test
-    @WithMockUser
-    @DisplayName("Register : Succès de la création de compte")
-    void registerSuccess() throws Exception {
-        given(authService.register(any(RegisterRequest.class))).willReturn(loginResponse);
-        mockMvc.perform(post("/api/v1/auth/register")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(registerRequest)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.token").value("Fake-token"))
-                .andExpect(jsonPath("$.user.email").value("test@example.com"));
-    }
+        @Test
+        @WithMockUser
+        @DisplayName("Register : Succès de la création de compte")
+        void registerSuccess() throws Exception {
+                given(authService.register(any(RegisterRequest.class))).willReturn(loginResponse);
+                mockMvc.perform(post("/api/v1/auth/register")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(registerRequest)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.token").value("Fake-token"))
+                                .andExpect(jsonPath("$.user.email").value("test@example.com"));
+        }
 
-    @Test
-    @WithMockUser
-    @DisplayName("RefreshToken : Succès du renouvellement de token")
-    void refreshTokenSuccess() throws Exception {
-        TokenRefreshRequest refreshRequest = new TokenRefreshRequest("Fake-refresh-token");
-        TokenRefreshResponse refreshResponse = new TokenRefreshResponse("New-Fake-token", "Fake-refresh-token");
-        given(authService.refreshToken(any(com.fika.api.features.auth.dto.TokenRefreshRequest.class))).willReturn(refreshResponse);
-        mockMvc.perform(post("/api/v1/auth/refresh-token")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(refreshRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("New-Fake-token"))
-                .andExpect(jsonPath("$.refreshToken").value("Fake-refresh-token"));
-    }
+        @Test
+        @WithMockUser
+        @DisplayName("RefreshToken : Succès du renouvellement de token")
+        void refreshTokenSuccess() throws Exception {
+                TokenRefreshRequest refreshRequest = new TokenRefreshRequest("Fake-refresh-token");
+                TokenRefreshResponse refreshResponse = new TokenRefreshResponse("New-Fake-token", "Fake-refresh-token");
+                given(authService.refreshToken(any(com.fika.api.features.auth.dto.TokenRefreshRequest.class)))
+                                .willReturn(refreshResponse);
+                mockMvc.perform(post("/api/v1/auth/refresh-token")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(refreshRequest)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.accessToken").value("New-Fake-token"))
+                                .andExpect(jsonPath("$.refreshToken").value("Fake-refresh-token"));
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("Logout : Succès de la déconnexion")
+        void logoutSuccess() throws Exception {
+                TokenRefreshRequest logoutRequest = new TokenRefreshRequest("Fake-refresh-token");
+                mockMvc.perform(post("/api/v1/auth/logout")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(logoutRequest)))
+                                .andExpect(status().isNoContent());
+        }
 }

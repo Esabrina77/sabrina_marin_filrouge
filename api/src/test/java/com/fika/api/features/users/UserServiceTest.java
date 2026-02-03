@@ -13,6 +13,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -62,14 +66,16 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("GetAll : Retourne la liste des utilisateurs")
+    @DisplayName("GetAll : Retourne une page d'utilisateurs")
     void getAllUsers() {
-        given(userRepository.findAll()).willReturn(List.of(user));
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<User> userPage = new PageImpl<>(List.of(user));
+        given(userRepository.findAll(pageable)).willReturn(userPage);
         given(userMapper.toResponse(user)).willReturn(userResponse);
-        List<UserResponse> result = userService.getAllUsers();
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst()).isEqualTo(userResponse);
-        then(userRepository).should().findAll();
+        Page<UserResponse> result = userService.getAllUsers(pageable);
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().getFirst()).isEqualTo(userResponse);
+        then(userRepository).should().findAll(pageable);
     }
 
     @Test

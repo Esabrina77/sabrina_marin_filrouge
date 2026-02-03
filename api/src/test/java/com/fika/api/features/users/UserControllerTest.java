@@ -13,16 +13,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -54,15 +56,13 @@ class UserControllerTest {
     private UserRequest userRequest;
     private UserResponse userResponse;
     private UUID userId;
-    private User user;
 
     @BeforeEach
     void setUp() {
         userId = UUID.randomUUID();
         userRequest = new UserRequest("John", "Doe", "test@example.com", "password123", null);
         userResponse = new UserResponse(userId, "John", "Doe", "test@example.com", Role.CLIENT);
-
-        user = new User();
+        User user = new User();
         user.setId(userId);
     }
 
@@ -70,7 +70,7 @@ class UserControllerTest {
     @WithMockUser
     @DisplayName("Create : Création d'un utilisateur")
     void createUser() throws Exception {
-        given(userService.createUser(any(UserRequest.class))).willReturn(userResponse);
+        given(userService.createUser(userRequest)).willReturn(userResponse);
 
         mockMvc.perform(post("/api/v1/users")
                 .with(csrf())
@@ -85,7 +85,7 @@ class UserControllerTest {
     @WithMockUser
     @DisplayName("Create : Échec si l'email existe déjà")
     void createUserFailEmailExists() throws Exception {
-        given(userService.createUser(any(UserRequest.class)))
+        given(userService.createUser(userRequest))
                 .willThrow(new EmailAlreadyExistsException("L'email test@example.com est déjà utilisé."));
 
         mockMvc.perform(post("/api/v1/users")
@@ -97,14 +97,15 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser
-    @DisplayName("GetAll : Liste tous les utilisateurs")
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("GetAll : Liste tous les utilisateurs (ADMIN)")
     void getAllUsers() throws Exception {
-        given(userService.getAllUsers()).willReturn(List.of(userResponse));
+        Page<UserResponse> userPage = new PageImpl<>(List.of(userResponse));
+        given(userService.getAllUsers(any(Pageable.class))).willReturn(userPage);
 
         mockMvc.perform(get("/api/v1/users"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(userId.toString()));
+                .andExpect(jsonPath("$.content[0].id").value(userId.toString()));
     }
 
     @Test
@@ -133,7 +134,7 @@ class UserControllerTest {
     @WithMockUser
     @DisplayName("Update : Mise à jour d'un utilisateur")
     void updateUser() throws Exception {
-        given(userService.updateUser(eq(userId), any(UserRequest.class))).willReturn(userResponse);
+        given(userService.updateUser(userId, userRequest)).willReturn(userResponse);
 
         mockMvc.perform(put("/api/v1/users/{id}", userId)
                 .with(csrf())
@@ -147,7 +148,7 @@ class UserControllerTest {
     @WithMockUser
     @DisplayName("Update : Échec si l'utilisateur n'existe pas")
     void updateUserNotFound() throws Exception {
-        given(userService.updateUser(eq(userId), any(UserRequest.class))).willThrow(new UserNotFoundException(userId));
+        given(userService.updateUser(userId, userRequest)).willThrow(new UserNotFoundException(userId));
 
         mockMvc.perform(put("/api/v1/users/{id}", userId)
                 .with(csrf())
@@ -181,7 +182,7 @@ class UserControllerTest {
     @WithMockUser(username = "test@example.com")
     @DisplayName("GetMe : Récupération de mon profil")
     void getMe() throws Exception {
-        given(userService.getCurrentUser("test@example.com")).willReturn(userResponse);
+        given(userService.getCurrentUser(any())).willReturn(userResponse);
 
         mockMvc.perform(get("/api/v1/users/me"))
                 .andExpect(status().isOk())

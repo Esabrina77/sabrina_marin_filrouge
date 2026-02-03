@@ -3,7 +3,6 @@ package com.fika.api.features.auth;
 import com.fika.api.features.auth.model.RefreshToken;
 import com.fika.api.features.users.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -19,6 +18,5 @@ import java.util.Optional;
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, java.util.UUID> {
     Optional<RefreshToken> findByToken(String token);
 
-    @Modifying
-    int deleteByUser(Optional<User> user);
+    Optional<RefreshToken> findByUser(User user);
 }

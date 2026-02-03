@@ -57,10 +57,12 @@ class RefreshTokenServiceTest {
     @Test
     @DisplayName("Création : Succès et rotation")
     void createRefreshTokenSuccess() {
+        given(refreshTokenRepository.findByUser(user)).willReturn(Optional.of(refreshToken));
         given(refreshTokenRepository.save(any(RefreshToken.class))).willReturn(refreshToken);
         RefreshToken result = refreshTokenService.createRefreshToken(user);
         assertThat(result).isNotNull();
-        verify(refreshTokenRepository).deleteByUser(Optional.of(user));
+        verify(refreshTokenRepository).delete(refreshToken);
+        verify(refreshTokenRepository).flush();
         verify(refreshTokenRepository).save(any(RefreshToken.class));
     }
 
@@ -75,7 +77,8 @@ class RefreshTokenServiceTest {
     @DisplayName("Vérification : Échec si expiré")
     void verifyExpirationFail() {
         refreshToken.setExpiryDate(Instant.now().minusMillis(1000));
-        assertThatThrownBy(() -> refreshTokenService.verifyExpiration(refreshToken)).isInstanceOf(RefreshTokenExpiredException.class);
+        assertThatThrownBy(() -> refreshTokenService.verifyExpiration(refreshToken))
+                .isInstanceOf(RefreshTokenExpiredException.class);
         verify(refreshTokenRepository).delete(refreshToken);
     }
 
@@ -83,7 +86,8 @@ class RefreshTokenServiceTest {
     @DisplayName("Suppression : Par ID utilisateur")
     void deleteByUserId() {
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(refreshTokenRepository.findByUser(user)).willReturn(Optional.of(refreshToken));
         refreshTokenService.deleteByUserId(user.getId());
-        verify(refreshTokenRepository).deleteByUser(Optional.of(user));
+        verify(refreshTokenRepository).delete(refreshToken);
     }
 }

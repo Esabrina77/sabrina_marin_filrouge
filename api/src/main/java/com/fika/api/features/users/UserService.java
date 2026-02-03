@@ -6,11 +6,12 @@ import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
 import com.fika.api.features.users.model.User;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -19,6 +20,7 @@ import java.util.UUID;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -26,15 +28,15 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     /**
-     * Récupère la liste de tous les utilisateurs enregistrés.
+     * Récupère une page d'utilisateurs enregistrés.
      *
-     * @return Une liste de UserResponse.
+     * @param pageable Les informations de pagination et de tri.
+     * @return Une Page de UserResponse.
      */
-    public List<UserResponse> getAllUsers() {
-        return userRepository.findAll()
-                .stream()
-                .map(userMapper::toResponse)
-                .toList();
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
+        log.debug("Récupération de la page d'utilisateurs: {}", pageable);
+        return userRepository.findAll(pageable)
+                .map(userMapper::toResponse);
     }
 
     /**
@@ -59,6 +61,7 @@ public class UserService {
      */
     @Transactional
     public UserResponse createUser(UserRequest userRequest) {
+        log.info("Création d'un nouvel utilisateur avec l'email: {}", userRequest.email());
         if (userRepository.existsByEmail(userRequest.email())) {
             throw new EmailAlreadyExistsException("L'email " + userRequest.email() + " est déjà utilisé.");
         }
@@ -86,6 +89,7 @@ public class UserService {
      */
     @Transactional
     public UserResponse updateUser(UUID id, UserRequest userRequest) {
+        log.info("Mise à jour de l'utilisateur ID: {}", id);
         User userToUpdate = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
@@ -111,17 +115,22 @@ public class UserService {
      * @throws UserNotFoundException Si l'utilisateur n'existe pas, empêchant la
      *                               suppression.
      */
+    @Transactional
     public void deleteUser(UUID id) {
+        log.info("Suppression de l'utilisateur ID: {}", id);
         if (!userRepository.existsById(id)) {
             throw new UserNotFoundException(id);
         }
         userRepository.deleteById(id);
+        log.info("Utilisateur ID: {} supprimé", id);
     }
 
     /**
      * Supprime tous les utilisateurs de la base de données.
      */
+    @Transactional
     public void deleteUsers() {
+        log.warn("SUPPRESSION DE TOUS LES UTILISATEURS");
         userRepository.deleteAll();
     }
 
