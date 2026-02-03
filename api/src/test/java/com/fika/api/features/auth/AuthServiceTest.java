@@ -48,6 +48,7 @@ class AuthServiceTest {
     private AuthService authService;
 
     private User user;
+    private UserResponse userResponse;
     private LoginRequest loginRequest;
     private RegisterRequest registerRequest;
     private LoginResponse loginResponse;
@@ -63,7 +64,7 @@ class AuthServiceTest {
 
         loginRequest = new LoginRequest("test@example.com", "password123");
         registerRequest = new RegisterRequest("John", "Doe", "test@example.com", "password123");
-        UserResponse userResponse = new UserResponse(UUID.randomUUID(), "John", "Doe", "test@example.com", Role.CLIENT);
+        userResponse = new UserResponse(UUID.randomUUID(), "John", "Doe", "test@example.com", Role.CLIENT);
         loginResponse = new LoginResponse(userResponse, "Fake-token");
     }
 
@@ -99,9 +100,12 @@ class AuthServiceTest {
     @Test
     @DisplayName("Register : Succès")
     void registerSuccess() {
-        given(userService.createUser(any(UserRequest.class))).willReturn(user);
+        given(userService.createUser(any(UserRequest.class))).willReturn(userResponse);
+        given(userRepository.findByEmail(userResponse.email())).willReturn(Optional.of(user));
         given(authMapper.toResponse(eq(user), any(String.class))).willReturn(loginResponse);
+
         LoginResponse result = authService.register(registerRequest);
+
         assertThat(result).isEqualTo(loginResponse);
     }
 }

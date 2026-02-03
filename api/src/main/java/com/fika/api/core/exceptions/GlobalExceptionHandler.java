@@ -65,19 +65,20 @@ public class GlobalExceptionHandler {
      *         validation.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<FormErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        java.util.Map<String, String> errors = new java.util.HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((org.springframework.validation.FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
 
-        String errorMessage = ex.getBindingResult()
-                .getAllErrors()
-                .stream()
-                .map(org.springframework.context.support.DefaultMessageSourceResolvable::getDefaultMessage)
-                .collect(java.util.stream.Collectors.joining(", "));
-
-        ErrorResponse errorResponse = new ErrorResponse(
+        FormErrorResponse errorResponse = new FormErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Validation Failed",
-                errorMessage);
+                "Certains champs sont invalides",
+                errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 

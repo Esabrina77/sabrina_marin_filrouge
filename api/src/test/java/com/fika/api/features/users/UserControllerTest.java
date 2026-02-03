@@ -39,9 +39,6 @@ class UserControllerTest {
     @MockitoBean
     private UserService userService;
 
-    @MockitoBean
-    private UserMapper userMapper;
-
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -53,7 +50,7 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         userId = UUID.randomUUID();
-        userRequest = new UserRequest("John", "Doe", "test@example.com", "password123");
+        userRequest = new UserRequest("John", "Doe", "test@example.com", "password123", null);
         userResponse = new UserResponse(userId, "John", "Doe", "test@example.com", Role.CLIENT);
 
         user = new User();
@@ -64,8 +61,7 @@ class UserControllerTest {
     @WithMockUser
     @DisplayName("Create : Création d'un utilisateur")
     void createUser() throws Exception {
-        given(userService.createUser(any(UserRequest.class))).willReturn(user);
-        given(userMapper.toResponse(user)).willReturn(userResponse);
+        given(userService.createUser(any(UserRequest.class))).willReturn(userResponse);
 
         mockMvc.perform(post("/api/v1/users")
                 .with(csrf())

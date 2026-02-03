@@ -57,7 +57,7 @@ class UserServiceTest {
         user.setFirstName("John");
         user.setLastName("Doe");
 
-        userRequest = new UserRequest("John", "Doe", "test@example.com", "password123");
+        userRequest = new UserRequest("John", "Doe", "test@example.com", "password123", null);
         userResponse = new UserResponse(userId, "John", "Doe", "test@example.com", Role.CLIENT);
     }
 
@@ -97,8 +97,11 @@ class UserServiceTest {
         given(userMapper.toEntity(userRequest)).willReturn(user);
         given(passwordEncoder.encode(userRequest.password())).willReturn("encodedPassword");
         given(userRepository.save(user)).willReturn(user);
-        User result = userService.createUser(userRequest);
-        assertThat(result).isEqualTo(user);
+        given(userMapper.toResponse(user)).willReturn(userResponse);
+
+        UserResponse result = userService.createUser(userRequest);
+
+        assertThat(result).isEqualTo(userResponse);
         then(userRepository).should().save(user);
     }
 

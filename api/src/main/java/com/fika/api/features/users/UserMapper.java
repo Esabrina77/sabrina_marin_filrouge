@@ -23,32 +23,35 @@ public class UserMapper {
      * @return Un DTO UserResponse ou null si l'entrée est nulle.
      */
     public UserResponse toResponse(User user) {
-        if (user == null) return null;
+        if (user == null)
+            return null;
         return new UserResponse(
                 user.getId(),
                 user.getFirstName(),
                 user.getLastName(),
                 user.getEmail(),
-                user.getRole()
-        );
+                user.getRole());
     }
 
     /**
      * Transforme un DTO UserRequest en entité User.
-     * Utilisé par exemple lors de la création d'un utilisateur. Par défaut, le rôle CLIENT
+     * Utilisé par exemple lors de la création d'un utilisateur. Par défaut, le rôle
+     * CLIENT
      * est attribué.
      *
      * @param request Le DTO contenant les données de création.
-     * @return Une entité User prête pour la persistance ou null si l'entrée est nulle.
+     * @return Une entité User prête pour la persistance ou null si l'entrée est
+     *         nulle.
      */
     public User toEntity(UserRequest request) {
-        if (request == null) return null;
+        if (request == null)
+            return null;
         return User.builder()
                 .firstName(request.firstName())
                 .lastName(request.lastName())
                 .email(request.email())
                 .password(request.password())
-                .role(Role.CLIENT)
+                .role(request.role() != null ? request.role() : Role.CLIENT)
                 .build();
     }
 }

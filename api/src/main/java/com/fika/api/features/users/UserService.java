@@ -57,13 +57,15 @@ public class UserService {
      * @return Le DTO de l'utilisateur créé avec son ID généré.
      * @throws EmailAlreadyExistsException si l'email est déjà utilisé en base.
      */
-    public User createUser(UserRequest userRequest) {
+    @Transactional
+    public UserResponse createUser(UserRequest userRequest) {
         if (userRepository.existsByEmail(userRequest.email())) {
             throw new EmailAlreadyExistsException("L'email " + userRequest.email() + " est déjà utilisé.");
         }
         User userToCreate = userMapper.toEntity(userRequest);
         userToCreate.setPassword(passwordEncoder.encode(userRequest.password()));
-        return userRepository.save(userToCreate);
+        User savedUser = userRepository.save(userToCreate);
+        return userMapper.toResponse(savedUser);
     }
 
     /**
@@ -90,11 +92,13 @@ public class UserService {
         if (!userToUpdate.getEmail().equals(userRequest.email()) && userRepository.existsByEmail(userRequest.email())) {
             throw new EmailAlreadyExistsException("Cet email est déjà pris par un autre utilisateur.");
         }
-
         userToUpdate.setEmail(userRequest.email());
         userToUpdate.setFirstName(userRequest.firstName());
         userToUpdate.setLastName(userRequest.lastName());
         userToUpdate.setPassword(passwordEncoder.encode(userRequest.password()));
+        if (userRequest.role() != null) {
+            userToUpdate.setRole(userRequest.role());
+        }
 
         User updatedUser = userRepository.save(userToUpdate);
         return userMapper.toResponse(updatedUser);
@@ -119,5 +123,18 @@ public class UserService {
      */
     public void deleteUsers() {
         userRepository.deleteAll();
+    }
+
+    /**
+     * Récupère le profil de l'utilisateur actuellement connecté via son email.
+     *
+     * @param email L'email de l'utilisateur.
+     * @return Le DTO de l'utilisateur.
+     * @throws UserNotFoundException si l'utilisateur n'existe pas.
+     */
+    public UserResponse getCurrentUser(String email) {
+        return userRepository.findByEmail(email)
+                .map(userMapper::toResponse)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'email: " + email));
     }
 }

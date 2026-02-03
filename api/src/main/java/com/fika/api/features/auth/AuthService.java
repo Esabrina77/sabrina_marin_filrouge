@@ -4,6 +4,7 @@ import com.fika.api.core.jwt.JwtService;
 import com.fika.api.features.auth.dto.LoginRequest;
 import com.fika.api.features.auth.dto.LoginResponse;
 import com.fika.api.features.auth.dto.RegisterRequest;
+import com.fika.api.features.users.dto.UserResponse;
 import com.fika.api.features.users.UserService;
 import com.fika.api.features.users.dto.UserRequest;
 import com.fika.api.features.users.model.User;
@@ -40,7 +41,6 @@ public class AuthService {
     public LoginResponse login(LoginRequest loginRequest) {
         User user = userRepository.findByEmail(loginRequest.email())
                 .orElseThrow(() -> new BadCredentialsException("Email ou mot de passe incorrect"));
-
         if (!passwordEncoder.matches(loginRequest.password(), user.getPassword())) {
             throw new BadCredentialsException("Email ou mot de passe incorrect");
         }
@@ -68,11 +68,13 @@ public class AuthService {
                 registerRequest.firstName(),
                 registerRequest.lastName(),
                 registerRequest.email(),
-                registerRequest.password());
+                registerRequest.password(),
+                null);
 
-        User user = userService.createUser(userRequest);
+        UserResponse userResponse = userService.createUser(userRequest);
+        User user = userRepository.findByEmail(userResponse.email())
+                .orElseThrow(() -> new RuntimeException("User not found after creation"));
         String token = jwtService.generateToken(user);
-
         return authMapper.toResponse(user, token);
     }
 }
