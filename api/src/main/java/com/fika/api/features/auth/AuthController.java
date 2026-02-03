@@ -61,7 +61,7 @@ public class AuthController {
         @Operation(summary = "Rafraîchir le token", description = "Utilise le Refresh Token (cookie) pour obtenir un nouveau Access Token (JSON).")
         @ApiResponse(responseCode = "200", description = "Nouveaux tokens générés (Access en JSON, Refresh en Cookie)")
         public ResponseEntity<TokenRefreshResponse> refreshToken(
-                        @CookieValue(name = "refreshToken") String refreshToken) {
+                        @io.swagger.v3.oas.annotations.Parameter(hidden = true) @CookieValue(name = "refreshToken") String refreshToken) {
                 TokenRefreshRequest request = new TokenRefreshRequest(refreshToken);
                 TokenRefreshResponse refreshResponse = authService.refreshToken(request);
 
@@ -75,7 +75,8 @@ public class AuthController {
         @PostMapping("/logout")
         @Operation(summary = "Déconnexion", description = "Invalide le Refresh Token en base et supprime le cookie.")
         @ApiResponse(responseCode = "204", description = "Déconnexion réussie")
-        public ResponseEntity<Void> logout(@CookieValue(name = "refreshToken") String refreshToken) {
+        public ResponseEntity<Void> logout(
+                        @io.swagger.v3.oas.annotations.Parameter(hidden = true) @CookieValue(name = "refreshToken") String refreshToken) {
                 TokenRefreshRequest request = new TokenRefreshRequest(refreshToken);
                 authService.logout(request);
                 ResponseCookie deleteRefreshToken = cookieUtil.deleteRefreshTokenCookie();

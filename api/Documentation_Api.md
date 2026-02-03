@@ -11,8 +11,8 @@ Ce document sert de référence pour l'intégration Frontend. Il détaille le fo
 | :--- | :--- |
 | **Base URL** | `http://localhost:8080/api/v1` |
 | **Swagger UI** (Doc interactive) | [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html) |
-| **Lancer la BDD (Docker)** | `docker-compose up -d` |
-| **Lancer l'API** | `./mvnw spring-boot:run` |
+| **Lancer TOUT (BDD + API)** | `docker-compose up --build -d` |
+| **Lancer l'API (Dev mode)** | `./mvnw spring-boot:run` |
 
 ---
 

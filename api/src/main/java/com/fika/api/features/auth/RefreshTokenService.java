@@ -46,11 +46,10 @@ public class RefreshTokenService {
     public RefreshToken createRefreshToken(User user) {
         log.debug("Création d'un refresh token pour l'utilisateur: {}", user.getEmail());
 
-        // On cherche un token existant pour cet utilisateur
         refreshTokenRepository.findByUser(user).ifPresent(token -> {
             log.debug("Suppression de l'ancien token pour: {}", user.getEmail());
             refreshTokenRepository.delete(token);
-            refreshTokenRepository.flush(); // Force la suppression en base immédiatement
+            refreshTokenRepository.flush();
         });
 
         RefreshToken refreshToken = RefreshToken.builder()

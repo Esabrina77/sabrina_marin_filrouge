@@ -11,5 +11,19 @@ services:
     volumes:
       - fika_postgres_data:/var/lib/postgresql/data
     restart: "no"
+
+  api:
+    build: ./api
+    container_name: fika-api
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/fikadb
+    depends_on:
+      - db
+    restart: always
 volumes:
   fika_postgres_data:
