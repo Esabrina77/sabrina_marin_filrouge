@@ -71,6 +71,18 @@ public class JwtService {
     }
 
     /**
+     * Vérifie si le token est valide.
+     * Méthode explicite pour la clarté du code, même si extractUsername/extractRole
+     * le font implicitement.
+     *
+     * @param token Le jeton à vérifier.
+     * @return true si le token est valide, false sinon.
+     */
+    public boolean isValidToken(String token) {
+        return validateAndDecodeToken(token) != null;
+    }
+
+    /**
      * Extrait le rôle d'un jeton JWT.
      *
      * @param token Le jeton JWT.

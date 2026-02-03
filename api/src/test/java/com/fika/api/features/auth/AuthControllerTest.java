@@ -97,7 +97,7 @@ class AuthControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(loginRequest)))
                                 .andExpect(status().isUnauthorized())
-                                .andExpect(jsonPath("$.message").value("Email ou mot de passe incorrect"));
+                                .andExpect(jsonPath("$.message").value("Email ou mot de passe incorrect."));
         }
 
         @Test

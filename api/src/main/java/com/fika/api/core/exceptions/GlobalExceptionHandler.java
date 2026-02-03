@@ -176,22 +176,6 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Gère les exceptions de type Runtime non explicitées.
-     *
-     * @param ex L'exception capturée.
-     * @return Une réponse HTTP 400 (Bad Request) au format standard.
-     */
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                "Requête invalide",
-                ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-
-    /**
      * Gère toutes les autres exceptions non traitées explicitement (Erreur 500).
      *
      * @param ex L'exception capturée.
