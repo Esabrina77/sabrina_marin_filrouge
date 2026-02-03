@@ -23,7 +23,6 @@ import java.util.UUID;
  */
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class RefreshTokenService {
 
     @Value("${application.security.jwt.refresh-token.expiration}")
@@ -44,10 +43,7 @@ public class RefreshTokenService {
      */
     @Transactional
     public RefreshToken createRefreshToken(User user) {
-        log.debug("Création d'un refresh token pour l'utilisateur: {}", user.getEmail());
-
         refreshTokenRepository.findByUser(user).ifPresent(token -> {
-            log.debug("Suppression de l'ancien token pour: {}", user.getEmail());
             refreshTokenRepository.delete(token);
             refreshTokenRepository.flush();
         });
@@ -74,7 +70,6 @@ public class RefreshTokenService {
     @Transactional
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().isBefore(Instant.now())) {
-            log.warn("Le refresh token a expiré pour l'utilisateur: {}", token.getUser().getEmail());
             refreshTokenRepository.delete(token);
             throw new RefreshTokenExpiredException(token.getToken(), "Veuillez vous reconnecter.");
         }
@@ -88,10 +83,7 @@ public class RefreshTokenService {
      */
     @Transactional
     public void deleteByUserId(UUID userId) {
-        log.debug("Suppression des tokens pour l'utilisateur ID: {}", userId);
-        userRepository.findById(userId)
-                .ifPresent(user -> refreshTokenRepository.findByUser(user)
-                        .ifPresent(refreshTokenRepository::delete));
+        userRepository.findById(userId).flatMap(refreshTokenRepository::findByUser).ifPresent(refreshTokenRepository::delete);
     }
 
     /**

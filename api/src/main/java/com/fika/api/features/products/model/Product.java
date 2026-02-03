@@ -1,4 +1,4 @@
-package com.fika.api.features.users.model;
+package com.fika.api.features.products.model;
 
 
 import jakarta.persistence.*;
@@ -7,41 +7,46 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
+@Table(name = "products")
 @Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
-@EntityListeners(AuditingEntityListener.class)
 @Builder
-public class User {
+@EntityListeners(AuditingEntityListener.class)
+@NoArgsConstructor
+@AllArgsConstructor
+public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(nullable = false)
-    private String firstName;
+    private String name;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
+
+    @Column(nullable = false, length = 1000)
+    private String description;
 
     @Column(nullable = false)
-    private String lastName;
-
-    @Column(nullable = false, unique = true)
-    private String email;
+    private String imgUrl;
 
     @Column(nullable = false)
-    private String password;
-
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
+    private Category category;
 
-    @CreatedDate
+    @Column(nullable = false)
+    private boolean available;
+
     @Column(nullable = false, updatable = false)
+    @CreatedDate
     private Instant createdAt;
 
-    @LastModifiedDate
     @Column(insertable = false)
+    @LastModifiedDate
     private Instant updatedAt;
 }

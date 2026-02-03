@@ -11,7 +11,6 @@ import com.fika.api.features.users.dto.UserRequest;
 import com.fika.api.features.users.model.User;
 import com.fika.api.features.users.UserRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -45,7 +43,6 @@ public class AuthService {
      */
     @Transactional
     public LoginResponse login(LoginRequest loginRequest) {
-        log.debug("Tentative de connexion pour l'utilisateur: {}", loginRequest.email());
         User user = userRepository.findByEmail(loginRequest.email())
                 .orElseThrow(() -> {
                     return new BadCredentialsException("Email ou mot de passe incorrect");
@@ -68,7 +65,6 @@ public class AuthService {
      */
     @Transactional
     public LoginResponse register(RegisterRequest registerRequest) {
-        log.info("Nouvelle inscription demandée pour l'email: {}", registerRequest.email());
         UserRequest userRequest = new UserRequest(
                 registerRequest.firstName(),
                 registerRequest.lastName(),
@@ -81,7 +77,6 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found after creation"));
         String token = jwtService.generateToken(user);
         com.fika.api.features.auth.model.RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
-        log.info("Inscription réussie pour l'utilisateur ID: {}", user.getId());
         return authMapper.toResponse(user, token, refreshToken.getToken());
     }
 
@@ -100,7 +95,6 @@ public class AuthService {
     @Transactional
     public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
         String requestRefreshToken = request.refreshToken();
-        log.debug("Demande de rafraîchissement de token reçue");
         return refreshTokenService.findByToken(requestRefreshToken)
                 .map(refreshTokenService::verifyExpiration)
                 .map(RefreshToken::getUser)
