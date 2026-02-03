@@ -1,5 +1,6 @@
 package com.fika.api.features.auth;
 
+import com.fika.api.core.jwt.JwtService;
 import com.fika.api.features.auth.dto.LoginRequest;
 import com.fika.api.features.auth.dto.LoginResponse;
 import com.fika.api.features.auth.dto.RegisterRequest;
@@ -25,6 +26,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthMapper authMapper;
     private final UserService userService;
+    private final JwtService jwtService;
 
     /**
      * Authentifie un utilisateur en vérifiant son email et son mot de passe.
@@ -42,7 +44,7 @@ public class AuthService {
         if (!passwordEncoder.matches(loginRequest.password(), user.getPassword())) {
             throw new BadCredentialsException("Email ou mot de passe incorrect");
         }
-        String token = "Fake-token";
+        String token = jwtService.generateToken(user);
         return authMapper.toResponse(user, token);
     }
 
@@ -69,7 +71,7 @@ public class AuthService {
                 registerRequest.password());
 
         User user = userService.createUser(userRequest);
-        String token = "Fake-token";
+        String token = jwtService.generateToken(user);
 
         return authMapper.toResponse(user, token);
     }

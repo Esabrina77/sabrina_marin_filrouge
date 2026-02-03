@@ -68,7 +68,7 @@ class UserServiceTest {
         given(userMapper.toResponse(user)).willReturn(userResponse);
         List<UserResponse> result = userService.getAllUsers();
         assertThat(result).hasSize(1);
-        assertThat(result.get(0)).isEqualTo(userResponse);
+        assertThat(result.getFirst()).isEqualTo(userResponse);
         then(userRepository).should().findAll();
     }
 

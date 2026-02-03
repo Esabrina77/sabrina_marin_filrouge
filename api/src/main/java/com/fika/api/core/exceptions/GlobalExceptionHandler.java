@@ -4,10 +4,13 @@ import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import java.time.LocalDateTime;
 
 /**
@@ -79,20 +82,63 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Gère les échecs d'authentification (mauvais mot de passe ou email inexistant).
+     * Gère les échecs d'authentification (mauvais mot de passe ou email
+     * inexistant).
      * Renvoie une réponse 401 Unauthorized pour éviter de donner trop d'indices
      * sur la raison exacte de l'échec (sécurité).
      *
-     * @return Une {@link ResponseEntity} contenant les détails de l'erreur au format {@link ErrorResponse}.
+     * @return Une {@link ResponseEntity} contenant les détails de l'erreur au
+     *         format {@link ErrorResponse}.
      */
-    @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
+    @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials() {
         ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
                 "Authentification échouée",
-                "Email ou mot de passe incorrect"
-        );
+                "Email ou mot de passe incorrect");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    /**
+     * Gère les erreurs d'authentification (ex: token manquant ou invalide).
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException() {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                "Vous devez être authentifié pour accéder à cette ressource.");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
+
+    /**
+     * Gère les erreurs d'accès refusé (ex: rôle insuffisant).
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException() {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.FORBIDDEN.value(),
+                "Forbidden",
+                "Vous n'avez pas les permissions nécessaires.");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    /**
+     * Gère toutes les autres exceptions non traitées explicitement (Erreur 500).
+     *
+     * @param ex L'exception capturée.
+     * @return Une réponse HTTP 500 (Internal Server Error) au format standard.
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal Server Error",
+                "Une erreur inattendue est survenue: " + ex.getLocalizedMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }

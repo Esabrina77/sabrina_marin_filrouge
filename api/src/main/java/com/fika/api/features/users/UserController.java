@@ -2,6 +2,7 @@ package com.fika.api.features.users;
 
 import com.fika.api.features.users.dto.UserRequest;
 import com.fika.api.features.users.dto.UserResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     private final UserService userService;
@@ -90,6 +92,7 @@ public class UserController {
 
     /**
      * Supprime tous les utilisateurs du système.
+     * 
      * @status 204 No Content
      */
     @DeleteMapping("/all")
