@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: api
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/fikadb
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      initialization-fail-timeout: 0
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+
+
+springdoc:
+  swagger-ui:
+    path: /swagger
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY}
+      expiration: 1800000
+      refresh-token:
+        expiration: 604800000

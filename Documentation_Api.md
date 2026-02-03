@@ -16,6 +16,22 @@ Ce document sert de référence pour l'intégration Frontend. Il détaille le fo
 
 ---
 
+
+## 🚦 Rate Limiting (Protection)
+
+Pour protéger l'API contre les abus, un système de limitation de requêtes est en place par IP :
+
+| Endpoint | Limite | Conséquence |
+| :--- | :--- | :--- |
+| **Login / Register** | **10 requêtes / minute** | Protection Brute Force sévère. |
+| **API Globale** (`/api/v1/*`) | **30 requêtes / minute** | Prévention du spam / surcharge. |
+
+En cas de dépassement, l'API renvoie :
+*   **Satus** : `429 Too Many Requests`
+*   **JSON** : `{"message": "Trop de requêtes. Veuillez ralentir."}`
+
+---
+
 ## 🔐 Authentification & Sécurité
 
 L'API utilise un système **Stateless** basé sur **JWT (Access Token)** et **Refresh Token** (avec rotation).
