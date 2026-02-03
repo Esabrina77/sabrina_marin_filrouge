@@ -39,6 +39,15 @@ class UserControllerTest {
     @MockitoBean
     private UserService userService;
 
+    @MockitoBean
+    private com.fika.api.core.jwt.JwtService jwtService;
+
+    @MockitoBean
+    private com.fika.api.core.jwt.JwtFilter jwtFilter;
+
+    @MockitoBean
+    private com.fika.api.core.exceptions.JwtExceptionHandler jwtExceptionHandler;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -166,5 +175,17 @@ class UserControllerTest {
                 .with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    @WithMockUser(username = "test@example.com")
+    @DisplayName("GetMe : Récupération de mon profil")
+    void getMe() throws Exception {
+        given(userService.getCurrentUser("test@example.com")).willReturn(userResponse);
+
+        mockMvc.perform(get("/api/v1/users/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("test@example.com"))
+                .andExpect(jsonPath("$.firstName").value("John"));
     }
 }

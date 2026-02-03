@@ -1,10 +1,8 @@
 package com.fika.api.features.auth;
 
+import com.fika.api.features.auth.dto.*;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.security.authentication.BadCredentialsException;
-import com.fika.api.features.auth.dto.LoginRequest;
-import com.fika.api.features.auth.dto.LoginResponse;
-import com.fika.api.features.auth.dto.RegisterRequest;
 import com.fika.api.features.users.dto.UserResponse;
 import com.fika.api.features.users.model.Role;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +34,15 @@ class AuthControllerTest {
     @MockitoBean
     private AuthService authService;
 
+    @MockitoBean
+    private com.fika.api.core.jwt.JwtService jwtService;
+
+    @MockitoBean
+    private com.fika.api.core.jwt.JwtFilter jwtFilter;
+
+    @MockitoBean
+    private com.fika.api.core.exceptions.JwtExceptionHandler jwtExceptionHandler;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -47,8 +54,7 @@ class AuthControllerTest {
     void setUp() {
         loginRequest = new LoginRequest("test@example.com", "password123");
         registerRequest = new RegisterRequest("John", "Doe", "test@example.com", "password123");
-        UserResponse userResponse = new UserResponse(java.util.UUID.randomUUID(), "John", "Doe", "test@example.com",
-                Role.CLIENT);
+        UserResponse userResponse = new UserResponse(java.util.UUID.randomUUID(), "John", "Doe", "test@example.com", Role.CLIENT);
         loginResponse = new LoginResponse(userResponse, "Fake-token", "Fake-refresh-token");
     }
 
@@ -93,5 +99,21 @@ class AuthControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.token").value("Fake-token"))
                 .andExpect(jsonPath("$.user.email").value("test@example.com"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("RefreshToken : Succès du renouvellement de token")
+    void refreshTokenSuccess() throws Exception {
+        TokenRefreshRequest refreshRequest = new TokenRefreshRequest("Fake-refresh-token");
+        TokenRefreshResponse refreshResponse = new TokenRefreshResponse("New-Fake-token", "Fake-refresh-token");
+        given(authService.refreshToken(any(com.fika.api.features.auth.dto.TokenRefreshRequest.class))).willReturn(refreshResponse);
+        mockMvc.perform(post("/api/v1/auth/refresh-token")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(refreshRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("New-Fake-token"))
+                .andExpect(jsonPath("$.refreshToken").value("Fake-refresh-token"));
     }
 }
