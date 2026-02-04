@@ -1,5 +1,6 @@
 package com.fika.api.features.users;
 
+import com.fika.api.features.users.dto.UserProfileRequest;
 import com.fika.api.features.users.dto.UserRequest;
 import com.fika.api.features.users.dto.UserResponse;
 import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
@@ -137,5 +138,40 @@ public class UserService {
         return userRepository.findByEmail(email)
                 .map(userMapper::toResponse)
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'email: " + email));
+    }
+
+    /**
+     * Met à jour le profil de l'utilisateur actuellement connecté.
+     *
+     * @param email              L'email actuel de l'utilisateur (issu du JWT).
+     * @param userProfileRequest Les nouvelles informations de profil.
+     * @return Le DTO de l'utilisateur mis à jour.
+     */
+    @Transactional
+    public UserResponse updateCurrentUser(String email, UserProfileRequest userProfileRequest) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'email: " + email));
+        if (!user.getEmail().equals(userProfileRequest.email())
+                && userRepository.existsByEmail(userProfileRequest.email())) {
+            throw new EmailAlreadyExistsException("Cet email est déjà pris par un autre utilisateur.");
+        }
+        user.setEmail(userProfileRequest.email());
+        user.setFirstName(userProfileRequest.firstName());
+        user.setLastName(userProfileRequest.lastName());
+        User updatedUser = userRepository.save(user);
+        return userMapper.toResponse(updatedUser);
+    }
+
+    @Transactional
+    public void deleteCurrentUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'email: " + email));
+
+        user.setFirstName("Utilisateur");
+        user.setLastName("Anonymisé");
+        user.setEmail("deleted_" + UUID.randomUUID() + "@fika-anonym.fr");
+        user.setPassword("{noop}DELETED_" + UUID.randomUUID());
+
+        userRepository.save(user);
     }
 }

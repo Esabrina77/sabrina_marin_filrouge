@@ -1,4 +1,4 @@
-package com.fika.api.features.order;
+package com.fika.api.features.orders.model;
 
 public enum OrderStatus {
     PENDING,

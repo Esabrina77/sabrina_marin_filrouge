@@ -1,5 +1,6 @@
 package com.fika.api.features.users;
 
+import com.fika.api.features.users.dto.UserProfileRequest;
 import com.fika.api.features.users.dto.UserRequest;
 import com.fika.api.features.users.dto.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,7 +37,6 @@ public class UserController {
 
     private final UserService userService;
 
-
     @GetMapping("/me")
     @Operation(summary = "Mon profil", description = "Récupère les informations de l'utilisateur actuellement connecté.")
     @ApiResponse(responseCode = "200", description = "Profil récupéré")
@@ -45,6 +45,24 @@ public class UserController {
         return userService.getCurrentUser(email);
     }
 
+    @PutMapping("/me")
+    @Operation(summary = "Mettre à jour mon profil", description = "Permet à l'utilisateur connecté de modifier ses propres informations.")
+    @ApiResponse(responseCode = "200", description = "Profil mis à jour")
+    @ApiResponse(responseCode = "400", description = "Données invalides")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    public UserResponse updateCurrentUser(@AuthenticationPrincipal String email,
+            @Valid @RequestBody UserProfileRequest userProfileRequest) {
+        return userService.updateCurrentUser(email, userProfileRequest);
+    }
+
+    @DeleteMapping("/me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Supprimer mon compte", description = "Permet à l'utilisateur connecté de supprimer son compte (anonymisation).")
+    @ApiResponse(responseCode = "204", description = "Compte anonymisé avec succès")
+    @ApiResponse(responseCode = "401", description = "Non authentifié")
+    public void deleteCurrentUser(@AuthenticationPrincipal String email) {
+        userService.deleteCurrentUser(email);
+    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -56,7 +74,6 @@ public class UserController {
         return userService.createUser(userRequest);
     }
 
-
     @GetMapping
     @Operation(summary = "Lister les utilisateurs", description = "Récupère une page de tous les utilisateurs (Réservé aux ADMINS).")
     @ApiResponse(responseCode = "200", description = "Liste récupérée avec succès")
@@ -66,7 +83,6 @@ public class UserController {
         return userService.getAllUsers(pageable);
     }
 
-
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer un utilisateur", description = "Récupère les détails d'un utilisateur par son ID.")
     @ApiResponse(responseCode = "200", description = "Utilisateur trouvé")
@@ -75,7 +91,6 @@ public class UserController {
             @Parameter(description = "ID unique de l'utilisateur", example = "550e8400-e29b-41d4-a716-446655440000") @PathVariable UUID id) {
         return userService.getUserById(id);
     }
-
 
     @PutMapping("/{id}")
     @Operation(summary = "Mettre à jour un utilisateur", description = "Met à jour les informations d'un utilisateur existant.")
@@ -91,7 +106,7 @@ public class UserController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Supprimer un utilisateur", description = "Supprime un utilisateur du système par son ID.")
+    @Operation(summary = "Supprimer un utilisateur", description = "Supprime définitivement un utilisateur du système par son ID.")
     @ApiResponse(responseCode = "204", description = "Utilisateur supprimé")
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
     public void deleteUser(@Parameter(description = "ID de l'utilisateur à supprimer") @PathVariable UUID id) {
