@@ -1,6 +1,7 @@
 package com.fika.api.features.products;
 
 
+import com.fika.api.features.products.dto.ProductRequest;
 import com.fika.api.features.products.dto.ProductResponse;
 import com.fika.api.features.products.model.Product;
 import org.springframework.stereotype.Component;
@@ -17,5 +18,17 @@ public class ProductMapper {
                 product.getCategory(),
                 product.isAvailable()
         );
+    }
+
+    public Product toEntity(ProductRequest productRequest) {
+        if (productRequest == null) return null;
+        return Product.builder()
+                .name(productRequest.name())
+                .price(productRequest.price())
+                .description(productRequest.description())
+                .imgUrl(productRequest.imgUrl())
+                .category(productRequest.category())
+                .available(productRequest.available())
+                .build();
     }
 }

@@ -31,21 +31,12 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
-@SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Users", description = "Gestion des comptes utilisateurs")
 public class UserController {
 
     private final UserService userService;
 
-    /**
-     * Récupère le profil de l'utilisateur actuellement authentifié.
-     * <p>
-     * Utilise le contexte de sécurité pour identifier l'utilisateur via son JWT.
-     * </p>
-     *
-     * @return UserResponse contenant les détails de l'utilisateur connecté.
-     * @status 200 OK
-     */
+
     @GetMapping("/me")
     @Operation(summary = "Mon profil", description = "Récupère les informations de l'utilisateur actuellement connecté.")
     @ApiResponse(responseCode = "200", description = "Profil récupéré")
@@ -54,14 +45,7 @@ public class UserController {
         return userService.getCurrentUser(email);
     }
 
-    /**
-     * Crée un nouvel utilisateur dans le système.
-     *
-     * @param userRequest DTO contenant les informations de l'utilisateur (validé
-     *                    par @Valid).
-     * @return UserResponse contenant les données de l'utilisateur créé.
-     * @status 201 Created
-     */
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Créer un utilisateur", description = "Crée un nouveau compte utilisateur dans le système.")
@@ -72,12 +56,7 @@ public class UserController {
         return userService.createUser(userRequest);
     }
 
-    /**
-     * Récupère la liste exhaustive de tous les utilisateurs enregistrés.
-     *
-     * @return Liste de UserResponse.
-     * @status 200 OK
-     */
+
     @GetMapping
     @Operation(summary = "Lister les utilisateurs", description = "Récupère une page de tous les utilisateurs (Réservé aux ADMINS).")
     @ApiResponse(responseCode = "200", description = "Liste récupérée avec succès")
@@ -87,13 +66,7 @@ public class UserController {
         return userService.getAllUsers(pageable);
     }
 
-    /**
-     * Récupère les détails d'un utilisateur spécifique par son identifiant unique.
-     *
-     * @param id Identifiant UUID de l'utilisateur.
-     * @return UserResponse de l'utilisateur trouvé.
-     * @status 200 OK ou 404 Not Found (via GlobalExceptionHandler)
-     */
+
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer un utilisateur", description = "Récupère les détails d'un utilisateur par son ID.")
     @ApiResponse(responseCode = "200", description = "Utilisateur trouvé")
@@ -103,14 +76,7 @@ public class UserController {
         return userService.getUserById(id);
     }
 
-    /**
-     * Met à jour l'intégralité des informations d'un utilisateur.
-     *
-     * @param id          Identifiant UUID de l'utilisateur à modifier.
-     * @param userRequest Nouvelles données de l'utilisateur (validées par @Valid).
-     * @return UserResponse de l'utilisateur mis à jour.
-     * @status 200 OK
-     */
+
     @PutMapping("/{id}")
     @Operation(summary = "Mettre à jour un utilisateur", description = "Met à jour les informations d'un utilisateur existant.")
     @ApiResponse(responseCode = "200", description = "Utilisateur mis à jour")
@@ -122,12 +88,6 @@ public class UserController {
         return userService.updateUser(id, userRequest);
     }
 
-    /**
-     * Supprime définitivement un utilisateur du système.
-     *
-     * @param id Identifiant UUID de l'utilisateur à supprimer.
-     * @status 204 No Content
-     */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -138,11 +98,6 @@ public class UserController {
         userService.deleteUser(id);
     }
 
-    /**
-     * Supprime tous les utilisateurs du système.
-     * 
-     * @status 204 No Content
-     */
     @Operation(summary = "Supprimer TOUS les utilisateurs", description = "Supprime tous les utilisateurs de la base (ADMIN uniquement - DANGEREUX).")
     @DeleteMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
