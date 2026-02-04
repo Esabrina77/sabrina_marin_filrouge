@@ -2,6 +2,7 @@ package com.fika.api.core.exceptions;
 
 import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
+import com.fika.api.core.exceptions.product.ProductNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -40,6 +41,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Gère l'exception lorsqu'un produit n'est pas trouvé.
+     *
+     * @param ex L'exception ProductNotFoundException levée.
+     * @return Une réponse HTTP 404 (Not Found) avec les détails de l'erreur.
+     */
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleProductNotFound(ProductNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                "Produit introuvable",
+                ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
      * Gère l'exception lorsqu'un utilisateur tente d'utiliser un email déjà
      * existant.
      *
@@ -67,7 +84,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<FormErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
         java.util.Map<String, String> errors = new java.util.HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
+        ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((org.springframework.validation.FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);

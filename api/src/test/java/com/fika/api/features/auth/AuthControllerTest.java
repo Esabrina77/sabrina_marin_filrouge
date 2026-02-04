@@ -45,6 +45,9 @@ class AuthControllerTest {
         private com.fika.api.core.jwt.JwtFilter jwtFilter;
 
         @MockitoBean
+        private com.fika.api.core.config.RateLimitFilter rateLimitFilter;
+
+        @MockitoBean
         private com.fika.api.core.exceptions.JwtExceptionHandler jwtExceptionHandler;
 
         @MockitoBean
