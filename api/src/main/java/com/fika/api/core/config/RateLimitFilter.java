@@ -3,23 +3,22 @@ package com.fika.api.core.config;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 
-import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class RateLimitFilter implements Filter {
+public class RateLimitFilter extends OncePerRequestFilter {
 
     private final Cache<String, Bucket> cache;
 
@@ -30,11 +29,10 @@ public class RateLimitFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain)
             throws IOException, ServletException {
-
-        HttpServletRequest request = (HttpServletRequest) servletRequest;
-        HttpServletResponse response = (HttpServletResponse) servletResponse;
 
         String ip = request.getRemoteAddr();
         String path = request.getRequestURI();
@@ -77,6 +75,7 @@ public class RateLimitFilter implements Filter {
                 .addLimit(Bandwidth.builder()
                         .capacity(10)
                         .refillIntervally(10, Duration.ofMinutes(1))
+                        .initialTokens(10)
                         .build())
                 .build();
     }
@@ -86,6 +85,7 @@ public class RateLimitFilter implements Filter {
                 .addLimit(Bandwidth.builder()
                         .capacity(30)
                         .refillIntervally(30, Duration.ofMinutes(1))
+                        .initialTokens(30)
                         .build())
                 .build();
     }
