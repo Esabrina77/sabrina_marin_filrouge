@@ -1,5 +1,7 @@
 package com.fika.api.features.users;
 
+import com.fika.api.core.exceptions.ErrorResponse;
+import com.fika.api.core.exceptions.FormErrorResponse;
 import com.fika.api.features.users.dto.UserProfileRequest;
 import com.fika.api.features.users.dto.UserRequest;
 import com.fika.api.features.users.dto.UserResponse;
@@ -50,8 +52,7 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "Profil mis à jour")
     @ApiResponse(responseCode = "400", description = "Données invalides")
     @ApiResponse(responseCode = "401", description = "Non authentifié")
-    public UserResponse updateCurrentUser(@AuthenticationPrincipal String email,
-            @Valid @RequestBody UserProfileRequest userProfileRequest) {
+    public UserResponse updateCurrentUser(@AuthenticationPrincipal String email, @Valid @RequestBody UserProfileRequest userProfileRequest) {
         return userService.updateCurrentUser(email, userProfileRequest);
     }
 
@@ -68,8 +69,8 @@ public class UserController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Créer un utilisateur", description = "Crée un nouveau compte utilisateur dans le système.")
     @ApiResponse(responseCode = "201", description = "Utilisateur créé avec succès")
-    @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content(schema = @Schema(implementation = com.fika.api.core.exceptions.FormErrorResponse.class)))
-    @ApiResponse(responseCode = "409", description = "L'email existe déjà", content = @Content(schema = @Schema(implementation = com.fika.api.core.exceptions.ErrorResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content(schema = @Schema(implementation = FormErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "L'email existe déjà", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     public UserResponse createUser(@Valid @RequestBody UserRequest userRequest) {
         return userService.createUser(userRequest);
     }
@@ -86,9 +87,8 @@ public class UserController {
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer un utilisateur", description = "Récupère les détails d'un utilisateur par son ID.")
     @ApiResponse(responseCode = "200", description = "Utilisateur trouvé")
-    @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé", content = @Content(schema = @Schema(implementation = com.fika.api.core.exceptions.ErrorResponse.class)))
-    public UserResponse getUserById(
-            @Parameter(description = "ID unique de l'utilisateur", example = "550e8400-e29b-41d4-a716-446655440000") @PathVariable UUID id) {
+    @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public UserResponse getUserById(@Parameter(description = "ID unique de l'utilisateur", example = "550e8400-e29b-41d4-a716-446655440000") @PathVariable UUID id) {
         return userService.getUserById(id);
     }
 
@@ -97,9 +97,8 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "Utilisateur mis à jour")
     @ApiResponse(responseCode = "400", description = "Données invalides")
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
-    public UserResponse updateUser(
-            @Parameter(description = "ID de l'utilisateur à modifier") @PathVariable UUID id,
-            @Valid @RequestBody UserRequest userRequest) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserResponse updateUser(@Parameter(description = "ID de l'utilisateur à modifier") @PathVariable UUID id, @Valid @RequestBody UserRequest userRequest) {
         return userService.updateUser(id, userRequest);
     }
 

@@ -1,8 +1,10 @@
 package com.fika.api.core.exceptions;
 
+import com.fika.api.core.exceptions.order.OrderNotFoundException;
 import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -52,6 +54,22 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.NOT_FOUND.value(),
                 "Produit introuvable",
+                ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
+     * Gère l'exception lorsqu'une commande n'est pas trouvé.
+     *
+     * @param ex L'exception OrderNotFoundException levée.
+     * @return Une réponse HTTP 404 (Not Found) avec les détails de l'erreur.
+     */
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleOrderNotFound(OrderNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                "Commande introuvable",
                 ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
