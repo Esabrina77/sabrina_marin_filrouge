@@ -5,6 +5,7 @@ import com.fika.api.features.users.dto.UserRequest;
 import com.fika.api.features.users.dto.UserResponse;
 import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
+import com.fika.api.features.users.model.Role;
 import com.fika.api.features.users.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -38,16 +39,17 @@ public class UserService {
     }
 
     /**
-     * Récupère un utilisateur par son identifiant unique.
+     * Récupère un utilisateur par son identifiant unique avec vérification des
+     * droits.
      *
-     * @param id L'UUID de l'utilisateur.
+     * @param id               L'UUID de l'utilisateur recherché.
      * @return Le DTO de l'utilisateur trouvé.
      * @throws UserNotFoundException si aucun utilisateur n'existe avec cet ID.
      */
     public UserResponse getUserById(UUID id) {
-        return userRepository.findById(id)
-                .map(userMapper::toResponse)
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
+        return userMapper.toResponse(user);
     }
 
     /**
@@ -137,7 +139,7 @@ public class UserService {
     public UserResponse getCurrentUser(String email) {
         return userRepository.findByEmail(email)
                 .map(userMapper::toResponse)
-                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'email: " + email));
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur pas trouvé avec l'email: " + email));
     }
 
     /**
@@ -162,16 +164,33 @@ public class UserService {
         return userMapper.toResponse(updatedUser);
     }
 
+    /**
+     * Anonymise les données du compte utilisateur (RGPD) et invalide l'accès.
+     * @param email Email de l'utilisateur à traiter.
+     */
     @Transactional
     public void deleteCurrentUser(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'email: " + email));
-
         user.setFirstName("Utilisateur");
         user.setLastName("Anonymisé");
         user.setEmail("deleted_" + UUID.randomUUID() + "@fika-anonym.fr");
         user.setPassword("{noop}DELETED_" + UUID.randomUUID());
 
+        userRepository.save(user);
+    }
+
+    /**
+     * Assigne le rôle ADMIN à un utilisateur via son ID.
+     * @param id UUID de l'utilisateur à promouvoir.
+     */
+    @Transactional
+    public void setAdminRole(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+        if (user.getRole() != Role.ADMIN) {
+            user.setRole(Role.ADMIN);
+        }
         userRepository.save(user);
     }
 }

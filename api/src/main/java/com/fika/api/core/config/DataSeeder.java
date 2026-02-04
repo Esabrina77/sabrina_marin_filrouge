@@ -6,6 +6,10 @@ import com.fika.api.features.users.model.User;
 import com.fika.api.features.products.ProductRepository;
 import com.fika.api.features.products.model.Category;
 import com.fika.api.features.products.model.Product;
+import com.fika.api.features.orders.model.Order;
+import com.fika.api.features.orders.model.OrderItem;
+import com.fika.api.features.orders.model.OrderStatus;
+import com.fika.api.features.orders.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.boot.CommandLineRunner;
@@ -13,6 +17,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Composant responsable de l'initialisation des données (seeding) au démarrage
@@ -29,6 +35,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final OrderRepository orderRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -54,7 +61,19 @@ public class DataSeeder implements CommandLineRunner {
             userRepository.save(admin);
         }
 
+        if (!userRepository.existsByEmail("client@example.com")) {
+            User client = User.builder()
+                    .firstName("Jean")
+                    .lastName("Dupont")
+                    .email("client@example.com")
+                    .password(passwordEncoder.encode("password123"))
+                    .role(Role.CLIENT)
+                    .build();
+            userRepository.save(client);
+        }
+
         seedProducts();
+        seedOrders();
     }
 
     private void seedProducts() {
@@ -89,6 +108,36 @@ public class DataSeeder implements CommandLineRunner {
                     .category(Category.DESSERT)
                     .available(true)
                     .build());
+        }
+    }
+
+    private void seedOrders() {
+        User marin = userRepository.findByEmail("marin@example.com").orElse(null);
+        if (marin != null && orderRepository.findByUserEmailOrderByCreatedAtDesc(marin.getEmail()).isEmpty()) {
+            Product burger = productRepository.findAll().stream()
+                    .filter(p -> p.getName().equals("Burger Maison"))
+                    .findFirst()
+                    .orElse(null);
+
+            if (burger != null) {
+                Order order = Order.builder()
+                        .user(marin)
+                        .orderReference("TEST")
+                        .status(OrderStatus.COMPLETED)
+                        .total(burger.getPrice())
+                        .items(new ArrayList<>())
+                        .build();
+
+                OrderItem item = OrderItem.builder()
+                        .order(order)
+                        .product(burger)
+                        .quantity(1)
+                        .priceAtReservation(burger.getPrice())
+                        .build();
+
+                order.addItem(item);
+                orderRepository.save(order);
+            }
         }
     }
 }

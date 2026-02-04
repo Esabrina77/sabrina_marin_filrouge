@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +51,8 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "Profil mis à jour")
     @ApiResponse(responseCode = "400", description = "Données invalides")
     @ApiResponse(responseCode = "401", description = "Non authentifié")
-    public UserResponse updateCurrentUser(@AuthenticationPrincipal String email, @Valid @RequestBody UserProfileRequest userProfileRequest) {
+    public UserResponse updateCurrentUser(@AuthenticationPrincipal String email,
+            @Valid @RequestBody UserProfileRequest userProfileRequest) {
         return userService.updateCurrentUser(email, userProfileRequest);
     }
 
@@ -85,9 +85,11 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Récupérer un utilisateur", description = "Récupère les détails d'un utilisateur par son ID.")
+    @Operation(summary = "Récupérer un utilisateur", description = "Récupère les détails d'un utilisateur par son ID. L'accès est limité au titulaire du compte ou à un administrateur.")
     @ApiResponse(responseCode = "200", description = "Utilisateur trouvé")
+    @ApiResponse(responseCode = "403", description = "Accès refusé")
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponse getUserById(@Parameter(description = "ID unique de l'utilisateur", example = "550e8400-e29b-41d4-a716-446655440000") @PathVariable UUID id) {
         return userService.getUserById(id);
     }
@@ -98,7 +100,8 @@ public class UserController {
     @ApiResponse(responseCode = "400", description = "Données invalides")
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
     @PreAuthorize("hasRole('ADMIN')")
-    public UserResponse updateUser(@Parameter(description = "ID de l'utilisateur à modifier") @PathVariable UUID id, @Valid @RequestBody UserRequest userRequest) {
+    public UserResponse updateUser(@Parameter(description = "ID de l'utilisateur à modifier") @PathVariable UUID id,
+            @Valid @RequestBody UserRequest userRequest) {
         return userService.updateUser(id, userRequest);
     }
 
@@ -119,4 +122,13 @@ public class UserController {
     public void deleteAllUser() {
         userService.deleteUsers();
     }
+
+    @Operation(summary = "Promouvoir un utilisateur en ADMIN", description = "Accorde les privilèges administrateur à l'utilisateur spécifié par son ID.")
+    @PutMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void setAdminRole(@PathVariable UUID id) {
+        userService.setAdminRole(id);
+    }
+
 }

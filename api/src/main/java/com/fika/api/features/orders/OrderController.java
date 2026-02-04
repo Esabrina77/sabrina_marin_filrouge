@@ -1,20 +1,23 @@
 package com.fika.api.features.orders;
 
+import com.fika.api.features.orders.dto.OrderRequest;
 import com.fika.api.features.orders.dto.OrderResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
 @Tag(name = "Orders", description = "Gestion des commandes")
 public class OrderController {
@@ -28,12 +31,24 @@ public class OrderController {
     }
 
     @GetMapping("/my-order")
+    @Operation(summary = "Récupérer mes commandes")
     public List<OrderResponse> getMyOrder(@AuthenticationPrincipal String email) {
         return orderService.getOrderByUserMail(email);
     }
 
     @GetMapping("/{id}")
-    public OrderResponse getOrderById(@PathVariable UUID id) {
-        return orderService.getOrderById(id);
+    @Operation(summary = "Récupérer une commande par ID")
+    public OrderResponse getOrderById(@PathVariable UUID id, @AuthenticationPrincipal String email,
+            Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        return orderService.getOrderById(id, email, isAdmin);
+    }
+
+    @PostMapping()
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Créer une commande")
+    public OrderResponse createOrder(@Valid @RequestBody OrderRequest orderRequest,
+            @AuthenticationPrincipal String email) {
+        return orderService.createOrder(orderRequest, email);
     }
 }

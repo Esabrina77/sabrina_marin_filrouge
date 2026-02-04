@@ -63,10 +63,13 @@ public class RateLimitFilter implements Filter {
     }
 
     private void sendErrorResponse(HttpServletResponse response) throws IOException {
+        String timestamp = java.time.LocalDateTime.now().toString();
         response.setStatus(429);
-        response.getWriter().write(
-                "{\"status\": 429, \"error\": \"Too Many Requests\", \"message\": \"Trop de requêtes. Veuillez ralentir.\"}");
         response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(String.format(
+                "{\"timestamp\": \"%s\", \"status\": 429, \"error\": \"Too Many Requests\", \"message\": \"Trop de requêtes. Veuillez ralentir.\"}",
+                timestamp));
     }
 
     private Bucket createNewAuthBucket(String key) {

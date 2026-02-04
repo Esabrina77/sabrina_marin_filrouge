@@ -1,6 +1,5 @@
 package com.fika.api.features.products;
 
-
 import com.fika.api.features.products.dto.ProductRequest;
 import com.fika.api.features.products.dto.ProductResponse;
 import io.swagger.v3.oas.annotations.Operation;

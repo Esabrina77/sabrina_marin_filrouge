@@ -1,6 +1,6 @@
 package com.fika.api.features.users;
 
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
 import com.fika.api.features.users.dto.UserRequest;
@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -53,8 +53,8 @@ class UserControllerTest {
     @MockitoBean
     private com.fika.api.core.exceptions.JwtExceptionHandler jwtExceptionHandler;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
     private UserRequest userRequest;
     private UserResponse userResponse;
@@ -112,8 +112,8 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser
-    @DisplayName("GetOne : Récupération d'un utilisateur par ID")
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("GetOne : Récupération d'un utilisateur par ID (ADMIN)")
     void getUserById() throws Exception {
         given(userService.getUserById(userId)).willReturn(userResponse);
 
@@ -123,8 +123,8 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser
-    @DisplayName("GetOne : Échec si l'utilisateur n'existe pas")
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("GetOne : Échec si l'utilisateur n'existe pas (ADMIN)")
     void getUserByIdNotFound() throws Exception {
         given(userService.getUserById(userId)).willThrow(new UserNotFoundException(userId));
 
