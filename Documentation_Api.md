@@ -3,15 +3,31 @@
 Ce document sert de référence pour l'intégration Frontend. Il détaille le fonctionnement de l'API, l'authentification sécurisée et les commandes utiles.
 *Ce document est vivant et doit être mis à jour à chaque évolution majeure de l'API.*
 
+### 📄 Pagination (Format standard)
+Toutes les listes paginées (Produits, Commandes, Users) renvoient ce format :
+```json
+{
+  "content": [...],
+  "pageNumber": 0,
+  "pageSize": 12,
+  "totalElements": 25,
+  "totalPages": 3,
+  "last": false
+}
+```
+
 ---
 
 ## 🚀 Accès Rapides
 
-| Service | URL / Commande |
-| **Base URL** | `http://localhost:8080/api/v1` |
-| **Swagger UI** (Doc interactive) | [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html) |
-| **Lancer TOUT (BDD + API)** | `docker-compose up --build -d` |
-| **Lancer l'API (Dev mode)** | `./mvnw spring-boot:run` |
+| Ressource | Lien / Commande |
+| :--- | :--- |
+| 🌍 **Base URL** | `http://localhost:8080/api/v1` |
+| 📖 **Swagger UI** | [Lien vers la Doc Interactive](http://localhost:8080/swagger-ui/index.html) |
+| 🐳 **Docker (Complet)** | `docker-compose up --build -d` |
+| ☕ **Spring Boot (Dev)** | `./mvnw spring-boot:run` |
+| 🧪 **Tests JUnit** | `mvn test` |
+| 🧹 **Nettoyer & Regénérer** | `mvn clean install` |
 
 ---
 
@@ -75,6 +91,7 @@ Header requis : `Authorization: Bearer <token>`
 | `GET` | `/me` | Profil de l'utilisateur connecté | **Authentifié** |
 | `PUT` | `/me` | Modifier son propre profil | **Authentifié** |
 | `DELETE` | `/me` | Supprimer son propre compte | **Authentifié** |
+| `POST` | `/` | Créer un utilisateur | **Admin ONLY** |
 | `GET` | `/` | Liste de tous les utilisateurs | **Admin ONLY** |
 | `GET` | `/{id}` | Détails d'un utilisateur | **Admin ONLY** |
 | `PUT` | `/{id}` | Modifier n'importe quel profil | **Admin ONLY** |
@@ -84,21 +101,31 @@ Header requis : `Authorization: Bearer <token>`
 ### ☕ Produits (`/api/v1/products`)
 | Méthode | Route | Description | Accès |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/` | Liste paginée des produits | Public |
+| `GET` | `/` | Liste paginée et filtrée | Public |
 | `GET` | `/{id}` | Détails d'un produit | Public |
 | `POST` | `/` | Ajouter un produit | **Admin ONLY** |
 | `PUT` | `/{id}` | Modifier un produit | **Admin ONLY** |
 | `DELETE` | `/{id}` | Supprimer un produit | **Admin ONLY** |
 
+**Note sur le filtrage des produits :**
+Le paramètre `onlyAvailable` (Boolean) supporte 3 états :
+*   `null` (non envoyé) : Affiche **tout** le catalogue.
+*   `true` : Uniquement les produits **en stock**.
+*   `false` : Uniquement les produits **épuisés**.
+
 ### 🛍️ Commandes (`/api/v1/orders`)
 | Méthode | Route | Description | Accès |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/` | Créer une commande | **Authentifié** |
-| `GET` | `/my-order` | Historique de mes commandes | **Authentifié** |
+| `GET` | `/my-order` | Historique paginé de mes commandes | **Authentifié** |
 | `GET` | `/{id}` | Détails d'une commande | **Propriétaire ou Admin** |
-| `GET` | `/` | Liste toutes les commandes | **Admin ONLY** |
-| `GET` | `/filter` | Filtrer les commandes par statut | **Admin ONLY** |
+| `GET` | `/` | Lister toutes les commandes | **Admin ONLY** |
+| `GET` | `/filter` | Lister les commandes par statut | **Admin ONLY** |
 | `PATCH`| `/{id}/status` | Changer le statut d'une commande | **Admin ONLY** |
+
+**Note sur les commandes :**
+Les réponses `OrderResponse` incluent désormais les informations du client :
+*   `userFirstName`, `userLastName`, `userEmail`.
 
 ---
 

@@ -66,10 +66,12 @@ public class UserController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Créer un utilisateur (Public)", description = "Crée un nouveau compte utilisateur dans le système.")
+    @Operation(summary = "Créer un utilisateur (Admin ONLY)", description = "Crée un nouveau compte utilisateur dans le système avec un rôle spécifique.")
     @ApiResponse(responseCode = "201", description = "Utilisateur créé avec succès")
     @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content(schema = @Schema(implementation = FormErrorResponse.class)))
+    @ApiResponse(responseCode = "403", description = "Accès refusé - Rôle ADMIN requis")
     @ApiResponse(responseCode = "409", description = "L'email existe déjà", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     public UserResponse createUser(@Valid @RequestBody UserRequest userRequest) {
         return userService.createUser(userRequest);
@@ -90,7 +92,8 @@ public class UserController {
     @ApiResponse(responseCode = "403", description = "Accès refusé")
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PreAuthorize("hasRole('ADMIN')")
-    public UserResponse getUserById(@Parameter(description = "ID unique de l'utilisateur", example = "550e8400-e29b-41d4-a716-446655440000") @PathVariable UUID id) {
+    public UserResponse getUserById(
+            @Parameter(description = "ID unique de l'utilisateur", example = "550e8400-e29b-41d4-a716-446655440000") @PathVariable UUID id) {
         return userService.getUserById(id);
     }
 
@@ -100,7 +103,8 @@ public class UserController {
     @ApiResponse(responseCode = "400", description = "Données invalides")
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
     @PreAuthorize("hasRole('ADMIN')")
-    public UserResponse updateUser(@Parameter(description = "ID de l'utilisateur à modifier") @PathVariable UUID id, @Valid @RequestBody UserRequest userRequest) {
+    public UserResponse updateUser(@Parameter(description = "ID de l'utilisateur à modifier") @PathVariable UUID id,
+            @Valid @RequestBody UserRequest userRequest) {
         return userService.updateUser(id, userRequest);
     }
 
