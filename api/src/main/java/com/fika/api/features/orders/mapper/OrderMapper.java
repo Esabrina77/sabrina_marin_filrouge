@@ -18,6 +18,9 @@ public class OrderMapper {
                 order.getTotal(),
                 order.getStatus(),
                 order.getCreatedAt(),
+                order.getUser().getFirstName(),
+                order.getUser().getLastName(),
+                order.getUser().getEmail(),
                 order.getItems().stream().map(orderItemMapper::toResponse).toList());
     }
 }

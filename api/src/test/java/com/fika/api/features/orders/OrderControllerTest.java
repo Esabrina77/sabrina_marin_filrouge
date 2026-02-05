@@ -65,7 +65,8 @@ class OrderControllerTest {
     @BeforeEach
     void setUp() {
         orderId = UUID.randomUUID();
-        orderResponse = new OrderResponse(orderId, "ABCD", new BigDecimal("15.50"), OrderStatus.PENDING, null, null);
+        orderResponse = new OrderResponse(orderId, "ABCD", new BigDecimal("15.50"), OrderStatus.PENDING, null, "John",
+                "Doe", "john.doe@email.com", null);
     }
 
     @Test

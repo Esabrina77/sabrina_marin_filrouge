@@ -13,10 +13,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "Réponse détaillée d'une commande")
 public record OrderResponse(
-                @Schema(description = "ID technique", example = "550e8400-e29b-41d4-a716-446655440000") UUID id,
-                @Schema(description = "Référence lisible", example = "XJ8K") String orderReference,
-                @Schema(description = "Montant total de la commande", example = "12.50") BigDecimal total,
-                @Schema(description = "Statut actuel de la commande", example = "PENDING") OrderStatus status,
-                @Schema(description = "Date de création") Instant createdAt,
-                @Schema(description = "Liste des articles") List<OrderItemResponse> items) {
+        @Schema(description = "ID technique", example = "550e8400-e29b-41d4-a716-446655440000") UUID id,
+        @Schema(description = "Référence lisible", example = "XJ8K") String orderReference,
+        @Schema(description = "Montant total de la commande", example = "12.50") BigDecimal total,
+        @Schema(description = "Statut actuel de la commande", example = "PENDING") OrderStatus status,
+        @Schema(description = "Date de création") Instant createdAt,
+        @Schema(description = "Prénom du client", example = "Jean") String userFirstName,
+        @Schema(description = "Nom du client", example = "Dupont") String userLastName,
+        @Schema(description = "Email du client", example = "jean.dupont@email.com") String userEmail,
+        @Schema(description = "Liste des articles") List<OrderItemResponse> items) {
 }

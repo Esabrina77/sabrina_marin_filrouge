@@ -89,7 +89,8 @@ class OrderServiceTest {
                 .items(new ArrayList<>())
                 .build();
 
-        orderResponse = new OrderResponse(orderId, "ABCD", new BigDecimal("2.50"), OrderStatus.PENDING, null, null);
+        orderResponse = new OrderResponse(orderId, "ABCD", new BigDecimal("2.50"), OrderStatus.PENDING, null, "John",
+                "Doe", "john@fika.com", null);
     }
 
     @Test
