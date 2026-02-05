@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
@@ -82,6 +83,13 @@ public class OrderService {
         Page<OrderResponse> orderPage = orderRepository.findByUserEmailOrderByCreatedAtDesc(email, pageable)
                 .map(orderMapper::toResponse);
         return PagedResponse.of(orderPage);
+    }
+
+    public OrderResponse getLatestActiveOrder(String email) {
+        List<OrderStatus> orderStatuses = List.of(OrderStatus.PENDING, OrderStatus.READY);
+        return orderRepository.findFirstByUserEmailAndStatusInOrderByCreatedAtDesc(email, orderStatuses)
+                .map(orderMapper::toResponse)
+                .orElse(null);
     }
 
     /**
@@ -159,6 +167,33 @@ public class OrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
         order.setStatus(orderStatus);
+        return orderMapper.toResponse(orderRepository.save(order));
+    }
+
+    /**
+     * Permet à un utilisateur de modifier le statut de sa propre commande à
+     * CANCELLED.
+     * Uniquement possible si la commande est encore au statut PENDING.
+     * 
+     * @param id               L'UUID de la commande à annuler.
+     * @param currentUserEmail L'email de l'utilisateur courant.
+     * @return La commande mise à jour.
+     * @throws IllegalStateException si la commande n'est plus au statut PENDING.
+     */
+    @Transactional
+    public OrderResponse cancelOrder(UUID id, String currentUserEmail) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new OrderNotFoundException(id));
+
+        if (!order.getUser().getEmail().equals(currentUserEmail)) {
+            throw new AccessDeniedException("Vous n'êtes pas autorisé à annuler cette commande.");
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new IllegalStateException("Seules les commandes en attente (PENDING) peuvent être annulées.");
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
         return orderMapper.toResponse(orderRepository.save(order));
     }
 

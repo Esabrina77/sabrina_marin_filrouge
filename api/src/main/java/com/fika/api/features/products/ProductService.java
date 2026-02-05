@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -35,8 +37,7 @@ public class ProductService {
      * @return PagedResponse de {@link ProductResponse} avec métadonnées de
      *         navigation.
      */
-    public PagedResponse<ProductResponse> getAllProducts(String name, Category category, BigDecimal minPrice,
-            BigDecimal maxPrice, Boolean onlyAvailable, Pageable pageable) {
+    public PagedResponse<ProductResponse> getAllProducts(String name, Category category, BigDecimal minPrice, BigDecimal maxPrice, Boolean onlyAvailable, Pageable pageable) {
         String nameFilter = (name != null && !name.isBlank()) ? "%" + name + "%" : null;
         Page<ProductResponse> productPage = productRepository
                 .findWithFilters(nameFilter, category, minPrice, maxPrice, onlyAvailable, pageable)
@@ -109,5 +110,10 @@ public class ProductService {
             throw new ProductNotFoundException(id);
         }
         productRepository.deleteById(id);
+    }
+
+
+    public  List<Category> getAllCategories() {
+        return Arrays.asList(Category.values());
     }
 }

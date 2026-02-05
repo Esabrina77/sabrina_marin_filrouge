@@ -12,6 +12,9 @@ RUN ./mvnw clean package -DskipTests
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+RUN addgroup -S fikagroup && adduser -S fikauser -G fikagroup
+USER fikauser
+
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 

@@ -39,13 +39,15 @@ public class OrderController {
     @GetMapping("/filter")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Lister les commandes par statut (Admin ONLY)", description = "Filtre les commandes selon le statut passé en paramètre (PENDING, READY, etc.).")
-    public PagedResponse<OrderResponse> getOrdersByStatus(@RequestParam OrderStatus status, @ParameterObject @PageableDefault(size = 12) Pageable pageable) {
+    public PagedResponse<OrderResponse> getOrdersByStatus(@RequestParam OrderStatus status,
+            @ParameterObject @PageableDefault(size = 12) Pageable pageable) {
         return orderService.getOrdersByStatus(status, pageable);
     }
 
     @GetMapping("/my-order")
     @Operation(summary = "Récupérer mes commandes (Authentifié)")
-    public PagedResponse<OrderResponse> getMyOrder(@AuthenticationPrincipal String email, @ParameterObject @PageableDefault(size = 12) Pageable pageable) {
+    public PagedResponse<OrderResponse> getMyOrder(@AuthenticationPrincipal String email,
+            @ParameterObject @PageableDefault(size = 12) Pageable pageable) {
         return orderService.getOrderByUserMail(email, pageable);
     }
 
@@ -71,5 +73,17 @@ public class OrderController {
     @Operation(summary = "Changer le statut (Admin ONLY)", description = "Permet de passer une commande à READY, COMPLETED, etc.")
     public OrderResponse updateStatus(@PathVariable UUID id, @RequestParam OrderStatus status) {
         return orderService.changeOrderStatus(id, status);
+    }
+
+    @GetMapping("/latest")
+    @Operation(summary = "Dernière commande active (Authentifié)", description = "Récupère la commande en cours (PENDING ou READY) la plus récente de l'utilisateur.")
+    public OrderResponse getLatestOrder(@AuthenticationPrincipal String email) {
+        return orderService.getLatestActiveOrder(email);
+    }
+
+    @PatchMapping("/{id}/cancel")
+    @Operation(summary = "Annuler une commande (Authentifié)", description = "Permet à l'utilisateur d'annuler sa propre commande si elle est encore au statut PENDING.")
+    public OrderResponse cancelOrder(@PathVariable UUID id, @AuthenticationPrincipal String email) {
+        return orderService.cancelOrder(id, email);
     }
 }

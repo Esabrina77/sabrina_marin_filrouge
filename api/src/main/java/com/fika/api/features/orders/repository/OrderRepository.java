@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -18,4 +20,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     Page<Order> findAllByStatusOrderByCreatedAtAsc(OrderStatus status, Pageable pageable);
+
+    Optional<Order> findFirstByUserEmailAndStatusInOrderByCreatedAtDesc(
+            String email,
+            List<OrderStatus> activeStatuses
+    );
 }

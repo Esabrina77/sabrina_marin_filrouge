@@ -103,6 +103,7 @@ Header requis : `Authorization: Bearer <token>`
 | :--- | :--- | :--- | :--- |
 | `GET` | `/` | Liste paginée et filtrée | Public |
 | `GET` | `/{id}` | Détails d'un produit | Public |
+| `GET` | `/categories` | Lister toutes les catégories | Public |
 | `POST` | `/` | Ajouter un produit | **Admin ONLY** |
 | `PUT` | `/{id}` | Modifier un produit | **Admin ONLY** |
 | `DELETE` | `/{id}` | Supprimer un produit | **Admin ONLY** |
@@ -118,6 +119,8 @@ Le paramètre `onlyAvailable` (Boolean) supporte 3 états :
 | :--- | :--- | :--- | :--- |
 | `POST` | `/` | Créer une commande | **Authentifié** |
 | `GET` | `/my-order` | Historique paginé de mes commandes | **Authentifié** |
+| `GET` | `/latest` | Dernière commande active | **Authentifié** |
+| `PATCH`| `/{id}/cancel` | Annuler ma commande (si PENDING) | **Authentifié** |
 | `GET` | `/{id}` | Détails d'une commande | **Propriétaire ou Admin** |
 | `GET` | `/` | Lister toutes les commandes | **Admin ONLY** |
 | `GET` | `/filter` | Lister les commandes par statut | **Admin ONLY** |

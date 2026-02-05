@@ -18,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -29,7 +30,7 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    @Operation(summary = "Catalogue paginé et filtrable", description = "Récupère les produits avec filtres et pagination (par défaut 12 produits par page, triés par nom).")
+    @Operation(summary = "Catalogue paginé et filtrable (Public)", description = "Récupère les produits avec filtres et pagination (par défaut 12 produits par page, triés par nom).")
     public PagedResponse<ProductResponse> getAllProducts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Category category,
@@ -79,4 +80,11 @@ public class ProductController {
     public void deleteProduct(@PathVariable UUID id) {
         productService.deleteProduct(id);
     }
+
+    @GetMapping("/categories")
+    @Operation(summary = "Lister toutes les catégories (Public)", description = "Récupère la liste exhaustive des catégories de produits pour les filtres du Front-end.")
+    public List<Category> getAllCategories() {
+        return productService.getAllCategories();
+    }
+
 }

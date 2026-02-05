@@ -26,3 +26,5 @@ application:
       expiration: 1800000
       refresh-token:
         expiration: 604800000
+    cookie:
+      secure: false

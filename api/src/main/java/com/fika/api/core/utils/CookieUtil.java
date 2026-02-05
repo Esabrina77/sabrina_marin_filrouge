@@ -10,10 +10,13 @@ public class CookieUtil {
     @Value("${application.security.jwt.refresh-token.expiration}")
     private long refreshTokenExpiration;
 
+    @Value("${application.security.cookie.secure}")
+    private boolean isSecure;
+
     public ResponseCookie createRefreshTokenCookie(String token) {
         return ResponseCookie.from("refreshToken", token)
                 .httpOnly(true)
-                .secure(false)
+                .secure(isSecure)
                 .path("/")
                 .maxAge(refreshTokenExpiration / 1000)
                 .sameSite("Strict")
@@ -23,7 +26,7 @@ public class CookieUtil {
     public ResponseCookie deleteRefreshTokenCookie() {
         return ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(isSecure)
                 .path("/")
                 .maxAge(0)
                 .sameSite("Strict")
