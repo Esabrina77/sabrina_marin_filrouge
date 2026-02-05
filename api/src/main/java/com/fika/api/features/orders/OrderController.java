@@ -41,13 +41,13 @@ public class OrderController {
     }
 
     @GetMapping("/my-order")
-    @Operation(summary = "Récupérer mes commandes")
+    @Operation(summary = "Récupérer mes commandes (Authentifié)")
     public List<OrderResponse> getMyOrder(@AuthenticationPrincipal String email) {
         return orderService.getOrderByUserMail(email);
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Récupérer une commande par ID")
+    @Operation(summary = "Récupérer une commande par ID (Authentifié/Admin)", description = "Récupère les détails d'une commande. L'utilisateur doit être le propriétaire ou un administrateur.")
     public OrderResponse getOrderById(@PathVariable UUID id, @AuthenticationPrincipal String email) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
@@ -57,7 +57,7 @@ public class OrderController {
 
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Créer une commande")
+    @Operation(summary = "Créer une commande (Authentifié)")
     public OrderResponse createOrder(@Valid @RequestBody OrderRequest orderRequest,
             @AuthenticationPrincipal String email) {
         return orderService.createOrder(orderRequest, email);
@@ -65,7 +65,7 @@ public class OrderController {
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Changer le statut (ADMIN)", description = "Permet de passer une commande à READY, COMPLETED, etc.")
+    @Operation(summary = "Changer le statut (Admin ONLY)", description = "Permet de passer une commande à READY, COMPLETED, etc.")
     public OrderResponse updateStatus(@PathVariable UUID id, @RequestParam OrderStatus status) {
         return orderService.changeOrderStatus(id, status);
     }

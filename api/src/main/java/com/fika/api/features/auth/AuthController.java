@@ -31,7 +31,7 @@ public class AuthController {
         private final com.fika.api.core.utils.CookieUtil cookieUtil;
 
         @PostMapping("/login")
-        @Operation(summary = "Connexion", description = "Authentifie un utilisateur et renvoie un Access Token (JSON) et un Refresh Token (Cookie HttpOnly).")
+        @Operation(summary = "Connexion (Public)", description = "Authentifie un utilisateur et renvoie un Access Token (JSON) et un Refresh Token (Cookie HttpOnly).")
         @ApiResponse(responseCode = "200", description = "Authentification réussie")
         @ApiResponse(responseCode = "401", description = "Identifiants invalides", content = @Content(schema = @Schema(implementation = com.fika.api.core.exceptions.ErrorResponse.class)))
         public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
@@ -43,7 +43,7 @@ public class AuthController {
         }
 
         @PostMapping("/register")
-        @Operation(summary = "Inscription", description = "Crée un nouveau compte et connecte l'utilisateur (Access Token JSON + Refresh Token Cookie).")
+        @Operation(summary = "Inscription (Public)", description = "Crée un nouveau compte et connecte l'utilisateur (Access Token JSON + Refresh Token Cookie).")
         @ApiResponse(responseCode = "201", description = "Compte créé avec succès")
         @ApiResponse(responseCode = "400", description = "Validation échouée", content = @Content(schema = @Schema(implementation = com.fika.api.core.exceptions.FormErrorResponse.class)))
         @ApiResponse(responseCode = "409", description = "L'email est déjà utilisé")
@@ -56,7 +56,7 @@ public class AuthController {
         }
 
         @PostMapping("/refresh-token")
-        @Operation(summary = "Rafraîchir le token", description = "Utilise le Refresh Token (cookie) pour obtenir un nouveau Access Token (JSON).")
+        @Operation(summary = "Rafraîchir le token (Public/Cookie)", description = "Utilise le Refresh Token (cookie) pour obtenir un nouveau Access Token (JSON).")
         @ApiResponse(responseCode = "200", description = "Nouveaux tokens générés (Access en JSON, Refresh en Cookie)")
         public ResponseEntity<TokenRefreshResponse> refreshToken(
                         @io.swagger.v3.oas.annotations.Parameter(hidden = true) @CookieValue(name = "refreshToken") String refreshToken) {
@@ -71,7 +71,7 @@ public class AuthController {
         }
 
         @PostMapping("/logout")
-        @Operation(summary = "Déconnexion", description = "Invalide le Refresh Token en base et supprime le cookie.")
+        @Operation(summary = "Déconnexion (Authentifié)", description = "Invalide le Refresh Token en base et supprime le cookie.")
         @ApiResponse(responseCode = "204", description = "Déconnexion réussie")
         public ResponseEntity<Void> logout(
                         @io.swagger.v3.oas.annotations.Parameter(hidden = true) @CookieValue(name = "refreshToken") String refreshToken) {

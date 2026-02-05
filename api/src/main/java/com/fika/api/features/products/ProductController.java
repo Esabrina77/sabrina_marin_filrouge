@@ -25,14 +25,14 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    @Operation(summary = "Lister les produits", description = "Récupère tous les produits avec pagination. Accessible à tous.")
+    @Operation(summary = "Lister les produits (Public)", description = "Récupère tous les produits avec pagination. Accessible à tous.")
     @ApiResponse(responseCode = "200", description = "Liste des produits récupérée avec succès")
     public Page<ProductResponse> getAllProducts(@ParameterObject Pageable pageable) {
         return productService.getAllProducts(pageable);
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Récupérer un produit par ID", description = "Fournit les détails d'un produit spécifique. Accessible à tous.")
+    @Operation(summary = "Récupérer un produit par ID (Public)", description = "Fournit les détails d'un produit spécifique. Accessible à tous.")
     @ApiResponse(responseCode = "200", description = "Produit trouvé")
     @ApiResponse(responseCode = "404", description = "Produit non trouvé")
     public ProductResponse getProductById(@PathVariable UUID id) {

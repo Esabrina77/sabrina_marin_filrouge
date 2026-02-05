@@ -67,14 +67,14 @@ Header requis : `Authorization: Bearer <token>`
 | `POST` | `/register` | Créer un compte client | Public |
 | `POST` | `/login` | Se connecter (Tokens) | Public |
 | `POST` | `/refresh-token`| Renouveler le JWT | Cookie requis |
-| `POST` | `/logout` | Invalider la session | Cookie requis |
+| `POST` | `/logout` | Invalider la session | **Authentifié** |
 
 ### 👤 Utilisateurs (`/api/v1/users`)
 | Méthode | Route | Description | Accès |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/me` | Profil de l'utilisateur connecté | Utilisateur |
-| `PUT` | `/me` | Modifier son propre profil | Utilisateur |
-| `DELETE` | `/me` | Supprimer son propre compte | Utilisateur |
+| `GET` | `/me` | Profil de l'utilisateur connecté | **Authentifié** |
+| `PUT` | `/me` | Modifier son propre profil | **Authentifié** |
+| `DELETE` | `/me` | Supprimer son propre compte | **Authentifié** |
 | `GET` | `/` | Liste de tous les utilisateurs | **Admin ONLY** |
 | `GET` | `/{id}` | Détails d'un utilisateur | **Admin ONLY** |
 | `PUT` | `/{id}` | Modifier n'importe quel profil | **Admin ONLY** |
@@ -93,10 +93,12 @@ Header requis : `Authorization: Bearer <token>`
 ### 🛍️ Commandes (`/api/v1/orders`)
 | Méthode | Route | Description | Accès |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/` | Créer une commande | Utilisateur |
-| `GET` | `/my-order` | Historique de mes commandes | Utilisateur |
+| `POST` | `/` | Créer une commande | **Authentifié** |
+| `GET` | `/my-order` | Historique de mes commandes | **Authentifié** |
 | `GET` | `/{id}` | Détails d'une commande | **Propriétaire ou Admin** |
 | `GET` | `/` | Liste toutes les commandes | **Admin ONLY** |
+| `GET` | `/filter` | Filtrer les commandes par statut | **Admin ONLY** |
+| `PATCH`| `/{id}/status` | Changer le statut d'une commande | **Admin ONLY** |
 
 ---
 

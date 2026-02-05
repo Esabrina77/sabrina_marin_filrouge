@@ -39,7 +39,7 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/me")
-    @Operation(summary = "Mon profil", description = "Récupère les informations de l'utilisateur actuellement connecté.")
+    @Operation(summary = "Mon profil (Authentifié)", description = "Récupère les informations de l'utilisateur actuellement connecté.")
     @ApiResponse(responseCode = "200", description = "Profil récupéré")
     @ApiResponse(responseCode = "401", description = "Non authentifié")
     public UserResponse getCurrentUser(@AuthenticationPrincipal String email) {
@@ -47,7 +47,7 @@ public class UserController {
     }
 
     @PutMapping("/me")
-    @Operation(summary = "Mettre à jour mon profil", description = "Permet à l'utilisateur connecté de modifier ses propres informations.")
+    @Operation(summary = "Mettre à jour mon profil (Authentifié)", description = "Permet à l'utilisateur connecté de modifier ses propres informations.")
     @ApiResponse(responseCode = "200", description = "Profil mis à jour")
     @ApiResponse(responseCode = "400", description = "Données invalides")
     @ApiResponse(responseCode = "401", description = "Non authentifié")
@@ -58,7 +58,7 @@ public class UserController {
 
     @DeleteMapping("/me")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Supprimer mon compte", description = "Permet à l'utilisateur connecté de supprimer son compte (anonymisation).")
+    @Operation(summary = "Supprimer mon compte (Authentifié)", description = "Permet à l'utilisateur connecté de supprimer son compte (anonymisation).")
     @ApiResponse(responseCode = "204", description = "Compte anonymisé avec succès")
     @ApiResponse(responseCode = "401", description = "Non authentifié")
     public void deleteCurrentUser(@AuthenticationPrincipal String email) {
@@ -67,7 +67,7 @@ public class UserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Créer un utilisateur", description = "Crée un nouveau compte utilisateur dans le système.")
+    @Operation(summary = "Créer un utilisateur (Public)", description = "Crée un nouveau compte utilisateur dans le système.")
     @ApiResponse(responseCode = "201", description = "Utilisateur créé avec succès")
     @ApiResponse(responseCode = "400", description = "Données invalides", content = @Content(schema = @Schema(implementation = FormErrorResponse.class)))
     @ApiResponse(responseCode = "409", description = "L'email existe déjà", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
