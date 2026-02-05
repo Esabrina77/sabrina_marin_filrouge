@@ -42,7 +42,7 @@ public class ProductController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "Créer un nouveau produit", description = "Ajoute un produit au catalogue. Réservé aux administrateurs.")
+    @Operation(summary = "Créer un nouveau produit (Admin ONLY)", description = "Ajoute un produit au catalogue.")
     @ApiResponse(responseCode = "201", description = "Produit créé avec succès")
     @ApiResponse(responseCode = "400", description = "Données invalides")
     @ApiResponse(responseCode = "403", description = "Droits insuffisants (Admin requis)")
@@ -53,17 +53,18 @@ public class ProductController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "Modifier un produit existant", description = "Met à jour les informations d'un produit. Réservé aux administrateurs.")
+    @Operation(summary = "Modifier un produit existant (Admin ONLY)", description = "Met à jour les informations d'un produit.")
     @ApiResponse(responseCode = "200", description = "Produit mis à jour avec succès")
     @ApiResponse(responseCode = "404", description = "Produit non trouvé")
-    public ProductResponse updateProduct(@Parameter(description = "ID unique du produit") @PathVariable UUID id, @Valid @RequestBody ProductRequest productRequest) {
+    public ProductResponse updateProduct(@Parameter(description = "ID unique du produit") @PathVariable UUID id,
+            @Valid @RequestBody ProductRequest productRequest) {
         return productService.updateProduct(productRequest, id);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "Supprimer un produit", description = "Supprime définitivement un produit du catalogue. Réservé aux administrateurs.")
+    @Operation(summary = "Supprimer un produit (Admin ONLY)", description = "Supprime définitivement un produit du catalogue.")
     @ApiResponse(responseCode = "204", description = "Produit supprimé avec succès")
     @ApiResponse(responseCode = "404", description = "Produit non trouvé")
     public void deleteProduct(@PathVariable UUID id) {

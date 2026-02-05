@@ -46,7 +46,20 @@ public class OrderService {
      * @return Une liste de toutes les commandes.
      */
     public List<OrderResponse> getAllOrders() {
-        return orderRepository.findAll().stream().map(orderMapper::toResponse).toList();
+        return orderRepository.findAllByOrderByCreatedAtDesc().stream().map(orderMapper::toResponse).toList();
+    }
+
+    /**
+     * Récupère les commandes filtrées par statut, triées de la plus ancienne à la plus récente.
+     * Utile pour l'affichage en cuisine (First In, First Out).
+     * @param status Le statut des commandes à rechercher (ex: PENDING, PREPARING).
+     * @return Liste de {@link OrderResponse} correspondantes.
+     */
+    public List<OrderResponse> getOrdersByStatus(OrderStatus status) {
+        return orderRepository.findAllByStatusOrderByCreatedAtAsc(status)
+                .stream()
+                .map(orderMapper::toResponse)
+                .toList();
     }
 
     /**
@@ -129,6 +142,14 @@ public class OrderService {
         order.setTotal(totalAmount);
         Order savedOrder = orderRepository.saveAndFlush(order);
         return orderMapper.toResponse(savedOrder);
+    }
+
+    @Transactional
+    public OrderResponse changeOrderStatus(UUID id, OrderStatus orderStatus) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new OrderNotFoundException(id));
+        order.setStatus(orderStatus);
+        return orderMapper.toResponse(orderRepository.save(order));
     }
 
     /**

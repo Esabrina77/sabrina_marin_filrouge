@@ -2,6 +2,7 @@ package com.fika.api.features.orders;
 
 import com.fika.api.features.orders.dto.OrderRequest;
 import com.fika.api.features.orders.dto.OrderResponse;
+import com.fika.api.features.orders.model.OrderStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,8 +28,16 @@ public class OrderController {
 
     @GetMapping()
     @PreAuthorize("hasRole('ADMIN')")
-    public List<OrderResponse> getAllOrder() {
+    @Operation(summary = "Lister toutes les commandes (Admin ONLY)", description = "Récupère l'intégralité des commandes passées sur la plateforme.")
+    public List<OrderResponse> getAllOrders() {
         return orderService.getAllOrders();
+    }
+
+    @GetMapping("/filter")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Lister les commandes par statut (Admin ONLY)", description = "Filtre les commandes selon le statut passé en paramètre (PENDING, READY, etc.).")
+    public List<OrderResponse> getOrdersByStatus(@RequestParam OrderStatus status) {
+        return orderService.getOrdersByStatus(status);
     }
 
     @GetMapping("/my-order")
@@ -52,5 +61,12 @@ public class OrderController {
     public OrderResponse createOrder(@Valid @RequestBody OrderRequest orderRequest,
             @AuthenticationPrincipal String email) {
         return orderService.createOrder(orderRequest, email);
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Changer le statut (ADMIN)", description = "Permet de passer une commande à READY, COMPLETED, etc.")
+    public OrderResponse updateStatus(@PathVariable UUID id, @RequestParam OrderStatus status) {
+        return orderService.changeOrderStatus(id, status);
     }
 }

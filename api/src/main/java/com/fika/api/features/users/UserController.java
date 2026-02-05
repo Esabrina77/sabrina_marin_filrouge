@@ -76,7 +76,7 @@ public class UserController {
     }
 
     @GetMapping
-    @Operation(summary = "Lister les utilisateurs", description = "Récupère une page de tous les utilisateurs (Réservé aux ADMINS).")
+    @Operation(summary = "Lister les utilisateurs (Admin ONLY)", description = "Récupère une page de tous les utilisateurs.")
     @ApiResponse(responseCode = "200", description = "Liste récupérée avec succès")
     @ApiResponse(responseCode = "403", description = "Accès refusé - Rôle ADMIN requis")
     @PreAuthorize("hasRole('ADMIN')")
@@ -85,7 +85,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Récupérer un utilisateur", description = "Récupère les détails d'un utilisateur par son ID. L'accès est limité au titulaire du compte ou à un administrateur.")
+    @Operation(summary = "Récupérer un utilisateur (Admin ONLY)", description = "Récupère les détails d'un utilisateur par son ID.")
     @ApiResponse(responseCode = "200", description = "Utilisateur trouvé")
     @ApiResponse(responseCode = "403", description = "Accès refusé")
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
@@ -95,27 +95,26 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Mettre à jour un utilisateur", description = "Met à jour les informations d'un utilisateur existant.")
+    @Operation(summary = "Mettre à jour un utilisateur (Admin ONLY)", description = "Met à jour les informations d'un utilisateur existant.")
     @ApiResponse(responseCode = "200", description = "Utilisateur mis à jour")
     @ApiResponse(responseCode = "400", description = "Données invalides")
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
     @PreAuthorize("hasRole('ADMIN')")
-    public UserResponse updateUser(@Parameter(description = "ID de l'utilisateur à modifier") @PathVariable UUID id,
-            @Valid @RequestBody UserRequest userRequest) {
+    public UserResponse updateUser(@Parameter(description = "ID de l'utilisateur à modifier") @PathVariable UUID id, @Valid @RequestBody UserRequest userRequest) {
         return userService.updateUser(id, userRequest);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Supprimer un utilisateur", description = "Supprime définitivement un utilisateur du système par son ID.")
+    @Operation(summary = "Supprimer un utilisateur (Admin ONLY)", description = "Supprime définitivement un utilisateur du système par son ID.")
     @ApiResponse(responseCode = "204", description = "Utilisateur supprimé")
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
     public void deleteUser(@Parameter(description = "ID de l'utilisateur à supprimer") @PathVariable UUID id) {
         userService.deleteUser(id);
     }
 
-    @Operation(summary = "Supprimer TOUS les utilisateurs", description = "Supprime tous les utilisateurs de la base (ADMIN uniquement - DANGEREUX).")
+    @Operation(summary = "Supprimer TOUS les utilisateurs (Admin ONLY)", description = "Supprime tous les utilisateurs de la base (DANGEREUX).")
     @DeleteMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -123,7 +122,7 @@ public class UserController {
         userService.deleteUsers();
     }
 
-    @Operation(summary = "Promouvoir un utilisateur en ADMIN", description = "Accorde les privilèges administrateur à l'utilisateur spécifié par son ID.")
+    @Operation(summary = "Promouvoir un utilisateur en ADMIN (Admin ONLY)", description = "Accorde les privilèges administrateur à l'utilisateur spécifié par son ID.")
     @PutMapping("/admin/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)

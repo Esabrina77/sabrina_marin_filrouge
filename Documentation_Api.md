@@ -75,20 +75,20 @@ Header requis : `Authorization: Bearer <token>`
 | `GET` | `/me` | Profil de l'utilisateur connecté | Utilisateur |
 | `PUT` | `/me` | Modifier son propre profil | Utilisateur |
 | `DELETE` | `/me` | Supprimer son propre compte | Utilisateur |
-| `GET` | `/` | Liste de tous les utilisateurs | **Admin** |
-| `GET` | `/{id}` | Détails d'un utilisateur | **Propriétaire ou Admin** |
-| `PUT` | `/{id}` | Modifier n'importe quel profil | **Admin** |
-| `DELETE` | `/{id}` | Supprimer un compte spécifique | **Admin** |
-| `DELETE` | `/all` | Purger tous les utilisateurs | **Admin** |
+| `GET` | `/` | Liste de tous les utilisateurs | **Admin ONLY** |
+| `GET` | `/{id}` | Détails d'un utilisateur | **Admin ONLY** |
+| `PUT` | `/{id}` | Modifier n'importe quel profil | **Admin ONLY** |
+| `DELETE` | `/{id}` | Supprimer un compte spécifique | **Admin ONLY** |
+| `DELETE` | `/all` | Purger tous les utilisateurs | **Admin ONLY** |
 
 ### ☕ Produits (`/api/v1/products`)
 | Méthode | Route | Description | Accès |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/` | Liste paginée des produits | Public |
 | `GET` | `/{id}` | Détails d'un produit | Public |
-| `POST` | `/` | Ajouter un produit | **Admin** |
-| `PUT` | `/{id}` | Modifier un produit | **Admin** |
-| `DELETE` | `/{id}` | Supprimer un produit | **Admin** |
+| `POST` | `/` | Ajouter un produit | **Admin ONLY** |
+| `PUT` | `/{id}` | Modifier un produit | **Admin ONLY** |
+| `DELETE` | `/{id}` | Supprimer un produit | **Admin ONLY** |
 
 ### 🛍️ Commandes (`/api/v1/orders`)
 | Méthode | Route | Description | Accès |
@@ -96,7 +96,7 @@ Header requis : `Authorization: Bearer <token>`
 | `POST` | `/` | Créer une commande | Utilisateur |
 | `GET` | `/my-order` | Historique de mes commandes | Utilisateur |
 | `GET` | `/{id}` | Détails d'une commande | **Propriétaire ou Admin** |
-| `GET` | `/` | Liste toutes les commandes | **Admin** |
+| `GET` | `/` | Liste toutes les commandes | **Admin ONLY** |
 
 ---
 
