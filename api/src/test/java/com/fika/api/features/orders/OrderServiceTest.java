@@ -1,5 +1,6 @@
 package com.fika.api.features.orders;
 
+import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.order.OrderNotFoundException;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
@@ -8,7 +9,6 @@ import com.fika.api.features.orders.dto.OrderRequest;
 import com.fika.api.features.orders.dto.OrderResponse;
 import com.fika.api.features.orders.mapper.OrderMapper;
 import com.fika.api.features.orders.model.Order;
-import com.fika.api.features.orders.model.OrderItem;
 import com.fika.api.features.orders.model.OrderStatus;
 import com.fika.api.features.orders.repository.OrderRepository;
 import com.fika.api.features.products.ProductRepository;
@@ -22,6 +22,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
@@ -34,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -90,25 +95,29 @@ class OrderServiceTest {
     @Test
     @DisplayName("GetAll : Retourne toutes les commandes")
     void getAllOrders() {
-        given(orderRepository.findAll()).willReturn(List.of(order));
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Order> orderPage = new PageImpl<>(List.of(order));
+        given(orderRepository.findAllByOrderByCreatedAtDesc(pageable)).willReturn(orderPage);
         given(orderMapper.toResponse(order)).willReturn(orderResponse);
 
-        List<OrderResponse> result = orderService.getAllOrders();
+        PagedResponse<OrderResponse> result = orderService.getAllOrders(pageable);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0)).isEqualTo(orderResponse);
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.content().get(0)).isEqualTo(orderResponse);
     }
 
     @Test
     @DisplayName("GetByUser : Retourne les commandes d'un utilisateur")
     void getOrderByUserMail() {
-        given(orderRepository.findByUserEmailOrderByCreatedAtDesc(userEmail)).willReturn(List.of(order));
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Order> orderPage = new PageImpl<>(List.of(order));
+        given(orderRepository.findByUserEmailOrderByCreatedAtDesc(eq(userEmail), eq(pageable))).willReturn(orderPage);
         given(orderMapper.toResponse(order)).willReturn(orderResponse);
 
-        List<OrderResponse> result = orderService.getOrderByUserMail(userEmail);
+        PagedResponse<OrderResponse> result = orderService.getOrderByUserMail(userEmail, pageable);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0)).isEqualTo(orderResponse);
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.content().get(0)).isEqualTo(orderResponse);
     }
 
     @Test

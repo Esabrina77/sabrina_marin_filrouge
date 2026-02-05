@@ -1,5 +1,6 @@
 package com.fika.api.features.users;
 
+import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.features.users.dto.UserProfileRequest;
 import com.fika.api.features.users.dto.UserRequest;
 import com.fika.api.features.users.dto.UserResponse;
@@ -31,18 +32,19 @@ public class UserService {
      * Récupère une page d'utilisateurs enregistrés.
      *
      * @param pageable Les informations de pagination et de tri.
-     * @return Une Page de UserResponse.
+     * @return Une PagedResponse de UserResponse.
      */
-    public Page<UserResponse> getAllUsers(Pageable pageable) {
-        return userRepository.findAll(pageable)
+    public PagedResponse<UserResponse> getAllUsers(Pageable pageable) {
+        Page<UserResponse> userPage = userRepository.findAll(pageable)
                 .map(userMapper::toResponse);
+        return PagedResponse.of(userPage);
     }
 
     /**
      * Récupère un utilisateur par son identifiant unique avec vérification des
      * droits.
      *
-     * @param id               L'UUID de l'utilisateur recherché.
+     * @param id L'UUID de l'utilisateur recherché.
      * @return Le DTO de l'utilisateur trouvé.
      * @throws UserNotFoundException si aucun utilisateur n'existe avec cet ID.
      */
@@ -166,6 +168,7 @@ public class UserService {
 
     /**
      * Anonymise les données du compte utilisateur (RGPD) et invalide l'accès.
+     * 
      * @param email Email de l'utilisateur à traiter.
      */
     @Transactional
@@ -182,6 +185,7 @@ public class UserService {
 
     /**
      * Assigne le rôle ADMIN à un utilisateur via son ID.
+     * 
      * @param id UUID de l'utilisateur à promouvoir.
      */
     @Transactional

@@ -1,5 +1,6 @@
 package com.fika.api.features.orders;
 
+import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.order.OrderNotFoundException;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
@@ -16,13 +17,14 @@ import com.fika.api.features.products.model.Product;
 import com.fika.api.features.users.UserRepository;
 import com.fika.api.features.users.model.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
@@ -43,35 +45,43 @@ public class OrderService {
     /**
      * Récupère toutes les commandes enregistrées (réservé aux admins).
      * 
-     * @return Une liste de toutes les commandes.
+     * @param pageable Pagination et tri.
+     * @return PagedResponse de toutes les commandes.
      */
-    public List<OrderResponse> getAllOrders() {
-        return orderRepository.findAllByOrderByCreatedAtDesc().stream().map(orderMapper::toResponse).toList();
+    public PagedResponse<OrderResponse> getAllOrders(Pageable pageable) {
+        Page<OrderResponse> orderPage = orderRepository.findAllByOrderByCreatedAtDesc(pageable)
+                .map(orderMapper::toResponse);
+        return PagedResponse.of(orderPage);
     }
 
     /**
-     * Récupère les commandes filtrées par statut, triées de la plus ancienne à la plus récente.
+     * Récupère les commandes filtrées par statut, triées de la plus ancienne à la
+     * plus récente.
      * Utile pour l'affichage en cuisine (First In, First Out).
-     * @param status Le statut des commandes à rechercher (ex: PENDING, PREPARING).
-     * @return Liste de {@link OrderResponse} correspondantes.
+     * 
+     * @param status   Le statut des commandes à rechercher (ex: PENDING,
+     *                 PREPARING).
+     * @param pageable Pagination et tri.
+     * @return PagedResponse de {@link OrderResponse} correspondantes.
      */
-    public List<OrderResponse> getOrdersByStatus(OrderStatus status) {
-        return orderRepository.findAllByStatusOrderByCreatedAtAsc(status)
-                .stream()
-                .map(orderMapper::toResponse)
-                .toList();
+    public PagedResponse<OrderResponse> getOrdersByStatus(OrderStatus status, Pageable pageable) {
+        Page<OrderResponse> orderPage = orderRepository.findAllByStatusOrderByCreatedAtAsc(status, pageable)
+                .map(orderMapper::toResponse);
+        return PagedResponse.of(orderPage);
     }
 
     /**
      * Récupère l'historique des commandes d'un utilisateur par son email.
      * 
-     * @param email L'email de l'utilisateur.
-     * @return La liste des commandes de l'utilisateur ordonnées par date
+     * @param email    L'email de l'utilisateur.
+     * @param pageable Pagination et tri.
+     * @return PagedResponse des commandes de l'utilisateur ordonnées par date
      *         décroissante.
      */
-    public List<OrderResponse> getOrderByUserMail(String email) {
-        return orderRepository.findByUserEmailOrderByCreatedAtDesc(email)
-                .stream().map(orderMapper::toResponse).toList();
+    public PagedResponse<OrderResponse> getOrderByUserMail(String email, Pageable pageable) {
+        Page<OrderResponse> orderPage = orderRepository.findByUserEmailOrderByCreatedAtDesc(email, pageable)
+                .map(orderMapper::toResponse);
+        return PagedResponse.of(orderPage);
     }
 
     /**

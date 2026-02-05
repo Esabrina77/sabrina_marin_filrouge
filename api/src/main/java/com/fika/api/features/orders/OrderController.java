@@ -1,5 +1,6 @@
 package com.fika.api.features.orders;
 
+import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.features.orders.dto.OrderRequest;
 import com.fika.api.features.orders.dto.OrderResponse;
 import com.fika.api.features.orders.model.OrderStatus;
@@ -7,6 +8,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -14,7 +18,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -29,21 +32,21 @@ public class OrderController {
     @GetMapping()
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Lister toutes les commandes (Admin ONLY)", description = "Récupère l'intégralité des commandes passées sur la plateforme.")
-    public List<OrderResponse> getAllOrders() {
-        return orderService.getAllOrders();
+    public PagedResponse<OrderResponse> getAllOrders(@ParameterObject @PageableDefault(size = 12) Pageable pageable) {
+        return orderService.getAllOrders(pageable);
     }
 
     @GetMapping("/filter")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Lister les commandes par statut (Admin ONLY)", description = "Filtre les commandes selon le statut passé en paramètre (PENDING, READY, etc.).")
-    public List<OrderResponse> getOrdersByStatus(@RequestParam OrderStatus status) {
-        return orderService.getOrdersByStatus(status);
+    public PagedResponse<OrderResponse> getOrdersByStatus(@RequestParam OrderStatus status, @ParameterObject @PageableDefault(size = 12) Pageable pageable) {
+        return orderService.getOrdersByStatus(status, pageable);
     }
 
     @GetMapping("/my-order")
     @Operation(summary = "Récupérer mes commandes (Authentifié)")
-    public List<OrderResponse> getMyOrder(@AuthenticationPrincipal String email) {
-        return orderService.getOrderByUserMail(email);
+    public PagedResponse<OrderResponse> getMyOrder(@AuthenticationPrincipal String email, @ParameterObject @PageableDefault(size = 12) Pageable pageable) {
+        return orderService.getOrderByUserMail(email, pageable);
     }
 
     @GetMapping("/{id}")

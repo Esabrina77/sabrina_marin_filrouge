@@ -1,6 +1,7 @@
 package com.fika.api.features.orders;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.features.orders.dto.OrderItemRequest;
 import com.fika.api.features.orders.dto.OrderRequest;
 import com.fika.api.features.orders.dto.OrderResponse;
@@ -11,6 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -68,24 +72,30 @@ class OrderControllerTest {
     @WithMockUser(roles = "ADMIN")
     @DisplayName("GetAll : Liste toutes les commandes (ADMIN)")
     void getAllOrders() throws Exception {
-        given(orderService.getAllOrders()).willReturn(List.of(orderResponse));
+        Page<OrderResponse> page = new PageImpl<>(List.of(orderResponse));
+        PagedResponse<OrderResponse> pagedResponse = PagedResponse.of(page);
+        given(orderService.getAllOrders(any(Pageable.class))).willReturn(pagedResponse);
 
         mockMvc.perform(get("/api/v1/orders"))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].orderReference").value("ABCD"));
+                .andExpect(jsonPath("$.content[0].orderReference").value("ABCD"))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
     @WithMockUser(username = "user")
     @DisplayName("GetMyOrders : Liste mes commandes")
     void getMyOrders() throws Exception {
-        given(orderService.getOrderByUserMail(any())).willReturn(List.of(orderResponse));
+        Page<OrderResponse> page = new PageImpl<>(List.of(orderResponse));
+        PagedResponse<OrderResponse> pagedResponse = PagedResponse.of(page);
+        given(orderService.getOrderByUserMail(any(), any())).willReturn(pagedResponse);
 
         mockMvc.perform(get("/api/v1/orders/my-order"))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].orderReference").value("ABCD"));
+                .andExpect(jsonPath("$.content[0].orderReference").value("ABCD"))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test

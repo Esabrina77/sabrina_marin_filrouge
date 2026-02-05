@@ -1,5 +1,6 @@
 package com.fika.api.features.users;
 
+import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
 import com.fika.api.features.users.dto.UserRequest;
@@ -69,12 +70,15 @@ class UserServiceTest {
     @DisplayName("GetAll : Retourne une page d'utilisateurs")
     void getAllUsers() {
         Pageable pageable = PageRequest.of(0, 10);
-        Page<User> userPage = new PageImpl<>(List.of(user));
+        Page<User> userPage = new PageImpl<>(List.of(user), pageable, 1);
         given(userRepository.findAll(pageable)).willReturn(userPage);
         given(userMapper.toResponse(user)).willReturn(userResponse);
-        Page<UserResponse> result = userService.getAllUsers(pageable);
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().getFirst()).isEqualTo(userResponse);
+
+        PagedResponse<UserResponse> result = userService.getAllUsers(pageable);
+
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.content().get(0)).isEqualTo(userResponse);
+        assertThat(result.totalElements()).isEqualTo(1);
         then(userRepository).should().findAll(pageable);
     }
 

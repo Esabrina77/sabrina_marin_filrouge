@@ -1,8 +1,10 @@
 package com.fika.api.features.products;
 
+import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
 import com.fika.api.features.products.dto.ProductRequest;
 import com.fika.api.features.products.dto.ProductResponse;
+import com.fika.api.features.products.model.Category;
 import com.fika.api.features.products.model.Product;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
@@ -26,14 +29,19 @@ public class ProductService {
     private final ProductMapper productMapper;
 
     /**
-     * Récupère la liste paginée de tous les produits.
-     *
-     * @param pageable informations de pagination et de tri
-     * @return une page de {@link ProductResponse}
+     * Récupère les produits filtrés et paginés.
+     * 
+     * @param pageable Pagination et tri (ex: page=0, size=10, sort=price,asc).
+     * @return PagedResponse de {@link ProductResponse} avec métadonnées de
+     *         navigation.
      */
-    public Page<ProductResponse> getAllProducts(Pageable pageable) {
-        return productRepository.findAll(pageable)
+    public PagedResponse<ProductResponse> getAllProducts(String name, Category category, BigDecimal minPrice,
+            BigDecimal maxPrice, Boolean onlyAvailable, Pageable pageable) {
+        String nameFilter = (name != null && !name.isBlank()) ? "%" + name + "%" : null;
+        Page<ProductResponse> productPage = productRepository
+                .findWithFilters(nameFilter, category, minPrice, maxPrice, onlyAvailable, pageable)
                 .map(productMapper::toResponse);
+        return PagedResponse.of(productPage);
     }
 
     /**
@@ -43,7 +51,7 @@ public class ProductService {
      * @return le DTO du produit trouvé
      * @throws ProductNotFoundException si aucun produit ne correspond à l'ID
      */
-    public ProductResponse getProductById(UUID id)  {
+    public ProductResponse getProductById(UUID id) {
         return productRepository.findById(id)
                 .map(productMapper::toResponse)
                 .orElseThrow(() -> new ProductNotFoundException(id));
@@ -69,7 +77,7 @@ public class ProductService {
      * les modifications avec la base de données.
      *
      * @param productRequest les nouvelles données à appliquer
-     * @param id l'identifiant du produit à modifier
+     * @param id             l'identifiant du produit à modifier
      * @return le produit mis à jour
      * @throws ProductNotFoundException si le produit n'existe pas
      */

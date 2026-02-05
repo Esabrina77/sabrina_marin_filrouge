@@ -10,6 +10,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -64,7 +67,9 @@ class OrderRepositoryTest {
         orderRepository.save(order1);
         orderRepository.save(order2);
 
-        List<Order> result = orderRepository.findByUserEmailOrderByCreatedAtDesc(user.getEmail());
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Order> resultPage = orderRepository.findByUserEmailOrderByCreatedAtDesc(user.getEmail(), pageable);
+        List<Order> result = resultPage.getContent();
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getOrderReference()).isEqualTo("REF2");

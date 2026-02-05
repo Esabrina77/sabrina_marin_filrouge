@@ -1,5 +1,6 @@
 package com.fika.api.features.users;
 
+import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.ErrorResponse;
 import com.fika.api.core.exceptions.FormErrorResponse;
 import com.fika.api.features.users.dto.UserProfileRequest;
@@ -14,7 +15,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -80,7 +80,7 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "Liste récupérée avec succès")
     @ApiResponse(responseCode = "403", description = "Accès refusé - Rôle ADMIN requis")
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<UserResponse> getAllUsers(@ParameterObject Pageable pageable) {
+    public PagedResponse<UserResponse> getAllUsers(@ParameterObject Pageable pageable) {
         return userService.getAllUsers(pageable);
     }
 

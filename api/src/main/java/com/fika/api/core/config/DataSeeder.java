@@ -14,11 +14,11 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Composant responsable de l'initialisation des données (seeding) au démarrage
@@ -109,11 +109,23 @@ public class DataSeeder implements CommandLineRunner {
                     .available(true)
                     .build());
         }
+
+        if (!productRepository.existsByName("Croissant du Chef (RP)")) {
+            productRepository.save(Product.builder()
+                    .name("Croissant du Chef (RP)")
+                    .price(new BigDecimal("2.50"))
+                    .description("Le traditionnel croissant au beurre, épuisé pour le moment.")
+                    .imgUrl("https://images.unsplash.com/photo-1555507036-ab1f4038808a")
+                    .category(Category.DESSERT)
+                    .available(false)
+                    .build());
+        }
     }
 
     private void seedOrders() {
         User marin = userRepository.findByEmail("marin@example.com").orElse(null);
-        if (marin != null && orderRepository.findByUserEmailOrderByCreatedAtDesc(marin.getEmail()).isEmpty()) {
+        if (marin != null && orderRepository.findByUserEmailOrderByCreatedAtDesc(marin.getEmail(), PageRequest.of(0, 1))
+                .isEmpty()) {
             Product burger = productRepository.findAll().stream()
                     .filter(p -> p.getName().equals("Burger Maison"))
                     .findFirst()

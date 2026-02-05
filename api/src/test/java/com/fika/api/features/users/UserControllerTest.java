@@ -1,6 +1,7 @@
 package com.fika.api.features.users;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
 import com.fika.api.features.users.dto.UserRequest;
@@ -104,11 +105,13 @@ class UserControllerTest {
     @DisplayName("GetAll : Liste tous les utilisateurs (ADMIN)")
     void getAllUsers() throws Exception {
         Page<UserResponse> userPage = new PageImpl<>(List.of(userResponse));
-        given(userService.getAllUsers(any(Pageable.class))).willReturn(userPage);
+        PagedResponse<UserResponse> pagedResponse = PagedResponse.of(userPage);
+        given(userService.getAllUsers(any(Pageable.class))).willReturn(pagedResponse);
 
         mockMvc.perform(get("/api/v1/users"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].id").value(userId.toString()));
+                .andExpect(jsonPath("$.content[0].id").value(userId.toString()))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test

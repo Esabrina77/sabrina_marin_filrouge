@@ -1,6 +1,7 @@
 package com.fika.api.features.products;
 
 import tools.jackson.databind.ObjectMapper;
+import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
 import com.fika.api.features.products.dto.ProductRequest;
 import com.fika.api.features.products.dto.ProductResponse;
@@ -35,115 +36,121 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Controller : Produits")
 class ProductControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @MockitoBean
-    private ProductService productService;
+        @MockitoBean
+        private ProductService productService;
 
-    @MockitoBean
-    private com.fika.api.core.jwt.JwtService jwtService;
+        @MockitoBean
+        private com.fika.api.core.jwt.JwtService jwtService;
 
-    @MockitoBean
-    private com.fika.api.core.jwt.JwtFilter jwtFilter;
+        @MockitoBean
+        private com.fika.api.core.jwt.JwtFilter jwtFilter;
 
-    @MockitoBean
-    private com.fika.api.core.config.RateLimitFilter rateLimitFilter;
+        @MockitoBean
+        private com.fika.api.core.config.RateLimitFilter rateLimitFilter;
 
-    @MockitoBean
-    private com.fika.api.core.exceptions.JwtExceptionHandler jwtExceptionHandler;
+        @MockitoBean
+        private com.fika.api.core.exceptions.JwtExceptionHandler jwtExceptionHandler;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    private ProductRequest productRequest;
-    private ProductResponse productResponse;
-    private UUID productId;
+        private ProductRequest productRequest;
+        private ProductResponse productResponse;
+        private UUID productId;
 
-    @BeforeEach
-    void setUp() {
-        productId = UUID.randomUUID();
-        productRequest = new ProductRequest(
-                "Espresso",
-                new BigDecimal("2.00"),
-                "Café court",
-                "http://img.com/espresso.jpg",
-                Category.ENTREE,
-                true);
-        productResponse = new ProductResponse(
-                productId,
-                "Espresso",
-                new BigDecimal("2.00"),
-                "Café court",
-                "http://img.com/espresso.jpg",
-                Category.ENTREE,
-                true);
-    }
+        @BeforeEach
+        void setUp() {
+                productId = UUID.randomUUID();
+                productRequest = new ProductRequest(
+                                "Espresso",
+                                new BigDecimal("2.00"),
+                                "Café court",
+                                "http://img.com/espresso.jpg",
+                                Category.ENTREE,
+                                true);
+                productResponse = new ProductResponse(
+                                productId,
+                                "Espresso",
+                                new BigDecimal("2.00"),
+                                "Café court",
+                                "http://img.com/espresso.jpg",
+                                Category.ENTREE,
+                                true);
+        }
 
-    @Test
-    @WithMockUser
-    @DisplayName("GetAll : Liste les produits")
-    void getAllProducts() throws Exception {
-        Page<ProductResponse> productPage = new PageImpl<>(List.of(productResponse));
-        given(productService.getAllProducts(any(Pageable.class))).willReturn(productPage);
-        mockMvc.perform(get("/api/v1/products"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].name").value("Espresso"));
-    }
+        @Test
+        @WithMockUser
+        @DisplayName("GetAll : Liste les produits")
+        void getAllProducts() throws Exception {
+                Page<ProductResponse> productPage = new PageImpl<>(List.of(productResponse));
+                PagedResponse<ProductResponse> pagedResponse = PagedResponse.of(productPage);
 
-    @Test
-    @WithMockUser
-    @DisplayName("GetOne : Récupère un produit par ID")
-    void getProductById() throws Exception {
-        given(productService.getProductById(productId)).willReturn(productResponse);
-        mockMvc.perform(get("/api/v1/products/{id}", productId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Espresso"));
-    }
+                given(productService.getAllProducts(any(), any(), any(), any(), any(), any(Pageable.class)))
+                                .willReturn(pagedResponse);
 
-    @Test
-    @WithMockUser
-    @DisplayName("GetOne : Erreur si non trouvé")
-    void getProductByIdNotFound() throws Exception {
-        given(productService.getProductById(productId)).willThrow(new ProductNotFoundException(productId));
+                mockMvc.perform(get("/api/v1/products"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.content[0].name").value("Espresso"))
+                                .andExpect(jsonPath("$.totalElements").value(1));
+        }
 
-        mockMvc.perform(get("/api/v1/products/{id}", productId))
-                .andExpect(status().isNotFound());
-    }
+        @Test
+        @WithMockUser
+        @DisplayName("GetOne : Récupère un produit par ID")
+        void getProductById() throws Exception {
+                given(productService.getProductById(productId)).willReturn(productResponse);
+                mockMvc.perform(get("/api/v1/products/{id}", productId))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value("Espresso"));
+        }
 
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("Create : Création (Admin)")
-    void createProduct() throws Exception {
-        given(productService.createProduct(any(ProductRequest.class))).willReturn(productResponse);
+        @Test
+        @WithMockUser
+        @DisplayName("GetOne : Erreur si non trouvé")
+        void getProductByIdNotFound() throws Exception {
+                given(productService.getProductById(productId)).willThrow(new ProductNotFoundException(productId));
 
-        mockMvc.perform(post("/api/v1/products")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(productRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Espresso"));
-    }
+                mockMvc.perform(get("/api/v1/products/{id}", productId))
+                                .andExpect(status().isNotFound());
+        }
 
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("Update : Modification (Admin)")
-    void updateProduct() throws Exception {
-        given(productService.updateProduct(any(ProductRequest.class), eq(productId))).willReturn(productResponse);
+        @Test
+        @WithMockUser(roles = "ADMIN")
+        @DisplayName("Create : Création (Admin)")
+        void createProduct() throws Exception {
+                given(productService.createProduct(any(ProductRequest.class))).willReturn(productResponse);
 
-        mockMvc.perform(put("/api/v1/products/{id}", productId)
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(productRequest)))
-                .andExpect(status().isOk());
-    }
+                mockMvc.perform(post("/api/v1/products")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(productRequest)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value("Espresso"));
+        }
 
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("Delete : Suppression (Admin)")
-    void deleteProduct() throws Exception {
-        mockMvc.perform(delete("/api/v1/products/{id}", productId)
-                .with(csrf()))
-                .andExpect(status().isOk());
-    }
+        @Test
+        @WithMockUser(roles = "ADMIN")
+        @DisplayName("Update : Modification (Admin)")
+        void updateProduct() throws Exception {
+                given(productService.updateProduct(any(ProductRequest.class), eq(productId)))
+                                .willReturn(productResponse);
+
+                mockMvc.perform(put("/api/v1/products/{id}", productId)
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(productRequest)))
+                                .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(roles = "ADMIN")
+        @DisplayName("Delete : Suppression (Admin)")
+        void deleteProduct() throws Exception {
+                mockMvc.perform(delete("/api/v1/products/{id}", productId)
+                                .with(csrf()))
+                                .andExpect(status().isOk());
+        }
 }

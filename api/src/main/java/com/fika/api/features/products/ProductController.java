@@ -1,7 +1,9 @@
 package com.fika.api.features.products;
 
+import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.features.products.dto.ProductRequest;
 import com.fika.api.features.products.dto.ProductResponse;
+import com.fika.api.features.products.model.Category;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,10 +12,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @RestController
@@ -25,10 +29,15 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    @Operation(summary = "Lister les produits (Public)", description = "Récupère tous les produits avec pagination. Accessible à tous.")
-    @ApiResponse(responseCode = "200", description = "Liste des produits récupérée avec succès")
-    public Page<ProductResponse> getAllProducts(@ParameterObject Pageable pageable) {
-        return productService.getAllProducts(pageable);
+    @Operation(summary = "Catalogue paginé et filtrable", description = "Récupère les produits avec filtres et pagination (par défaut 12 produits par page, triés par nom).")
+    public PagedResponse<ProductResponse> getAllProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Category category,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Boolean onlyAvailable,
+            @ParameterObject @PageableDefault(size = 12, sort = "name") Pageable pageable) {
+        return productService.getAllProducts(name, category, minPrice, maxPrice, onlyAvailable, pageable);
     }
 
     @GetMapping("/{id}")

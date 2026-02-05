@@ -1,5 +1,6 @@
 package com.fika.api.features.products;
 
+import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
 import com.fika.api.features.products.dto.ProductRequest;
 import com.fika.api.features.products.dto.ProductResponse;
@@ -25,6 +26,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -81,14 +83,18 @@ class ProductServiceTest {
     @DisplayName("Lister les produits : Succès")
     void getAllProductsSuccess() {
         Pageable pageable = PageRequest.of(0, 10);
-        Page<Product> productPage = new PageImpl<>(Collections.singletonList(product));
-        given(productRepository.findAll(pageable)).willReturn(productPage);
+        Page<Product> productPage = new PageImpl<>(Collections.singletonList(product), pageable, 1);
+
+        given(productRepository.findWithFilters(any(), any(), any(), any(), any(), eq(pageable)))
+                .willReturn(productPage);
         given(productMapper.toResponse(product)).willReturn(productResponse);
 
-        Page<ProductResponse> result = productService.getAllProducts(pageable);
+        PagedResponse<ProductResponse> result = productService.getAllProducts(null, null, null, null, false, pageable);
 
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().getFirst()).isEqualTo(productResponse);
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.content().get(0)).isEqualTo(productResponse);
+        assertThat(result.pageNumber()).isEqualTo(0);
+        assertThat(result.pageSize()).isEqualTo(10);
     }
 
     @Test
