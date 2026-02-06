@@ -2,6 +2,7 @@ package com.fika.api.features.orders;
 
 import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.order.OrderNotFoundException;
+import com.fika.api.core.exceptions.product.InsufficientProductQuantityException;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
 import com.fika.api.features.orders.dto.OrderItemRequest;
@@ -145,6 +146,16 @@ public class OrderService {
         for (OrderItemRequest itemReq : orderRequest.items()) {
             Product product = productRepository.findById(itemReq.productId())
                     .orElseThrow(() -> new ProductNotFoundException(itemReq.productId().toString()));
+
+            if (product.getQuantity() < itemReq.quantity()) {
+                throw new InsufficientProductQuantityException(product.getName(), product.getQuantity(),
+                        itemReq.quantity());
+            }
+            product.setQuantity(product.getQuantity() - itemReq.quantity());
+            if (product.getQuantity() <= 0) {
+                product.setAvailable(false);
+            }
+            productRepository.save(product);
 
             OrderItem orderItem = OrderItem.builder()
                     .order(order)

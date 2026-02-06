@@ -3,6 +3,7 @@ package com.fika.api.features.products;
 import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.features.products.dto.ProductRequest;
 import com.fika.api.features.products.dto.ProductResponse;
+import com.fika.api.features.products.dto.StockUpdateRequest;
 import com.fika.api.features.products.model.Category;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -69,6 +70,16 @@ public class ProductController {
     public ProductResponse updateProduct(@Parameter(description = "ID unique du produit") @PathVariable UUID id,
             @Valid @RequestBody ProductRequest productRequest) {
         return productService.updateProduct(productRequest, id);
+    }
+
+    @PatchMapping("/{id}/stock")
+    @PreAuthorize("hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Mettre à jour le stock (Admin ONLY)", description = "Met à jour uniquement la quantité disponible d'un produit.")
+    @ApiResponse(responseCode = "200", description = "Stock mis à jour avec succès")
+    @ApiResponse(responseCode = "404", description = "Produit non trouvé")
+    public ProductResponse updateStock(@PathVariable UUID id, @Valid @RequestBody StockUpdateRequest request) {
+        return productService.updateStock(id, request.quantity());
     }
 
     @DeleteMapping("/{id}")

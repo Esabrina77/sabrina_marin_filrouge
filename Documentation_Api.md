@@ -105,14 +105,18 @@ Header requis : `Authorization: Bearer <token>`
 | `GET` | `/{id}` | Détails d'un produit | Public |
 | `GET` | `/categories` | Lister toutes les catégories | Public |
 | `POST` | `/` | Ajouter un produit | **Admin ONLY** |
+| `PATCH`| `/{id}/stock` | Mettre à jour le stock | **Admin ONLY** |
 | `PUT` | `/{id}` | Modifier un produit | **Admin ONLY** |
 | `DELETE` | `/{id}` | Supprimer un produit | **Admin ONLY** |
 
 **Note sur le filtrage des produits :**
 Le paramètre `onlyAvailable` (Boolean) supporte 3 états :
 *   `null` (non envoyé) : Affiche **tout** le catalogue.
-*   `true` : Uniquement les produits **en stock**.
-*   `false` : Uniquement les produits **épuisés**.
+*   `true` : Uniquement les produits **en stock** (`quantity > 0` et `available = true`).
+*   `false` : Uniquement les produits **épuisés** (`quantity = 0` ou `available = false`).
+
+**Champs ajoutés :**
+*   `quantity` (Integer) : Stock disponible. Mis à jour automatiquement lors d'une commande.
 
 ### 🛍️ Commandes (`/api/v1/orders`)
 | Méthode | Route | Description | Accès |
@@ -129,6 +133,10 @@ Le paramètre `onlyAvailable` (Boolean) supporte 3 états :
 **Note sur les commandes :**
 Les réponses `OrderResponse` incluent désormais les informations du client :
 *   `userFirstName`, `userLastName`, `userEmail`.
+
+**Règle de Gestion des Stocks :**
+L'API valide le stock au moment de la création (`POST /`). Si la quantité demandée est supérieure au stock disponible, une erreur `400 Bad Request` est renvoyée avec le message "Stock insuffisant...".
+En cas de succès, le stock du produit est **automatiquement décrémenté**. Si le stock atteint 0, le produit est marqué comme indisponible.
 
 ---
 
