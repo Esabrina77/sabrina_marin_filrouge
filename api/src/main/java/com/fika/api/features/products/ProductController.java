@@ -16,6 +16,7 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -52,6 +53,7 @@ public class ProductController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.CREATED)
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Créer un nouveau produit (Admin ONLY)", description = "Ajoute un produit au catalogue.")
     @ApiResponse(responseCode = "201", description = "Produit créé avec succès")
@@ -84,6 +86,7 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Supprimer un produit (Admin ONLY)", description = "Supprime définitivement un produit du catalogue.")
     @ApiResponse(responseCode = "204", description = "Produit supprimé avec succès")
