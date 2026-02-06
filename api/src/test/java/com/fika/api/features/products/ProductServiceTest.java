@@ -58,6 +58,7 @@ class ProductServiceTest {
                 .description("Un café noir intense")
                 .imgUrl("http://example.com/cafe.jpg")
                 .category(Category.ENTREE)
+                .quantity(10)
                 .available(true)
                 .build();
 
@@ -67,6 +68,7 @@ class ProductServiceTest {
                 "Un café noir intense",
                 "http://example.com/cafe.jpg",
                 Category.ENTREE,
+                10,
                 true);
 
         productResponse = new ProductResponse(
@@ -76,6 +78,7 @@ class ProductServiceTest {
                 "Un café noir intense",
                 "http://example.com/cafe.jpg",
                 Category.ENTREE,
+                10,
                 true);
     }
 
@@ -92,8 +95,8 @@ class ProductServiceTest {
         PagedResponse<ProductResponse> result = productService.getAllProducts(null, null, null, null, false, pageable);
 
         assertThat(result.content()).hasSize(1);
-        assertThat(result.content().get(0)).isEqualTo(productResponse);
-        assertThat(result.pageNumber()).isEqualTo(0);
+        assertThat(result.content().getFirst()).isEqualTo(productResponse);
+        assertThat(result.pageNumber()).isZero();
         assertThat(result.pageSize()).isEqualTo(10);
     }
 
@@ -150,5 +153,37 @@ class ProductServiceTest {
         given(productRepository.existsById(productId)).willReturn(false);
         assertThatThrownBy(() -> productService.deleteProduct(productId))
                 .isInstanceOf(ProductNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Mettre à jour le stock : Succès")
+    void updateStockSuccess() {
+        int newQuantity = 50;
+        given(productRepository.findById(productId)).willReturn(Optional.of(product));
+        given(productRepository.save(product)).willReturn(product);
+        given(productMapper.toResponse(product)).willReturn(new ProductResponse(productId, "Café Noir",
+                new BigDecimal("2.50"), "Description", "url", Category.ENTREE, newQuantity, true));
+
+        productService.updateStock(productId, newQuantity);
+
+        assertThat(product.getQuantity()).isEqualTo(newQuantity);
+        assertThat(product.isAvailable()).isTrue();
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    @DisplayName("Mettre à jour le stock : Succès (épuisé)")
+    void updateStockOutOfStock() {
+        int newQuantity = 0;
+        given(productRepository.findById(productId)).willReturn(Optional.of(product));
+        given(productRepository.save(product)).willReturn(product);
+        given(productMapper.toResponse(product)).willReturn(new ProductResponse(productId, "Café Noir",
+                new BigDecimal("2.50"), "Description", "url", Category.ENTREE, newQuantity, false));
+
+        productService.updateStock(productId, newQuantity);
+
+        assertThat(product.getQuantity()).isZero();
+        assertThat(product.isAvailable()).isFalse();
+        verify(productRepository).save(product);
     }
 }

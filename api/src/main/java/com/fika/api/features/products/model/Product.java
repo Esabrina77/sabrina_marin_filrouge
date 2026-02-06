@@ -69,6 +69,13 @@ public class Product {
     private Category category;
 
     /**
+     * Quantité en stock.
+     */
+    @Column(nullable = false, columnDefinition = "int default 0")
+    @Schema(description = "Quantité en stock", example = "10")
+    private int quantity;
+
+    /**
      * Disponibilité en stock.
      */
     @Column(nullable = false)

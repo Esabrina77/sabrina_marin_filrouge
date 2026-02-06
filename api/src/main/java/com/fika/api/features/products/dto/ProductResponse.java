@@ -10,11 +10,12 @@ import java.util.UUID;
  */
 @Schema(description = "Réponse détaillée d'un produit")
 public record ProductResponse(
-                @Schema(description = "ID unique du produit", example = "550e8400-e29b-41d4-a716-446655440000") UUID id,
-                @Schema(description = "Nom du produit", example = "Espresso") String name,
-                @Schema(description = "Prix du produit", example = "2.50") BigDecimal price,
-                @Schema(description = "Description détaillée", example = "Un café intense.") String description,
-                @Schema(description = "URL de l'image", example = "https://example.com/img.jpg") String imgUrl,
-                @Schema(description = "Catégorie", example = "DESSERT") Category category,
-                @Schema(description = "Disponibilité", example = "true") boolean available) {
+        @Schema(description = "ID unique du produit", example = "550e8400-e29b-41d4-a716-446655440000") UUID id,
+        @Schema(description = "Nom du produit", example = "Espresso") String name,
+        @Schema(description = "Prix du produit", example = "2.50") BigDecimal price,
+        @Schema(description = "Description détaillée", example = "Un café intense.") String description,
+        @Schema(description = "URL de l'image", example = "https://example.com/img.jpg") String imgUrl,
+        @Schema(description = "Catégorie", example = "DESSERT") Category category,
+        @Schema(description = "Quantité en stock", example = "10") int quantity,
+        @Schema(description = "Disponibilité", example = "true") boolean available) {
 }

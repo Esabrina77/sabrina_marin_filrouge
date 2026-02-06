@@ -2,6 +2,7 @@ package com.fika.api.features.orders;
 
 import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.order.OrderNotFoundException;
+import com.fika.api.core.exceptions.product.InsufficientProductQuantityException;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
 import com.fika.api.features.orders.dto.OrderItemRequest;
@@ -78,6 +79,8 @@ class OrderServiceTest {
                 .id(UUID.randomUUID())
                 .name("Café")
                 .price(new BigDecimal("2.50"))
+                .quantity(10)
+                .available(true)
                 .build();
 
         order = Order.builder()
@@ -201,5 +204,76 @@ class OrderServiceTest {
 
         assertThatThrownBy(() -> orderService.createOrder(orderRequest, userEmail))
                 .isInstanceOf(UserNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Create : Erreur si stock insuffisant")
+    void createOrderInsufficientStock() {
+        OrderItemRequest itemRequest = new OrderItemRequest(product.getId(), 20); // 20 > 10
+        OrderRequest orderRequest = new OrderRequest(List.of(itemRequest));
+
+        given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(productRepository.findById(product.getId())).willReturn(Optional.of(product));
+
+        assertThatThrownBy(() -> orderService.createOrder(orderRequest, userEmail))
+                .isInstanceOf(InsufficientProductQuantityException.class);
+    }
+
+    @Test
+    @DisplayName("Create : Décrémentation du stock après commande")
+    void createOrderDecrementsStock() {
+        int initialQuantity = product.getQuantity();
+        int requestedQuantity = 2;
+        OrderItemRequest itemRequest = new OrderItemRequest(product.getId(), requestedQuantity);
+        OrderRequest orderRequest = new OrderRequest(List.of(itemRequest));
+
+        given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(productRepository.findById(product.getId())).willReturn(Optional.of(product));
+        given(orderRepository.saveAndFlush(any(Order.class))).willReturn(order);
+        given(orderMapper.toResponse(any(Order.class))).willReturn(orderResponse);
+
+        orderService.createOrder(orderRequest, userEmail);
+
+        assertThat(product.getQuantity()).isEqualTo(initialQuantity - requestedQuantity);
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    @DisplayName("Create : Commande de la totalité du stock")
+    void createOrderExactStock() {
+        int initialQuantity = product.getQuantity();
+        OrderItemRequest itemRequest = new OrderItemRequest(product.getId(), initialQuantity);
+        OrderRequest orderRequest = new OrderRequest(List.of(itemRequest));
+
+        given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(productRepository.findById(product.getId())).willReturn(Optional.of(product));
+        given(orderRepository.saveAndFlush(any(Order.class))).willReturn(order);
+        given(orderMapper.toResponse(any(Order.class))).willReturn(orderResponse);
+
+        orderService.createOrder(orderRequest, userEmail);
+
+        assertThat(product.getQuantity()).isZero();
+        assertThat(product.isAvailable()).isFalse();
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    @DisplayName("Create : Échec si un produit du panier est en rupture (Rollback logique)")
+    void createOrderMultiItemFail() {
+        Product productA = Product.builder().id(UUID.randomUUID()).name("Prod A").price(BigDecimal.TEN).quantity(5)
+                .available(true).build();
+        Product productB = Product.builder().id(UUID.randomUUID()).name("Prod B").price(BigDecimal.TEN).quantity(1)
+                .available(true).build();
+
+        OrderItemRequest itemA = new OrderItemRequest(productA.getId(), 2);
+        OrderItemRequest itemB = new OrderItemRequest(productB.getId(), 5); // 5 > 1, doit échouer
+        OrderRequest orderRequest = new OrderRequest(List.of(itemA, itemB));
+
+        given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(productRepository.findById(productA.getId())).willReturn(Optional.of(productA));
+        given(productRepository.findById(productB.getId())).willReturn(Optional.of(productB));
+
+        assertThatThrownBy(() -> orderService.createOrder(orderRequest, userEmail))
+                .isInstanceOf(InsufficientProductQuantityException.class);
     }
 }

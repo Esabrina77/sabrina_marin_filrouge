@@ -3,8 +3,8 @@ package com.fika.api.core.exceptions;
 import com.fika.api.core.exceptions.order.OrderNotFoundException;
 import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
+import com.fika.api.core.exceptions.product.InsufficientProductQuantityException;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
-import org.aspectj.weaver.ast.Or;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -56,6 +56,22 @@ public class GlobalExceptionHandler {
                 "Produit introuvable",
                 ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
+     * Gère l'exception lorsqu'un produit n'a plus assez de stock.
+     *
+     * @param ex L'exception InsufficientProductQuantityException levée.
+     * @return Une réponse HTTP 400 (Bad Request) avec les détails de l'erreur.
+     */
+    @ExceptionHandler(InsufficientProductQuantityException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientProductQuantity(InsufficientProductQuantityException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Stock insuffisant",
+                ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     /**

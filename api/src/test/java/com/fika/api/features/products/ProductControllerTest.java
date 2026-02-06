@@ -70,6 +70,7 @@ class ProductControllerTest {
                                 "Café court",
                                 "http://img.com/espresso.jpg",
                                 Category.ENTREE,
+                                10,
                                 true);
                 productResponse = new ProductResponse(
                                 productId,
@@ -78,6 +79,7 @@ class ProductControllerTest {
                                 "Café court",
                                 "http://img.com/espresso.jpg",
                                 Category.ENTREE,
+                                10,
                                 true);
         }
 
@@ -151,6 +153,19 @@ class ProductControllerTest {
         void deleteProduct() throws Exception {
                 mockMvc.perform(delete("/api/v1/products/{id}", productId)
                                 .with(csrf()))
+                                .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(roles = "ADMIN")
+        @DisplayName("UpdateStock : Mise à jour du stock (Admin)")
+        void updateStock() throws Exception {
+                given(productService.updateStock(eq(productId), eq(50))).willReturn(productResponse);
+
+                mockMvc.perform(patch("/api/v1/products/{id}/stock", productId)
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"quantity\": 50}"))
                                 .andExpect(status().isOk());
         }
 }

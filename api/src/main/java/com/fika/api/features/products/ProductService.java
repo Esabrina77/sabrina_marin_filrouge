@@ -37,7 +37,8 @@ public class ProductService {
      * @return PagedResponse de {@link ProductResponse} avec métadonnées de
      *         navigation.
      */
-    public PagedResponse<ProductResponse> getAllProducts(String name, Category category, BigDecimal minPrice, BigDecimal maxPrice, Boolean onlyAvailable, Pageable pageable) {
+    public PagedResponse<ProductResponse> getAllProducts(String name, Category category, BigDecimal minPrice,
+            BigDecimal maxPrice, Boolean onlyAvailable, Pageable pageable) {
         String nameFilter = (name != null && !name.isBlank()) ? "%" + name + "%" : null;
         Page<ProductResponse> productPage = productRepository
                 .findWithFilters(nameFilter, category, minPrice, maxPrice, onlyAvailable, pageable)
@@ -92,10 +93,21 @@ public class ProductService {
         productToUpdate.setDescription(productRequest.description());
         productToUpdate.setImgUrl(productRequest.imgUrl());
         productToUpdate.setCategory(productRequest.category());
+        productToUpdate.setQuantity(productRequest.quantity());
         productToUpdate.setAvailable(productRequest.available());
 
         productRepository.save(productToUpdate);
         return productMapper.toResponse(productToUpdate);
+    }
+
+    @Transactional
+    public ProductResponse updateStock(UUID id, int quantity) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+        product.setQuantity(quantity);
+        product.setAvailable(quantity > 0);
+
+        return productMapper.toResponse(productRepository.save(product));
     }
 
     /**
@@ -112,8 +124,7 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
-
-    public  List<Category> getAllCategories() {
+    public List<Category> getAllCategories() {
         return Arrays.asList(Category.values());
     }
 }
