@@ -129,7 +129,7 @@ class ProductControllerTest {
                                 .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(productRequest)))
-                                .andExpect(status().isOk())
+                                .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.name").value("Espresso"));
         }
 
@@ -153,7 +153,7 @@ class ProductControllerTest {
         void deleteProduct() throws Exception {
                 mockMvc.perform(delete("/api/v1/products/{id}", productId)
                                 .with(csrf()))
-                                .andExpect(status().isOk());
+                                .andExpect(status().isNoContent());
         }
 
         @Test
@@ -167,5 +167,23 @@ class ProductControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{\"quantity\": 50}"))
                                 .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(roles = "ADMIN")
+        @DisplayName("Validation : Échec si quantité négative")
+        void createProductValidationFail() throws Exception {
+                ProductRequest invalidRequest = new ProductRequest(
+                                "Nom", BigDecimal.TEN, "Desc", "url", Category.ENTREE, -5, true);
+
+                mockMvc.perform(post("/api/v1/products")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(invalidRequest)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.status").value(400))
+                                .andExpect(jsonPath("$.error").value("Validation échouée"))
+                                .andExpect(jsonPath("$.message")
+                                                .value("Certains champs du formulaire sont invalides."));
         }
 }

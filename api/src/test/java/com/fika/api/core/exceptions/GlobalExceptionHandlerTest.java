@@ -1,5 +1,6 @@
 package com.fika.api.core.exceptions;
 
+import com.fika.api.core.exceptions.product.InsufficientProductQuantityException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
 import com.fika.api.features.users.UserController;
 import com.fika.api.features.users.UserService;
@@ -14,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -54,5 +56,19 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.error").value("Ressource introuvable"))
                 .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("Handle InsufficientProductQuantityException : Retourne 400")
+    void handleInsufficientQuantity() throws Exception {
+        // On simule une erreur qui pourrait arriver sur n'importe quel controller
+        // ici on utilise le UserController mocké pour lancer l'exception
+        given(userService.getUserById(any())).willThrow(new InsufficientProductQuantityException("Produit", 5, 10));
+
+        mockMvc.perform(get("/api/v1/users/{id}", UUID.randomUUID()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Stock insuffisant"));
     }
 }
