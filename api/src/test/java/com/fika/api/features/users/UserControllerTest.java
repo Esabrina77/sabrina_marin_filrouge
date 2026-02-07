@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
+import com.fika.api.features.users.dto.UserProfileRequest;
 import com.fika.api.features.users.dto.UserRequest;
 import com.fika.api.features.users.dto.UserResponse;
 import com.fika.api.features.users.model.Role;
@@ -27,7 +28,11 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import java.util.Collections;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -185,14 +190,41 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "test@example.com")
     @DisplayName("GetMe : Récupération de mon profil")
     void getMe() throws Exception {
         given(userService.getCurrentUser(any())).willReturn(userResponse);
 
-        mockMvc.perform(get("/api/v1/users/me"))
+        mockMvc.perform(get("/api/v1/users/me")
+                .with(authentication(new UsernamePasswordAuthenticationToken(userId, null,
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_CLIENT"))))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("test@example.com"))
                 .andExpect(jsonPath("$.firstName").value("John"));
+    }
+
+    @Test
+    @DisplayName("UpdateMe : Mise à jour de mon profil")
+    void updateMe() throws Exception {
+        UserProfileRequest profileRequest = new UserProfileRequest("John", "Doe", "test@example.com");
+        given(userService.updateCurrentUser(any(), any(UserProfileRequest.class))).willReturn(userResponse);
+
+        mockMvc.perform(put("/api/v1/users/me")
+                .with(csrf())
+                .with(authentication(new UsernamePasswordAuthenticationToken(userId, null,
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_CLIENT")))))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(profileRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("John"));
+    }
+
+    @Test
+    @DisplayName("DeleteMe : Suppression de mon profil")
+    void deleteMe() throws Exception {
+        mockMvc.perform(delete("/api/v1/users/me")
+                .with(csrf())
+                .with(authentication(new UsernamePasswordAuthenticationToken(userId, null,
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_CLIENT"))))))
+                .andExpect(status().isNoContent());
     }
 }

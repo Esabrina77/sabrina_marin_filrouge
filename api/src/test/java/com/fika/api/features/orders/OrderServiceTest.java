@@ -67,12 +67,15 @@ class OrderServiceTest {
     private Order order;
     private OrderResponse orderResponse;
     private UUID orderId;
+    private UUID userId;
     private String userEmail = "test@example.com";
 
     @BeforeEach
     void setUp() {
         orderId = UUID.randomUUID();
+        userId = UUID.randomUUID();
         user = new User();
+        user.setId(userId);
         user.setEmail(userEmail);
 
         product = Product.builder()
@@ -112,13 +115,13 @@ class OrderServiceTest {
 
     @Test
     @DisplayName("GetByUser : Retourne les commandes d'un utilisateur")
-    void getOrderByUserMail() {
+    void getOrderByUserId() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Order> orderPage = new PageImpl<>(List.of(order));
-        given(orderRepository.findByUserEmailOrderByCreatedAtDesc(eq(userEmail), eq(pageable))).willReturn(orderPage);
+        given(orderRepository.findByUserIdOrderByCreatedAtDesc(eq(userId), eq(pageable))).willReturn(orderPage);
         given(orderMapper.toResponse(order)).willReturn(orderResponse);
 
-        PagedResponse<OrderResponse> result = orderService.getOrderByUserMail(userEmail, pageable);
+        PagedResponse<OrderResponse> result = orderService.getOrderByUserId(userId, pageable);
 
         assertThat(result.content()).hasSize(1);
         assertThat(result.content().get(0)).isEqualTo(orderResponse);
@@ -130,7 +133,7 @@ class OrderServiceTest {
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
         given(orderMapper.toResponse(order)).willReturn(orderResponse);
 
-        OrderResponse result = orderService.getOrderById(orderId, userEmail, false);
+        OrderResponse result = orderService.getOrderById(orderId, userId, false);
 
         assertThat(result).isEqualTo(orderResponse);
     }
@@ -141,7 +144,7 @@ class OrderServiceTest {
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
         given(orderMapper.toResponse(order)).willReturn(orderResponse);
 
-        OrderResponse result = orderService.getOrderById(orderId, "admin@example.com", true);
+        OrderResponse result = orderService.getOrderById(orderId, UUID.randomUUID(), true);
 
         assertThat(result).isEqualTo(orderResponse);
     }
@@ -151,7 +154,7 @@ class OrderServiceTest {
     void getOrderByIdAccessDenied() {
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
-        assertThatThrownBy(() -> orderService.getOrderById(orderId, "other@example.com", false))
+        assertThatThrownBy(() -> orderService.getOrderById(orderId, UUID.randomUUID(), false))
                 .isInstanceOf(AccessDeniedException.class);
     }
 
@@ -160,7 +163,7 @@ class OrderServiceTest {
     void getOrderByIdNotFound() {
         given(orderRepository.findById(orderId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> orderService.getOrderById(orderId, userEmail, true))
+        assertThatThrownBy(() -> orderService.getOrderById(orderId, userId, true))
                 .isInstanceOf(OrderNotFoundException.class);
     }
 
@@ -170,13 +173,13 @@ class OrderServiceTest {
         OrderItemRequest itemRequest = new OrderItemRequest(product.getId(), 2);
         OrderRequest orderRequest = new OrderRequest(List.of(itemRequest));
 
-        given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(productRepository.findById(product.getId())).willReturn(Optional.of(product));
         given(orderRepository.existsByOrderReference(anyString())).willReturn(false);
         given(orderRepository.saveAndFlush(any(Order.class))).willReturn(order);
         given(orderMapper.toResponse(any(Order.class))).willReturn(orderResponse);
 
-        OrderResponse result = orderService.createOrder(orderRequest, userEmail);
+        OrderResponse result = orderService.createOrder(orderRequest, userId);
 
         assertThat(result).isEqualTo(orderResponse);
         verify(orderRepository).saveAndFlush(any(Order.class));
@@ -188,10 +191,10 @@ class OrderServiceTest {
         OrderItemRequest itemRequest = new OrderItemRequest(product.getId(), 2);
         OrderRequest orderRequest = new OrderRequest(List.of(itemRequest));
 
-        given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(productRepository.findById(product.getId())).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> orderService.createOrder(orderRequest, userEmail))
+        assertThatThrownBy(() -> orderService.createOrder(orderRequest, userId))
                 .isInstanceOf(ProductNotFoundException.class);
     }
 
@@ -200,9 +203,9 @@ class OrderServiceTest {
     void createOrderUserNotFound() {
         OrderRequest orderRequest = new OrderRequest(List.of());
 
-        given(userRepository.findByEmail(userEmail)).willReturn(Optional.empty());
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> orderService.createOrder(orderRequest, userEmail))
+        assertThatThrownBy(() -> orderService.createOrder(orderRequest, userId))
                 .isInstanceOf(UserNotFoundException.class);
     }
 
@@ -212,10 +215,10 @@ class OrderServiceTest {
         OrderItemRequest itemRequest = new OrderItemRequest(product.getId(), 20); // 20 > 10
         OrderRequest orderRequest = new OrderRequest(List.of(itemRequest));
 
-        given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(productRepository.findById(product.getId())).willReturn(Optional.of(product));
 
-        assertThatThrownBy(() -> orderService.createOrder(orderRequest, userEmail))
+        assertThatThrownBy(() -> orderService.createOrder(orderRequest, userId))
                 .isInstanceOf(InsufficientProductQuantityException.class);
     }
 
@@ -227,12 +230,12 @@ class OrderServiceTest {
         OrderItemRequest itemRequest = new OrderItemRequest(product.getId(), requestedQuantity);
         OrderRequest orderRequest = new OrderRequest(List.of(itemRequest));
 
-        given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(productRepository.findById(product.getId())).willReturn(Optional.of(product));
         given(orderRepository.saveAndFlush(any(Order.class))).willReturn(order);
         given(orderMapper.toResponse(any(Order.class))).willReturn(orderResponse);
 
-        orderService.createOrder(orderRequest, userEmail);
+        orderService.createOrder(orderRequest, userId);
 
         assertThat(product.getQuantity()).isEqualTo(initialQuantity - requestedQuantity);
         verify(productRepository).save(product);
@@ -245,12 +248,12 @@ class OrderServiceTest {
         OrderItemRequest itemRequest = new OrderItemRequest(product.getId(), initialQuantity);
         OrderRequest orderRequest = new OrderRequest(List.of(itemRequest));
 
-        given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(productRepository.findById(product.getId())).willReturn(Optional.of(product));
         given(orderRepository.saveAndFlush(any(Order.class))).willReturn(order);
         given(orderMapper.toResponse(any(Order.class))).willReturn(orderResponse);
 
-        orderService.createOrder(orderRequest, userEmail);
+        orderService.createOrder(orderRequest, userId);
 
         assertThat(product.getQuantity()).isZero();
         assertThat(product.isAvailable()).isFalse();
@@ -269,11 +272,11 @@ class OrderServiceTest {
         OrderItemRequest itemB = new OrderItemRequest(productB.getId(), 5); // 5 > 1, doit échouer
         OrderRequest orderRequest = new OrderRequest(List.of(itemA, itemB));
 
-        given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(productRepository.findById(productA.getId())).willReturn(Optional.of(productA));
         given(productRepository.findById(productB.getId())).willReturn(Optional.of(productB));
 
-        assertThatThrownBy(() -> orderService.createOrder(orderRequest, userEmail))
+        assertThatThrownBy(() -> orderService.createOrder(orderRequest, userId))
                 .isInstanceOf(InsufficientProductQuantityException.class);
     }
 }

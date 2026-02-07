@@ -73,22 +73,22 @@ public class OrderService {
     }
 
     /**
-     * Récupère l'historique des commandes d'un utilisateur par son email.
+     * Récupère l'historique des commandes d'un utilisateur par son ID.
      * 
-     * @param email    L'email de l'utilisateur.
+     * @param userId   L'ID de l'utilisateur.
      * @param pageable Pagination et tri.
      * @return PagedResponse des commandes de l'utilisateur ordonnées par date
      *         décroissante.
      */
-    public PagedResponse<OrderResponse> getOrderByUserMail(String email, Pageable pageable) {
-        Page<OrderResponse> orderPage = orderRepository.findByUserEmailOrderByCreatedAtDesc(email, pageable)
+    public PagedResponse<OrderResponse> getOrderByUserId(UUID userId, Pageable pageable) {
+        Page<OrderResponse> orderPage = orderRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
                 .map(orderMapper::toResponse);
         return PagedResponse.of(orderPage);
     }
 
-    public OrderResponse getLatestActiveOrder(String email) {
+    public OrderResponse getLatestActiveOrder(UUID userId) {
         List<OrderStatus> orderStatuses = List.of(OrderStatus.PENDING, OrderStatus.READY);
-        return orderRepository.findFirstByUserEmailAndStatusInOrderByCreatedAtDesc(email, orderStatuses)
+        return orderRepository.findFirstByUserIdAndStatusInOrderByCreatedAtDesc(userId, orderStatuses)
                 .map(orderMapper::toResponse)
                 .orElse(null);
     }
@@ -98,18 +98,16 @@ public class OrderService {
      * droits.
      * 
      * @param id               L'UUID de la commande.
-     * @param currentUserEmail L'email de l'utilisateur courant (pour vérification
-     *                         de propriété).
      * @param isAdmin          Booléen indiquant si l'utilisateur est admin.
      * @return La commande si trouvée et autorisée.
      * @throws OrderNotFoundException si la commande n'existe pas.
      * @throws AccessDeniedException  si l'utilisateur n'est pas le propriétaire ni
      *                                admin.
      */
-    public OrderResponse getOrderById(UUID id, String currentUserEmail, boolean isAdmin) {
+    public OrderResponse getOrderById(UUID id, UUID currentUserId, boolean isAdmin) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
-        if (!isAdmin && !order.getUser().getEmail().equals(currentUserEmail)) {
+        if (!isAdmin && !order.getUser().getId().equals(currentUserId)) {
             throw new AccessDeniedException(
                     "Vous n'avez pas l'autorisation de consulter cette commande.");
         }
@@ -122,16 +120,15 @@ public class OrderService {
      * produits.
      * 
      * @param orderRequest Les détails de la commande (articles et quantités).
-     * @param email        L'email de l'utilisateur passant la commande.
      * @return La commande créée.
      * @throws UserNotFoundException    si l'utilisateur n'existe pas.
      * @throws ProductNotFoundException si l'un des produits commandés est
      *                                  introuvable.
      */
     @Transactional
-    public OrderResponse createOrder(OrderRequest orderRequest, String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException(email));
+    public OrderResponse createOrder(OrderRequest orderRequest, UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         Order order = Order.builder()
                 .user(user)
@@ -186,17 +183,16 @@ public class OrderService {
      * CANCELLED.
      * Uniquement possible si la commande est encore au statut PENDING.
      * 
-     * @param id               L'UUID de la commande à annuler.
-     * @param currentUserEmail L'email de l'utilisateur courant.
+     * @param id L'UUID de la commande à annuler.
      * @return La commande mise à jour.
      * @throws IllegalStateException si la commande n'est plus au statut PENDING.
      */
     @Transactional
-    public OrderResponse cancelOrder(UUID id, String currentUserEmail) {
+    public OrderResponse cancelOrder(UUID id, UUID currentUserId) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
 
-        if (!order.getUser().getEmail().equals(currentUserEmail)) {
+        if (!order.getUser().getId().equals(currentUserId)) {
             throw new AccessDeniedException("Vous n'êtes pas autorisé à annuler cette commande.");
         }
 

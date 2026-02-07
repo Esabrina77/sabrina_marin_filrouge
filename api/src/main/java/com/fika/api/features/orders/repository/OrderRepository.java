@@ -15,6 +15,8 @@ import java.util.UUID;
 public interface OrderRepository extends JpaRepository<Order, UUID> {
     Page<Order> findByUserEmailOrderByCreatedAtDesc(String email, Pageable pageable);
 
+    Page<Order> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
+
     boolean existsByOrderReference(String orderReference);
 
     Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
@@ -23,6 +25,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     Optional<Order> findFirstByUserEmailAndStatusInOrderByCreatedAtDesc(
             String email,
-            List<OrderStatus> activeStatuses
-    );
+            List<OrderStatus> activeStatuses);
+
+    Optional<Order> findFirstByUserIdAndStatusInOrderByCreatedAtDesc(
+            UUID userId,
+            List<OrderStatus> activeStatuses);
 }

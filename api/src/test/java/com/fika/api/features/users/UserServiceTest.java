@@ -159,4 +159,42 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.deleteUser(userId))
                 .isInstanceOf(UserNotFoundException.class);
     }
+
+    @Test
+    @DisplayName("GetCurrentUser : Succès")
+    void getCurrentUserSuccess() {
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userMapper.toResponse(user)).willReturn(userResponse);
+
+        UserResponse result = userService.getCurrentUser(userId);
+
+        assertThat(result).isEqualTo(userResponse);
+    }
+
+    @Test
+    @DisplayName("UpdateCurrentUser : Succès")
+    void updateCurrentUserSuccess() {
+        com.fika.api.features.users.dto.UserProfileRequest profileRequest = new com.fika.api.features.users.dto.UserProfileRequest(
+                "John", "Doe", "test@example.com");
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userRepository.save(user)).willReturn(user);
+        given(userMapper.toResponse(user)).willReturn(userResponse);
+
+        UserResponse result = userService.updateCurrentUser(userId, profileRequest);
+
+        assertThat(result).isEqualTo(userResponse);
+        then(userRepository).should().save(user);
+    }
+
+    @Test
+    @DisplayName("DeleteCurrentUser : Succès")
+    void deleteCurrentUserSuccess() {
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        userService.deleteCurrentUser(userId);
+
+        then(userRepository).should().save(user);
+        assertThat(user.getFirstName()).isEqualTo("Utilisateur");
+        assertThat(user.getEmail()).startsWith("deleted_");
+    }
 }

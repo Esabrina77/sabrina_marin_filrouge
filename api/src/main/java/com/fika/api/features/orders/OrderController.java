@@ -46,26 +46,26 @@ public class OrderController {
 
     @GetMapping("/my-order")
     @Operation(summary = "Récupérer mes commandes (Authentifié)")
-    public PagedResponse<OrderResponse> getMyOrder(@AuthenticationPrincipal String email,
+    public PagedResponse<OrderResponse> getMyOrder(@AuthenticationPrincipal UUID userId,
             @ParameterObject @PageableDefault(size = 12) Pageable pageable) {
-        return orderService.getOrderByUserMail(email, pageable);
+        return orderService.getOrderByUserId(userId, pageable);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer une commande par ID (Authentifié/Admin)", description = "Récupère les détails d'une commande. L'utilisateur doit être le propriétaire ou un administrateur.")
-    public OrderResponse getOrderById(@PathVariable UUID id, @AuthenticationPrincipal String email) {
+    public OrderResponse getOrderById(@PathVariable UUID id, @AuthenticationPrincipal UUID userId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(a -> Objects.equals(a.getAuthority(), "ROLE_ADMIN"));
-        return orderService.getOrderById(id, email, isAdmin);
+        return orderService.getOrderById(id, userId, isAdmin);
     }
 
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Créer une commande (Authentifié)")
     public OrderResponse createOrder(@Valid @RequestBody OrderRequest orderRequest,
-            @AuthenticationPrincipal String email) {
-        return orderService.createOrder(orderRequest, email);
+            @AuthenticationPrincipal UUID userId) {
+        return orderService.createOrder(orderRequest, userId);
     }
 
     @PatchMapping("/{id}/status")
@@ -77,13 +77,13 @@ public class OrderController {
 
     @GetMapping("/latest")
     @Operation(summary = "Dernière commande active (Authentifié)", description = "Récupère la commande en cours (PENDING ou READY) la plus récente de l'utilisateur.")
-    public OrderResponse getLatestOrder(@AuthenticationPrincipal String email) {
-        return orderService.getLatestActiveOrder(email);
+    public OrderResponse getLatestOrder(@AuthenticationPrincipal UUID userId) {
+        return orderService.getLatestActiveOrder(userId);
     }
 
     @PatchMapping("/{id}/cancel")
     @Operation(summary = "Annuler une commande (Authentifié)", description = "Permet à l'utilisateur d'annuler sa propre commande si elle est encore au statut PENDING.")
-    public OrderResponse cancelOrder(@PathVariable UUID id, @AuthenticationPrincipal String email) {
-        return orderService.cancelOrder(id, email);
+    public OrderResponse cancelOrder(@PathVariable UUID id, @AuthenticationPrincipal UUID userId) {
+        return orderService.cancelOrder(id, userId);
     }
 }

@@ -36,7 +36,7 @@ public class JwtService {
      */
     public String generateToken(User user) {
         return JWT.create()
-                .withSubject(user.getEmail())
+                .withSubject(user.getId().toString())
                 .withClaim("role", user.getRole().name())
                 .withIssuedAt(new Date())
                 .withExpiresAt(new Date(System.currentTimeMillis() + jwtExpiration))
@@ -68,6 +68,18 @@ public class JwtService {
     public String extractUsername(String token) {
         DecodedJWT decodedJWT = validateAndDecodeToken(token);
         return decodedJWT != null ? decodedJWT.getSubject() : null;
+    }
+
+    /**
+     * Extrait l'ID de l'utilisateur (subject) d'un jeton JWT.
+     *
+     * @param token Le jeton JWT.
+     * @return L'UUID de l'utilisateur ou {@code null} si le jeton est invalide.
+     */
+    public java.util.UUID extractUserId(String token) {
+        DecodedJWT decodedJWT = validateAndDecodeToken(token);
+        String sub = decodedJWT != null ? decodedJWT.getSubject() : null;
+        return sub != null ? java.util.UUID.fromString(sub) : null;
     }
 
     /**
