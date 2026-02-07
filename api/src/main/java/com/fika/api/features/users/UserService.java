@@ -132,29 +132,29 @@ public class UserService {
     }
 
     /**
-     * Récupère le profil de l'utilisateur actuellement connecté via son email.
+     * Récupère le profil de l'utilisateur actuellement connecté via son ID.
      *
-     * @param email L'email de l'utilisateur.
+     * @param userId L'identifiant de l'utilisateur.
      * @return Le DTO de l'utilisateur.
      * @throws UserNotFoundException si l'utilisateur n'existe pas.
      */
-    public UserResponse getCurrentUser(String email) {
-        return userRepository.findByEmail(email)
+    public UserResponse getCurrentUser(UUID userId) {
+        return userRepository.findById(userId)
                 .map(userMapper::toResponse)
-                .orElseThrow(() -> new UserNotFoundException("Utilisateur pas trouvé avec l'email: " + email));
+                .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
     /**
      * Met à jour le profil de l'utilisateur actuellement connecté.
      *
-     * @param email              L'email actuel de l'utilisateur (issu du JWT).
+     * @param userId             L'identifiant de l'utilisateur (issu du JWT).
      * @param userProfileRequest Les nouvelles informations de profil.
      * @return Le DTO de l'utilisateur mis à jour.
      */
     @Transactional
-    public UserResponse updateCurrentUser(String email, UserProfileRequest userProfileRequest) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'email: " + email));
+    public UserResponse updateCurrentUser(UUID userId, UserProfileRequest userProfileRequest) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
         if (!user.getEmail().equals(userProfileRequest.email())
                 && userRepository.existsByEmail(userProfileRequest.email())) {
             throw new EmailAlreadyExistsException("Cet email est déjà pris par un autre utilisateur.");
@@ -169,12 +169,12 @@ public class UserService {
     /**
      * Anonymise les données du compte utilisateur (RGPD) et invalide l'accès.
      * 
-     * @param email Email de l'utilisateur à traiter.
+     * @param userId ID de l'utilisateur à traiter.
      */
     @Transactional
-    public void deleteCurrentUser(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé avec l'email: " + email));
+    public void deleteCurrentUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
         user.setFirstName("Utilisateur");
         user.setLastName("Anonymisé");
         user.setEmail("deleted_" + UUID.randomUUID() + "@fika-anonym.fr");

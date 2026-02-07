@@ -42,8 +42,8 @@ public class UserController {
     @Operation(summary = "Mon profil (Authentifié)", description = "Récupère les informations de l'utilisateur actuellement connecté.")
     @ApiResponse(responseCode = "200", description = "Profil récupéré")
     @ApiResponse(responseCode = "401", description = "Non authentifié")
-    public UserResponse getCurrentUser(@AuthenticationPrincipal String email) {
-        return userService.getCurrentUser(email);
+    public UserResponse getCurrentUser(@AuthenticationPrincipal UUID userId) {
+        return userService.getCurrentUser(userId);
     }
 
     @PutMapping("/me")
@@ -51,9 +51,9 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "Profil mis à jour")
     @ApiResponse(responseCode = "400", description = "Données invalides")
     @ApiResponse(responseCode = "401", description = "Non authentifié")
-    public UserResponse updateCurrentUser(@AuthenticationPrincipal String email,
+    public UserResponse updateCurrentUser(@AuthenticationPrincipal UUID userId,
             @Valid @RequestBody UserProfileRequest userProfileRequest) {
-        return userService.updateCurrentUser(email, userProfileRequest);
+        return userService.updateCurrentUser(userId, userProfileRequest);
     }
 
     @DeleteMapping("/me")
@@ -61,8 +61,8 @@ public class UserController {
     @Operation(summary = "Supprimer mon compte (Authentifié)", description = "Permet à l'utilisateur connecté de supprimer son compte (anonymisation).")
     @ApiResponse(responseCode = "204", description = "Compte anonymisé avec succès")
     @ApiResponse(responseCode = "401", description = "Non authentifié")
-    public void deleteCurrentUser(@AuthenticationPrincipal String email) {
-        userService.deleteCurrentUser(email);
+    public void deleteCurrentUser(@AuthenticationPrincipal UUID userId) {
+        userService.deleteCurrentUser(userId);
     }
 
     @PostMapping

@@ -25,8 +25,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String jwt = null;
         String authHeader = request.getHeader("Authorization");
@@ -40,18 +40,23 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-      DecodedJWT decodedJWT = jwtService.validateAndDecodeToken(jwt);
+        DecodedJWT decodedJWT = jwtService.validateAndDecodeToken(jwt);
 
         if (decodedJWT != null) {
-            String userEmail = decodedJWT.getSubject();
+            String sub = decodedJWT.getSubject();
             String role = decodedJWT.getClaim("role").asString();
-            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                List<SimpleGrantedAuthority> authorities = Collections
-                        .singletonList(new SimpleGrantedAuthority("ROLE_" + role));
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userEmail, null, authorities);
+            if (sub != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                try {
+                    java.util.UUID userId = java.util.UUID.fromString(sub);
+                    List<SimpleGrantedAuthority> authorities = Collections
+                            .singletonList(new SimpleGrantedAuthority("ROLE_" + role));
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userId, null, authorities);
 
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                } catch (IllegalArgumentException e) {
+                    logger.warn("Invalid UUID format in JWT subject: " + sub);
+                }
             }
         }
 
