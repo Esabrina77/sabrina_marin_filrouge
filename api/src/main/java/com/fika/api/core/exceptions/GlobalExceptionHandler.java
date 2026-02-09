@@ -1,21 +1,19 @@
 package com.fika.api.core.exceptions;
 
-import com.fika.api.core.exceptions.order.InvalidOrderStateException;
-import com.fika.api.core.exceptions.order.OrderNotFoundException;
-import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
-import com.fika.api.core.exceptions.user.UserNotFoundException;
-import com.fika.api.core.exceptions.product.InsufficientProductQuantityException;
-import com.fika.api.core.exceptions.product.ProductNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import java.time.LocalDateTime;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Contrôleur de conseil (Advice) global pour la gestion des exceptions de
@@ -25,105 +23,22 @@ import java.time.LocalDateTime;
  * en réponses HTTP structurées au format JSON.
  */
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     /**
-     * Gère l'exception lorsqu'un utilisateur n'est pas trouvé.
-     *
-     * @param ex L'exception UserNotFoundException levée.
-     * @return Une réponse HTTP 404 (Not Found) avec les détails de l'erreur.
+     * Gère toutes les exceptions métier étendant BaseBusinessException.
+     * centralise la création de la ErrorResponse pour tous les cas métiers.
      */
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUserNotFound(UserNotFoundException ex) {
+    @ExceptionHandler(BaseBusinessException.class)
+    public ResponseEntity<ErrorResponse> handleBaseBusinessException(BaseBusinessException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),
-                HttpStatus.NOT_FOUND.value(),
-                "Ressource introuvable",
-                ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
-    }
-
-    /**
-     * Gère l'exception lorsqu'un produit n'est pas trouvé.
-     *
-     * @param ex L'exception ProductNotFoundException levée.
-     * @return Une réponse HTTP 404 (Not Found) avec les détails de l'erreur.
-     */
-    @ExceptionHandler(ProductNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleProductNotFound(ProductNotFoundException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.NOT_FOUND.value(),
-                "Produit introuvable",
-                ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
-    }
-
-    /**
-     * Gère l'exception lorsqu'un produit n'a plus assez de stock.
-     *
-     * @param ex L'exception InsufficientProductQuantityException levée.
-     * @return Une réponse HTTP 400 (Bad Request) avec les détails de l'erreur.
-     */
-    @ExceptionHandler(InsufficientProductQuantityException.class)
-    public ResponseEntity<ErrorResponse> handleInsufficientProductQuantity(InsufficientProductQuantityException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                "Stock insuffisant",
-                ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-
-    /**
-     * Gère l'exception lorsqu'une commande n'est pas trouvé.
-     *
-     * @param ex L'exception OrderNotFoundException levée.
-     * @return Une réponse HTTP 404 (Not Found) avec les détails de l'erreur.
-     */
-    @ExceptionHandler(OrderNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleOrderNotFound(OrderNotFoundException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.NOT_FOUND.value(),
-                "Commande introuvable",
-                ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
-    }
-
-    /**
-     * Gère l'exception lorsqu'une commande est dans un état invalide pour une
-     * action.
-     *
-     * @param ex L'exception InvalidOrderStateException levée.
-     * @return Une réponse HTTP 400 (Bad Request) avec les détails de l'erreur.
-     */
-    @ExceptionHandler(InvalidOrderStateException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidOrderState(InvalidOrderStateException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                "État de commande invalide",
-                ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-
-    /**
-     * Gère l'exception lorsqu'un utilisateur tente d'utiliser un email déjà
-     * existant.
-     *
-     * @param ex L'exception EmailAlreadyExistsException levée.
-     * @return Une réponse HTTP 409 (Conflict) avec les détails de l'erreur.
-     */
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleEmailAlreadyExistsException(EmailAlreadyExistsException ex) {
-
-        ErrorResponse errorResponse = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.CONFLICT.value(),
-                "Conflit de données",
-                ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+                ex.getStatus().value(),
+                ex.getErrorLabel(),
+                ex.getMessage(),
+                ex.getErrorCode().getCode());
+        return ResponseEntity.status(ex.getStatus()).body(errorResponse);
     }
 
     /**
@@ -147,6 +62,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 "Validation échouée",
                 "Certains champs du formulaire sont invalides.",
+                BusinessErrorCode.VALIDATION_FAILED.getCode(),
                 errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
@@ -166,7 +82,8 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
                 "Échec d'authentification",
-                "Email ou mot de passe incorrect.");
+                "Email ou mot de passe incorrect.",
+                BusinessErrorCode.UNAUTHORIZED.getCode());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
@@ -179,7 +96,8 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
                 "Authentification requise",
-                "Vous devez être connecté pour accéder à cette ressource.");
+                "Vous devez être connecté pour accéder à cette ressource.",
+                BusinessErrorCode.UNAUTHORIZED.getCode());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
@@ -192,42 +110,9 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.FORBIDDEN.value(),
                 "Accès interdit",
-                "Vous n'avez pas les permissions nécessaires pour effectuer cette action.");
+                "Vous n'avez pas les permissions nécessaires pour effectuer cette action.",
+                BusinessErrorCode.ACCESS_DENIED.getCode());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
-    }
-
-    /**
-     * Gère l'exception lorsqu'un jeton de rafraîchissement a expiré.
-     *
-     * @param ex L'exception capturée.
-     * @return Une réponse HTTP 401 (Unauthorized) au format standard.
-     */
-    @ExceptionHandler(com.fika.api.core.exceptions.auth.RefreshTokenExpiredException.class)
-    public ResponseEntity<ErrorResponse> handleRefreshTokenExpiredException(
-            com.fika.api.core.exceptions.auth.RefreshTokenExpiredException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.UNAUTHORIZED.value(),
-                "Session expirée. Veuillez vous reconnecter",
-                ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-    }
-
-    /**
-     * Gère l'exception lorsqu'un jeton de rafraîchissement est introuvable.
-     *
-     * @param ex L'exception capturée.
-     * @return Une réponse HTTP 400 (Bad Request) au format standard.
-     */
-    @ExceptionHandler(com.fika.api.core.exceptions.auth.RefreshTokenNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleRefreshTokenNotFoundException(
-            com.fika.api.core.exceptions.auth.RefreshTokenNotFoundException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                "Session invalide",
-                ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     /**
@@ -240,8 +125,56 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Session expirée. Veuillez vous reconnecter",
-                "Le cookie '" + ex.getCookieName() + "' est obligatoire pour cette requête.");
+                "Le cookie '" + ex.getCookieName() + "' est obligatoire pour cette requête.",
+                BusinessErrorCode.UNAUTHORIZED.getCode());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * Gère l'exception lorsqu'un paramètre de requête a un type invalide (ex:
+     * texte au lieu d'UUID).
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatchException(MethodArgumentTypeMismatchException ex) {
+        String message = String.format("Le paramètre '%s' a une valeur invalide : '%s'. Attendu : %s",
+                ex.getName(), ex.getValue(),
+                (ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "inconnu"));
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Format de paramètre invalide",
+                message,
+                BusinessErrorCode.MALFORMED_REQUEST.getCode());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * Gère les erreurs de lecture du corps de la requête (ex: JSON malformé).
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Requête malformée",
+                "Le corps de la requête est illisible ou malformé.",
+                BusinessErrorCode.MALFORMED_REQUEST.getCode());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * Gère les violations d'intégrité des données (ex: contrainte unique en base).
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "Conflit de données",
+                "L'action ne peut pas être effectuée car elle viole une contrainte d'intégrité (ex: doublon).",
+                BusinessErrorCode.DATA_CONFLICT.getCode());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
     /**
@@ -252,11 +185,13 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex) {
+        log.error("Erreur serveur non gérée : ", ex);
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Erreur interne",
-                "Une erreur inattendue est survenue : " + ex.getLocalizedMessage());
+                "Une erreur inattendue est survenue : " + ex.getLocalizedMessage(),
+                BusinessErrorCode.TECHNICAL_ERROR.getCode());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }

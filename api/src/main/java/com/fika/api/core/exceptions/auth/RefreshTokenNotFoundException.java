@@ -11,9 +11,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * totalement invalide.
  * </p>
  */
-@ResponseStatus(HttpStatus.BAD_REQUEST)
-public class RefreshTokenNotFoundException extends RuntimeException {
+import com.fika.api.core.exceptions.BaseBusinessException;
+import com.fika.api.core.exceptions.BusinessErrorCode;
+
+public class RefreshTokenNotFoundException extends BaseBusinessException {
     public RefreshTokenNotFoundException(String message) {
-        super(message);
+        super(message,
+                BusinessErrorCode.UNAUTHORIZED,
+                HttpStatus.BAD_REQUEST,
+                "Session invalide");
     }
 }

@@ -55,6 +55,7 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.error").value("Ressource introuvable"))
+                .andExpect(jsonPath("$.code").value("RES_001"))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
@@ -69,6 +70,31 @@ class GlobalExceptionHandlerTest {
         mockMvc.perform(get("/api/v1/users/{id}", UUID.randomUUID()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Stock insuffisant"));
+                .andExpect(jsonPath("$.error").value("Stock insuffisant"))
+                .andExpect(jsonPath("$.code").value("PRODUCT_001"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("Handle MethodArgumentTypeMismatchException : Retourne 400")
+    void handleTypeMismatch() throws Exception {
+        mockMvc.perform(get("/api/v1/users/{id}", "invalid-uuid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Format de paramètre invalide"))
+                .andExpect(jsonPath("$.code").value("REQ_001"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("Handle HttpMessageNotReadableException : Retourne 400")
+    void handleMalformedJson() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/users")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content("{ invalid json }"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Requête malformée"))
+                .andExpect(jsonPath("$.code").value("REQ_001"));
     }
 }
