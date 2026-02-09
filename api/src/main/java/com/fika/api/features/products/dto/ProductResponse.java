@@ -1,5 +1,6 @@
 package com.fika.api.features.products.dto;
 
+import com.fika.api.features.products.model.Allergen;
 import com.fika.api.features.products.model.Category;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
@@ -16,6 +17,7 @@ public record ProductResponse(
         @Schema(description = "Description détaillée", example = "Un café intense.") String description,
         @Schema(description = "URL de l'image", example = "https://example.com/img.jpg") String imgUrl,
         @Schema(description = "Catégorie", example = "DESSERT") Category category,
+        @Schema(description = "Allergène", example = "GLUTEN")Allergen allergen,
         @Schema(description = "Quantité en stock", example = "10") int quantity,
         @Schema(description = "Disponibilité", example = "true") boolean available) {
 }

@@ -15,6 +15,7 @@ public class ProductMapper {
                 product.getDescription(),
                 product.getImgUrl(),
                 product.getCategory(),
+                product.getAllergen(),
                 product.getQuantity(),
                 product.isAvailable());
     }
@@ -28,6 +29,7 @@ public class ProductMapper {
                 .description(productRequest.description())
                 .imgUrl(productRequest.imgUrl())
                 .category(productRequest.category())
+                .allergen(productRequest.allergen())
                 .quantity(productRequest.quantity())
                 .available(productRequest.available())
                 .build();

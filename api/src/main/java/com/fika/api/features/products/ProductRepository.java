@@ -1,5 +1,6 @@
 package com.fika.api.features.products;
 
+import com.fika.api.features.products.model.Allergen;
 import com.fika.api.features.products.model.Category;
 import com.fika.api.features.products.model.Product;
 import org.springframework.data.domain.Page;
@@ -20,12 +21,14 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         @Query("SELECT p FROM Product p WHERE " +
                         "(CAST(:name AS string) IS NULL OR LOWER(p.name) LIKE LOWER(CAST(:name AS string))) AND " +
                         "(:category IS NULL OR p.category = :category) AND " +
+                        "(:excludedAllergen IS NULL OR p.allergen != :excludedAllergen) AND " +
                         "(:minPrice IS NULL OR p.price >= :minPrice) AND " +
                         "(:maxPrice IS NULL OR p.price <= :maxPrice) AND " +
                         "(:onlyAvailable IS NULL OR p.available = :onlyAvailable)")
         Page<Product> findWithFilters(
                         @Param("name") String name,
                         @Param("category") Category category,
+                        @Param("excludedAllergen") Allergen excludedAllergen,
                         @Param("minPrice") BigDecimal minPrice,
                         @Param("maxPrice") BigDecimal maxPrice,
                         @Param("onlyAvailable") Boolean onlyAvailable,
