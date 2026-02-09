@@ -74,7 +74,8 @@ public class AuthService {
 
         UserResponse userResponse = userService.createUser(userRequest);
         User user = userRepository.findByEmail(userResponse.email())
-                .orElseThrow(() -> new RuntimeException("User not found after creation"));
+                .orElseThrow(() -> new IllegalStateException(
+                        "Utilisateur non trouvé après création (email: " + userResponse.email() + ")"));
         String token = jwtService.generateToken(user);
         com.fika.api.features.auth.model.RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
         return authMapper.toResponse(user, token, refreshToken.getToken());

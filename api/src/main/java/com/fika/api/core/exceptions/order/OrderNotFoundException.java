@@ -2,9 +2,22 @@ package com.fika.api.core.exceptions.order;
 
 import java.util.UUID;
 
-public class OrderNotFoundException extends RuntimeException {
+import com.fika.api.core.exceptions.base.BaseBusinessException;
+import com.fika.api.core.exceptions.base.BusinessErrorCode;
+import org.springframework.http.HttpStatus;
+
+public class OrderNotFoundException extends BaseBusinessException {
     public OrderNotFoundException(String message) {
-        super(message);
+        super(message,
+                BusinessErrorCode.RESOURCE_NOT_FOUND,
+                HttpStatus.NOT_FOUND,
+                "Commande introuvable");
     }
-    public OrderNotFoundException(UUID id) {super(String.format("Commande avec l'id %s n'existe pas", id)); }
+
+    public OrderNotFoundException(UUID id) {
+        super(String.format("Commande avec l'id %s n'existe pas", id),
+                BusinessErrorCode.RESOURCE_NOT_FOUND,
+                HttpStatus.NOT_FOUND,
+                "Commande introuvable");
+    }
 }

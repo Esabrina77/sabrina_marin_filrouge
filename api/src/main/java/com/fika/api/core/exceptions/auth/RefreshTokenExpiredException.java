@@ -1,7 +1,8 @@
 package com.fika.api.core.exceptions.auth;
 
+import com.fika.api.core.exceptions.base.BaseBusinessException;
+import com.fika.api.core.exceptions.base.BusinessErrorCode;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  * Exception levée lorsqu'un jeton de rafraîchissement a expiré.
@@ -10,9 +11,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * au client qu'il doit se reconnecter manuellement.
  * </p>
  */
-@ResponseStatus(HttpStatus.UNAUTHORIZED)
-public class RefreshTokenExpiredException extends RuntimeException {
+public class RefreshTokenExpiredException extends BaseBusinessException {
     public RefreshTokenExpiredException(String token, String message) {
-        super(String.format("Le jeton de rafraîchissement [%s] a expiré. %s", token, message));
+        super(String.format("Le jeton de rafraîchissement [%s] a expiré. %s", token, message),
+                BusinessErrorCode.REFRESH_TOKEN_EXPIRED,
+                HttpStatus.UNAUTHORIZED,
+                "Session expirée. Veuillez vous reconnecter");
     }
 }

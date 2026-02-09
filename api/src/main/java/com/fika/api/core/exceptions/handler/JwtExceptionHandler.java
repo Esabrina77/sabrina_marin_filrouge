@@ -1,4 +1,4 @@
-package com.fika.api.core.exceptions;
+package com.fika.api.core.exceptions.handler;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

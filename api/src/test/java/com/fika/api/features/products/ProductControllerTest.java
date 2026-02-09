@@ -1,5 +1,6 @@
 package com.fika.api.features.products;
 
+import com.fika.api.core.exceptions.handler.JwtExceptionHandler;
 import tools.jackson.databind.ObjectMapper;
 import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
@@ -23,7 +24,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -54,7 +54,7 @@ class ProductControllerTest {
         private com.fika.api.core.config.RateLimitFilter rateLimitFilter;
 
         @MockitoBean
-        private com.fika.api.core.exceptions.JwtExceptionHandler jwtExceptionHandler;
+        private JwtExceptionHandler jwtExceptionHandler;
 
         @Autowired
         private ObjectMapper objectMapper;

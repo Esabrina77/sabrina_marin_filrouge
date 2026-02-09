@@ -1,4 +1,4 @@
-package com.fika.api.core.exceptions;
+package com.fika.api.core.exceptions.base;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -15,14 +15,16 @@ import java.util.Map;
  * @param status    Le code de statut HTTP.
  * @param error     Le type d'erreur (ex: "Validation Failed").
  * @param message   Un message global décrivant l'erreur.
+ * @param code      Le code d'erreur métier.
  * @param errors    Une map contenant les erreurs par champ (ex: "email" ->
  *                  "format
  *                  invalide").
  */
 public record FormErrorResponse(
-        LocalDateTime timestamp,
-        int status,
-        String error,
-        String message,
-        Map<String, String> errors) {
+                LocalDateTime timestamp,
+                int status,
+                String error,
+                String message,
+                String code,
+                Map<String, String> errors) {
 }

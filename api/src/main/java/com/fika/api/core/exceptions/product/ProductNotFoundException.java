@@ -2,10 +2,22 @@ package com.fika.api.core.exceptions.product;
 
 import java.util.UUID;
 
-public class ProductNotFoundException extends RuntimeException {
-    @SuppressWarnings("unused")
+import com.fika.api.core.exceptions.base.BaseBusinessException;
+import com.fika.api.core.exceptions.base.BusinessErrorCode;
+import org.springframework.http.HttpStatus;
+
+public class ProductNotFoundException extends BaseBusinessException {
     public ProductNotFoundException(String message) {
-        super(message);
+        super(message,
+                BusinessErrorCode.RESOURCE_NOT_FOUND,
+                HttpStatus.NOT_FOUND,
+                "Produit introuvable");
     }
-    public ProductNotFoundException(UUID id) {super(String.format("Produit avec l'id %s n'existe pas", id)); }
+
+    public ProductNotFoundException(UUID id) {
+        super(String.format("Produit avec l'id %s n'existe pas", id),
+                BusinessErrorCode.RESOURCE_NOT_FOUND,
+                HttpStatus.NOT_FOUND,
+                "Produit introuvable");
+    }
 }

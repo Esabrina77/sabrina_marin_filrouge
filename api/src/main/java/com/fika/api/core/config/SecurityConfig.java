@@ -1,6 +1,6 @@
 package com.fika.api.core.config;
 
-import com.fika.api.core.exceptions.JwtExceptionHandler;
+import com.fika.api.core.exceptions.handler.JwtExceptionHandler;
 import com.fika.api.core.jwt.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

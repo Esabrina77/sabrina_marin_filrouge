@@ -2,6 +2,7 @@ package com.fika.api.features.orders;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fika.api.core.dto.PagedResponse;
+import com.fika.api.core.exceptions.handler.JwtExceptionHandler;
 import com.fika.api.core.exceptions.order.InvalidOrderStateException;
 import com.fika.api.features.orders.dto.OrderItemRequest;
 import com.fika.api.features.orders.dto.OrderRequest;
@@ -60,7 +61,7 @@ class OrderControllerTest {
         private com.fika.api.core.config.RateLimitFilter rateLimitFilter;
 
         @MockitoBean
-        private com.fika.api.core.exceptions.JwtExceptionHandler jwtExceptionHandler;
+        private JwtExceptionHandler jwtExceptionHandler;
 
         private final ObjectMapper objectMapper = new ObjectMapper()
                         .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
