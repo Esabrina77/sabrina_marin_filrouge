@@ -1,5 +1,9 @@
-package com.fika.api.core.exceptions;
+package com.fika.api.core.exceptions.handler;
 
+import com.fika.api.core.exceptions.base.BaseBusinessException;
+import com.fika.api.core.exceptions.base.BusinessErrorCode;
+import com.fika.api.core.exceptions.base.ErrorResponse;
+import com.fika.api.core.exceptions.base.FormErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;

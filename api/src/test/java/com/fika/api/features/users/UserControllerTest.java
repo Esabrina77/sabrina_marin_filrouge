@@ -2,6 +2,7 @@ package com.fika.api.features.users;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fika.api.core.dto.PagedResponse;
+import com.fika.api.core.exceptions.handler.JwtExceptionHandler;
 import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
 import com.fika.api.features.users.dto.UserProfileRequest;
@@ -57,7 +58,7 @@ class UserControllerTest {
     private com.fika.api.core.config.RateLimitFilter rateLimitFilter;
 
     @MockitoBean
-    private com.fika.api.core.exceptions.JwtExceptionHandler jwtExceptionHandler;
+    private JwtExceptionHandler jwtExceptionHandler;
 
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());

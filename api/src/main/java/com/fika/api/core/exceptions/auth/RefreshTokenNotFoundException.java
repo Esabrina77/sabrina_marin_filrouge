@@ -1,7 +1,8 @@
 package com.fika.api.core.exceptions.auth;
 
+import com.fika.api.core.exceptions.base.BaseBusinessException;
+import com.fika.api.core.exceptions.base.BusinessErrorCode;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  * Exception levée lorsqu'un jeton de rafraîchissement n'est pas trouvé en base
@@ -11,9 +12,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * totalement invalide.
  * </p>
  */
-import com.fika.api.core.exceptions.BaseBusinessException;
-import com.fika.api.core.exceptions.BusinessErrorCode;
-
 public class RefreshTokenNotFoundException extends BaseBusinessException {
     public RefreshTokenNotFoundException(String message) {
         super(message,

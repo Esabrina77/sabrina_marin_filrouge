@@ -1,5 +1,7 @@
 package com.fika.api.features.auth;
 
+import com.fika.api.core.exceptions.base.ErrorResponse;
+import com.fika.api.core.exceptions.base.FormErrorResponse;
 import com.fika.api.features.auth.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,7 +35,7 @@ public class AuthController {
         @PostMapping("/login")
         @Operation(summary = "Connexion (Public)", description = "Authentifie un utilisateur et renvoie un Access Token (JSON) et un Refresh Token (Cookie HttpOnly).")
         @ApiResponse(responseCode = "200", description = "Authentification réussie")
-        @ApiResponse(responseCode = "401", description = "Identifiants invalides", content = @Content(schema = @Schema(implementation = com.fika.api.core.exceptions.ErrorResponse.class)))
+        @ApiResponse(responseCode = "401", description = "Identifiants invalides", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
         public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
                 LoginResponse loginResponse = authService.login(loginRequest);
                 ResponseCookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(loginResponse.refreshToken());
@@ -45,7 +47,7 @@ public class AuthController {
         @PostMapping("/register")
         @Operation(summary = "Inscription (Public)", description = "Crée un nouveau compte et connecte l'utilisateur (Access Token JSON + Refresh Token Cookie).")
         @ApiResponse(responseCode = "201", description = "Compte créé avec succès")
-        @ApiResponse(responseCode = "400", description = "Validation échouée", content = @Content(schema = @Schema(implementation = com.fika.api.core.exceptions.FormErrorResponse.class)))
+        @ApiResponse(responseCode = "400", description = "Validation échouée", content = @Content(schema = @Schema(implementation = FormErrorResponse.class)))
         @ApiResponse(responseCode = "409", description = "L'email est déjà utilisé")
         public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
                 LoginResponse loginResponse = authService.register(registerRequest);

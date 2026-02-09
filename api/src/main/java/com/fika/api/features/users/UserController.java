@@ -1,8 +1,8 @@
 package com.fika.api.features.users;
 
 import com.fika.api.core.dto.PagedResponse;
-import com.fika.api.core.exceptions.ErrorResponse;
-import com.fika.api.core.exceptions.FormErrorResponse;
+import com.fika.api.core.exceptions.base.ErrorResponse;
+import com.fika.api.core.exceptions.base.FormErrorResponse;
 import com.fika.api.features.users.dto.UserProfileRequest;
 import com.fika.api.features.users.dto.UserRequest;
 import com.fika.api.features.users.dto.UserResponse;

@@ -1,7 +1,7 @@
 package com.fika.api.core.exceptions.user;
 
-import com.fika.api.core.exceptions.BaseBusinessException;
-import com.fika.api.core.exceptions.BusinessErrorCode;
+import com.fika.api.core.exceptions.base.BaseBusinessException;
+import com.fika.api.core.exceptions.base.BusinessErrorCode;
 import org.springframework.http.HttpStatus;
 
 public class EmailAlreadyExistsException extends BaseBusinessException {

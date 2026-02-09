@@ -1,4 +1,4 @@
-package com.fika.api.core.exceptions;
+package com.fika.api.core.exceptions.base;
 
 import java.time.LocalDateTime;
 import java.util.Map;

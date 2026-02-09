@@ -1,5 +1,7 @@
 package com.fika.api.core.exceptions.auth;
 
+import com.fika.api.core.exceptions.base.BaseBusinessException;
+import com.fika.api.core.exceptions.base.BusinessErrorCode;
 import org.springframework.http.HttpStatus;
 
 /**
@@ -9,9 +11,6 @@ import org.springframework.http.HttpStatus;
  * au client qu'il doit se reconnecter manuellement.
  * </p>
  */
-import com.fika.api.core.exceptions.BaseBusinessException;
-import com.fika.api.core.exceptions.BusinessErrorCode;
-
 public class RefreshTokenExpiredException extends BaseBusinessException {
     public RefreshTokenExpiredException(String token, String message) {
         super(String.format("Le jeton de rafraîchissement [%s] a expiré. %s", token, message),

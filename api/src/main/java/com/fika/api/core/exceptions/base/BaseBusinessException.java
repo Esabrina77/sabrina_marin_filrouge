@@ -1,4 +1,4 @@
-package com.fika.api.core.exceptions;
+package com.fika.api.core.exceptions.base;
 
 import org.springframework.http.HttpStatus;
 import lombok.Getter;

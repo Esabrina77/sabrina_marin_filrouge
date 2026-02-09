@@ -1,5 +1,6 @@
 package com.fika.api.features.auth;
 
+import com.fika.api.core.exceptions.handler.JwtExceptionHandler;
 import com.fika.api.features.auth.dto.*;
 import org.springframework.http.ResponseCookie;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -48,7 +49,7 @@ class AuthControllerTest {
         private com.fika.api.core.config.RateLimitFilter rateLimitFilter;
 
         @MockitoBean
-        private com.fika.api.core.exceptions.JwtExceptionHandler jwtExceptionHandler;
+        private JwtExceptionHandler jwtExceptionHandler;
 
         @MockitoBean
         private com.fika.api.core.utils.CookieUtil cookieUtil;

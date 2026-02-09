@@ -1,14 +1,13 @@
 package com.fika.api.core.exceptions.product;
 
+import com.fika.api.core.exceptions.base.BaseBusinessException;
+import com.fika.api.core.exceptions.base.BusinessErrorCode;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  * Exception levée lorsqu'un produit n'a pas assez de stock pour satisfaire une
  * commande.
  */
-import com.fika.api.core.exceptions.BaseBusinessException;
-import com.fika.api.core.exceptions.BusinessErrorCode;
 
 public class InsufficientProductQuantityException extends BaseBusinessException {
     public InsufficientProductQuantityException(String productName, int available, int requested) {

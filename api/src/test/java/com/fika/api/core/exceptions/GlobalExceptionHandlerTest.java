@@ -1,5 +1,6 @@
 package com.fika.api.core.exceptions;
 
+import com.fika.api.core.exceptions.handler.JwtExceptionHandler;
 import com.fika.api.core.exceptions.product.InsufficientProductQuantityException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
 import com.fika.api.features.users.UserController;
@@ -42,7 +43,7 @@ class GlobalExceptionHandlerTest {
     private com.fika.api.core.config.RateLimitFilter rateLimitFilter;
 
     @MockitoBean
-    private com.fika.api.core.exceptions.JwtExceptionHandler jwtExceptionHandler;
+    private JwtExceptionHandler jwtExceptionHandler;
 
     @Test
     @WithMockUser(roles = "ADMIN")
@@ -55,7 +56,7 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.error").value("Ressource introuvable"))
-                .andExpect(jsonPath("$.code").value("RES_001"))
+                .andExpect(jsonPath("$.code").value("resource_not_found"))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
@@ -71,7 +72,7 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Stock insuffisant"))
-                .andExpect(jsonPath("$.code").value("PRODUCT_001"));
+                .andExpect(jsonPath("$.code").value("insufficient_stock"));
     }
 
     @Test
@@ -82,7 +83,7 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Format de paramètre invalide"))
-                .andExpect(jsonPath("$.code").value("REQ_001"));
+                .andExpect(jsonPath("$.code").value("malformed_request"));
     }
 
     @Test
@@ -95,6 +96,6 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Requête malformée"))
-                .andExpect(jsonPath("$.code").value("REQ_001"));
+                .andExpect(jsonPath("$.code").value("malformed_request"));
     }
 }
