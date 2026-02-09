@@ -1,5 +1,6 @@
 package com.fika.api.core.exceptions;
 
+import com.fika.api.core.exceptions.order.InvalidOrderStateException;
 import com.fika.api.core.exceptions.order.OrderNotFoundException;
 import com.fika.api.core.exceptions.user.EmailAlreadyExistsException;
 import com.fika.api.core.exceptions.user.UserNotFoundException;
@@ -88,6 +89,23 @@ public class GlobalExceptionHandler {
                 "Commande introuvable",
                 ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
+     * Gère l'exception lorsqu'une commande est dans un état invalide pour une
+     * action.
+     *
+     * @param ex L'exception InvalidOrderStateException levée.
+     * @return Une réponse HTTP 400 (Bad Request) avec les détails de l'erreur.
+     */
+    @ExceptionHandler(InvalidOrderStateException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidOrderState(InvalidOrderStateException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "État de commande invalide",
+                ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     /**

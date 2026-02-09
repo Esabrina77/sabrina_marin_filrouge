@@ -1,5 +1,6 @@
 package com.fika.api.features.products.dto;
 
+import com.fika.api.features.products.model.Allergen;
 import com.fika.api.features.products.model.Category;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
@@ -15,6 +16,7 @@ public record ProductRequest(
         @NotBlank(message = "La description est obligatoire") @Size(max = 1000) @Schema(example = "L'authentique brioche suédoise à la cannelle et cardamome. Moelleuse à souhait !") String description,
         @NotBlank(message = "L'URL de l'image est obligatoire") @Schema(example = "https://images.unsplash.com/photo-1509365465985-25d11c17e812?q=80&w=1000&auto=format&fit=crop") String imgUrl,
         @NotNull(message = "La catégorie est obligatoire") @Schema(example = "DESSERT") Category category,
+        @NotNull(message = "Les allergènes sont obligatoire") @Schema(example = "GLUTEN")Allergen allergen,
         @NotNull(message = "La quantité est obligatoire") @Min(value = 0, message = "La quantité ne peut pas être négative") @Schema(example = "10") int quantity,
         @NotNull(message = "Le statut de disponibilité est obligatoire") @Schema(example = "true") boolean available) {
 }

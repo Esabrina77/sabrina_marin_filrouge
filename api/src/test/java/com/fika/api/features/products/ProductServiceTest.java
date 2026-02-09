@@ -4,6 +4,7 @@ import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
 import com.fika.api.features.products.dto.ProductRequest;
 import com.fika.api.features.products.dto.ProductResponse;
+import com.fika.api.features.products.model.Allergen;
 import com.fika.api.features.products.model.Category;
 import com.fika.api.features.products.model.Product;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -58,6 +60,7 @@ class ProductServiceTest {
                 .description("Un café noir intense")
                 .imgUrl("http://example.com/cafe.jpg")
                 .category(Category.ENTREE)
+                .allergen(Allergen.GLUTEN)
                 .quantity(10)
                 .available(true)
                 .build();
@@ -68,6 +71,7 @@ class ProductServiceTest {
                 "Un café noir intense",
                 "http://example.com/cafe.jpg",
                 Category.ENTREE,
+                Allergen.GLUTEN,
                 10,
                 true);
 
@@ -78,26 +82,28 @@ class ProductServiceTest {
                 "Un café noir intense",
                 "http://example.com/cafe.jpg",
                 Category.ENTREE,
+                Allergen.GLUTEN,
                 10,
                 true);
     }
 
     @Test
-    @DisplayName("Lister les produits : Succès")
+    @DisplayName("Catalogue : Récupération avec succès")
     void getAllProductsSuccess() {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Product> productPage = new PageImpl<>(Collections.singletonList(product), pageable, 1);
+        Pageable pageable = PageRequest.of(0, 12);
+        Page<Product> productPage = new PageImpl<>(List.of(product), pageable, 1);
 
-        given(productRepository.findWithFilters(any(), any(), any(), any(), any(), eq(pageable)))
+        given(productRepository.findWithFilters(anyString(), any(), any(), any(), any(), any(), eq(pageable)))
                 .willReturn(productPage);
-        given(productMapper.toResponse(product)).willReturn(productResponse);
+        given(productMapper.toResponse(any(Product.class))).willReturn(productResponse);
 
-        PagedResponse<ProductResponse> result = productService.getAllProducts(null, null, null, null, false, pageable);
+        PagedResponse<ProductResponse> response = productService.getAllProducts("Test", Category.PLAT, Allergen.GLUTEN,
+                null, null, null, pageable);
 
-        assertThat(result.content()).hasSize(1);
-        assertThat(result.content().getFirst()).isEqualTo(productResponse);
-        assertThat(result.pageNumber()).isZero();
-        assertThat(result.pageSize()).isEqualTo(10);
+        assertThat(response.content()).hasSize(1);
+        assertThat(response.content().getFirst()).isEqualTo(productResponse);
+        assertThat(response.pageNumber()).isZero();
+        assertThat(response.pageSize()).isEqualTo(12);
     }
 
     @Test
@@ -162,7 +168,7 @@ class ProductServiceTest {
         given(productRepository.findById(productId)).willReturn(Optional.of(product));
         given(productRepository.save(product)).willReturn(product);
         given(productMapper.toResponse(product)).willReturn(new ProductResponse(productId, "Café Noir",
-                new BigDecimal("2.50"), "Description", "url", Category.ENTREE, newQuantity, true));
+                new BigDecimal("2.50"), "Description", "url", Category.ENTREE, Allergen.GLUTEN, newQuantity, true));
 
         productService.updateStock(productId, newQuantity);
 
@@ -178,7 +184,7 @@ class ProductServiceTest {
         given(productRepository.findById(productId)).willReturn(Optional.of(product));
         given(productRepository.save(product)).willReturn(product);
         given(productMapper.toResponse(product)).willReturn(new ProductResponse(productId, "Café Noir",
-                new BigDecimal("2.50"), "Description", "url", Category.ENTREE, newQuantity, false));
+                new BigDecimal("2.50"), "Description", "url", Category.ENTREE, Allergen.GLUTEN, newQuantity, false));
 
         productService.updateStock(productId, newQuantity);
 

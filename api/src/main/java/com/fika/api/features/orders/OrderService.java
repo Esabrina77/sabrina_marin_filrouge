@@ -1,6 +1,7 @@
 package com.fika.api.features.orders;
 
 import com.fika.api.core.dto.PagedResponse;
+import com.fika.api.core.exceptions.order.InvalidOrderStateException;
 import com.fika.api.core.exceptions.order.OrderNotFoundException;
 import com.fika.api.core.exceptions.product.InsufficientProductQuantityException;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
@@ -97,8 +98,8 @@ public class OrderService {
      * Récupère une commande par son identifiant unique avec vérification des
      * droits.
      * 
-     * @param id               L'UUID de la commande.
-     * @param isAdmin          Booléen indiquant si l'utilisateur est admin.
+     * @param id      L'UUID de la commande.
+     * @param isAdmin Booléen indiquant si l'utilisateur est admin.
      * @return La commande si trouvée et autorisée.
      * @throws OrderNotFoundException si la commande n'existe pas.
      * @throws AccessDeniedException  si l'utilisateur n'est pas le propriétaire ni
@@ -197,7 +198,7 @@ public class OrderService {
         }
 
         if (order.getStatus() != OrderStatus.PENDING) {
-            throw new IllegalStateException("Seules les commandes en attente (PENDING) peuvent être annulées.");
+            throw new InvalidOrderStateException("Seules les commandes en attente (PENDING) peuvent être annulées.");
         }
 
         order.setStatus(OrderStatus.CANCELLED);

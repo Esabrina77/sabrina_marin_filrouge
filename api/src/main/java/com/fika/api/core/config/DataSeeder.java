@@ -4,6 +4,7 @@ import com.fika.api.features.users.UserRepository;
 import com.fika.api.features.users.model.Role;
 import com.fika.api.features.users.model.User;
 import com.fika.api.features.products.ProductRepository;
+import com.fika.api.features.products.model.Allergen;
 import com.fika.api.features.products.model.Category;
 import com.fika.api.features.products.model.Product;
 import com.fika.api.features.orders.model.Order;
@@ -84,6 +85,7 @@ public class DataSeeder implements CommandLineRunner {
                     .description("Salade romaine, poulet grillé, croûtons, parmesan et sauce César.")
                     .imgUrl("https://images.unsplash.com/photo-1550304943-4f24f54ddde9")
                     .category(Category.ENTREE)
+                    .allergen(Allergen.LACTOSE)
                     .available(true)
                     .build());
         }
@@ -95,6 +97,7 @@ public class DataSeeder implements CommandLineRunner {
                     .description("Pain brioché, steak haché black angus, cheddar, oignons caramélisés et frites.")
                     .imgUrl("https://images.unsplash.com/photo-1568901346375-23c9450c58cd")
                     .category(Category.PLAT)
+                    .allergen(Allergen.GLUTEN)
                     .available(true)
                     .build());
         }
@@ -106,6 +109,7 @@ public class DataSeeder implements CommandLineRunner {
                     .description("Cœur coulant chocolat noir 70%, servi avec une boule de glace vanille.")
                     .imgUrl("https://images.unsplash.com/photo-1624353365286-3f8d62adda51")
                     .category(Category.DESSERT)
+                    .allergen(Allergen.LACTOSE)
                     .available(true)
                     .build());
         }
@@ -117,7 +121,20 @@ public class DataSeeder implements CommandLineRunner {
                     .description("Le traditionnel croissant au beurre, épuisé pour le moment.")
                     .imgUrl("https://images.unsplash.com/photo-1555507036-ab1f4038808a")
                     .category(Category.DESSERT)
+                    .allergen(Allergen.GLUTEN)
                     .available(false)
+                    .build());
+        }
+
+        if (!productRepository.existsByName("Café Noir")) {
+            productRepository.save(Product.builder()
+                    .name("Café Noir")
+                    .price(new BigDecimal("2.00"))
+                    .description("Café noir pur, torréfaction artisanale.")
+                    .imgUrl("https://images.unsplash.com/photo-151ec60230210-5874c2df770f")
+                    .category(Category.ENTREE)
+                    .allergen(Allergen.AUCUN)
+                    .available(true)
                     .build());
         }
     }

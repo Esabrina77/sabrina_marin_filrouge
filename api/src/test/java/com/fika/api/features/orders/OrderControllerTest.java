@@ -2,6 +2,7 @@ package com.fika.api.features.orders;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fika.api.core.dto.PagedResponse;
+import com.fika.api.core.exceptions.order.InvalidOrderStateException;
 import com.fika.api.features.orders.dto.OrderItemRequest;
 import com.fika.api.features.orders.dto.OrderRequest;
 import com.fika.api.features.orders.dto.OrderResponse;
@@ -167,5 +168,24 @@ class OrderControllerTest {
                                 .andDo(print())
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.status").value("PENDING"));
+        }
+
+        @Test
+        @DisplayName("Cancel : Échec si la commande n'est pas PENDING (400 Bad Request)")
+        void cancelOrderInvalidState() throws Exception {
+                UUID userId = UUID.randomUUID();
+                given(orderService.cancelOrder(eq(orderId), any()))
+                                .willThrow(new InvalidOrderStateException(
+                                                "Seules les commandes en attente (PENDING) peuvent être annulées."));
+
+                mockMvc.perform(patch("/api/v1/orders/{id}/cancel", orderId)
+                                .with(csrf())
+                                .with(authentication(new UsernamePasswordAuthenticationToken(userId, null,
+                                                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))))))
+                                .andDo(print())
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.error").value("État de commande invalide"))
+                                .andExpect(jsonPath("$.message").value(
+                                                "Seules les commandes en attente (PENDING) peuvent être annulées."));
         }
 }

@@ -5,6 +5,7 @@ import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
 import com.fika.api.features.products.dto.ProductRequest;
 import com.fika.api.features.products.dto.ProductResponse;
+import com.fika.api.features.products.model.Allergen;
 import com.fika.api.features.products.model.Category;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -70,6 +72,7 @@ class ProductControllerTest {
                                 "Café court",
                                 "http://img.com/espresso.jpg",
                                 Category.ENTREE,
+                                Allergen.GLUTEN,
                                 10,
                                 true);
                 productResponse = new ProductResponse(
@@ -79,21 +82,25 @@ class ProductControllerTest {
                                 "Café court",
                                 "http://img.com/espresso.jpg",
                                 Category.ENTREE,
+                                Allergen.GLUTEN,
                                 10,
                                 true);
         }
 
         @Test
         @WithMockUser
-        @DisplayName("GetAll : Liste les produits")
+        @DisplayName("Catalogue : Récupération paginée et filtrée")
         void getAllProducts() throws Exception {
                 Page<ProductResponse> productPage = new PageImpl<>(List.of(productResponse));
                 PagedResponse<ProductResponse> pagedResponse = PagedResponse.of(productPage);
 
-                given(productService.getAllProducts(any(), any(), any(), any(), any(), any(Pageable.class)))
+                given(productService.getAllProducts(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                                 .willReturn(pagedResponse);
 
-                mockMvc.perform(get("/api/v1/products"))
+                mockMvc.perform(get("/api/v1/products")
+                                .param("name", "Espresso")
+                                .param("category", "ENTREE")
+                                .param("excludedAllergen", "GLUTEN"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.content[0].name").value("Espresso"))
                                 .andExpect(jsonPath("$.totalElements").value(1));
@@ -174,7 +181,7 @@ class ProductControllerTest {
         @DisplayName("Validation : Échec si quantité négative")
         void createProductValidationFail() throws Exception {
                 ProductRequest invalidRequest = new ProductRequest(
-                                "Nom", BigDecimal.TEN, "Desc", "url", Category.ENTREE, -5, true);
+                                "Nom", BigDecimal.TEN, "Desc", "url", Category.ENTREE, Allergen.GLUTEN, -5, true);
 
                 mockMvc.perform(post("/api/v1/products")
                                 .with(csrf())

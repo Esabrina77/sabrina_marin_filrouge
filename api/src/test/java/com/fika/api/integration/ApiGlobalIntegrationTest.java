@@ -1,6 +1,7 @@
 package com.fika.api.integration;
 
 import com.fika.api.features.products.dto.ProductRequest;
+import com.fika.api.features.products.model.Allergen;
 import com.fika.api.features.products.model.Category;
 import com.fika.api.features.products.model.Product;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +32,7 @@ class ApiGlobalIntegrationTest extends AbstractIntegrationTest {
                 .description("Desc")
                 .imgUrl("http://url.com")
                 .category(Category.PLAT)
+                .allergen(Allergen.GLUTEN)
                 .quantity(10)
                 .available(true)
                 .build();
@@ -49,7 +51,8 @@ class ApiGlobalIntegrationTest extends AbstractIntegrationTest {
     @WithMockUser(roles = "USER")
     @DisplayName("Sécurité : Un USER ne peut pas modifier un produit (403 Forbidden)")
     void userCannotUpdateProduct() throws Exception {
-        ProductRequest request = new ProductRequest("Update", BigDecimal.ONE, "D", "U", Category.PLAT, 5, true);
+        ProductRequest request = new ProductRequest("Update", BigDecimal.ONE, "D", "U", Category.PLAT, Allergen.GLUTEN,
+                5, true);
 
         mockMvc.perform(put("/api/v1/products/{id}", existingProductId)
                 .with(csrf())
@@ -62,7 +65,9 @@ class ApiGlobalIntegrationTest extends AbstractIntegrationTest {
     @WithMockUser(roles = "ADMIN")
     @DisplayName("Validation : Échec de création si quantité négative (400 Bad Request)")
     void adminCannotCreateNegativeQuantity() throws Exception {
-        ProductRequest request = new ProductRequest("Fail", BigDecimal.ONE, "D", "U", Category.PLAT, -1, true);
+        ProductRequest request = new ProductRequest("Fail", BigDecimal.ONE, "D", "U", Category.PLAT, Allergen.GLUTEN,
+                -1,
+                true);
 
         mockMvc.perform(post("/api/v1/products")
                 .with(csrf())

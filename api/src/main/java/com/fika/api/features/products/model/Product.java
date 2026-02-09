@@ -69,6 +69,15 @@ public class Product {
     private Category category;
 
     /**
+     * Catégorie du produit.
+     */
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Schema(description = "Allergènes", example = "GLUTEN")
+    @Builder.Default
+    private Allergen allergen = Allergen.AUCUN;
+
+    /**
      * Quantité en stock.
      */
     @Column(nullable = false, columnDefinition = "int default 0")

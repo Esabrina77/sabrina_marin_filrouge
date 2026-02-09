@@ -1,6 +1,7 @@
 package com.fika.api.features.orders;
 
 import com.fika.api.core.dto.PagedResponse;
+import com.fika.api.core.exceptions.order.InvalidOrderStateException;
 import com.fika.api.core.exceptions.order.OrderNotFoundException;
 import com.fika.api.core.exceptions.product.InsufficientProductQuantityException;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
@@ -278,5 +279,39 @@ class OrderServiceTest {
 
         assertThatThrownBy(() -> orderService.createOrder(orderRequest, userId))
                 .isInstanceOf(InsufficientProductQuantityException.class);
+    }
+
+    @Test
+    @DisplayName("Cancel : Succès si PENDING et propriétaire")
+    void cancelOrderSuccess() {
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+        given(orderRepository.save(any(Order.class))).willReturn(order);
+        given(orderMapper.toResponse(any(Order.class))).willReturn(orderResponse);
+
+        OrderResponse result = orderService.cancelOrder(orderId, userId);
+
+        assertThat(result).isEqualTo(orderResponse);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        verify(orderRepository).save(order);
+    }
+
+    @Test
+    @DisplayName("Cancel : Erreur si non propriétaire")
+    void cancelOrderAccessDenied() {
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> orderService.cancelOrder(orderId, UUID.randomUUID()))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("Cancel : Erreur si déjà traité (InvalidOrderStateException)")
+    void cancelOrderInvalidState() {
+        order.setStatus(OrderStatus.COMPLETED);
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> orderService.cancelOrder(orderId, userId))
+                .isInstanceOf(InvalidOrderStateException.class)
+                .hasMessage("Seules les commandes en attente (PENDING) peuvent être annulées.");
     }
 }

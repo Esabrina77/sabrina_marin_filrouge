@@ -4,6 +4,7 @@ import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.features.products.dto.ProductRequest;
 import com.fika.api.features.products.dto.ProductResponse;
 import com.fika.api.features.products.dto.StockUpdateRequest;
+import com.fika.api.features.products.model.Allergen;
 import com.fika.api.features.products.model.Category;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,11 +37,13 @@ public class ProductController {
     public PagedResponse<ProductResponse> getAllProducts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Category category,
+            @RequestParam(required = false) Allergen excludedAllergen,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) Boolean onlyAvailable,
             @ParameterObject @PageableDefault(size = 12, sort = "name") Pageable pageable) {
-        return productService.getAllProducts(name, category, minPrice, maxPrice, onlyAvailable, pageable);
+        return productService.getAllProducts(name, category, excludedAllergen, minPrice, maxPrice, onlyAvailable,
+                pageable);
     }
 
     @GetMapping("/{id}")

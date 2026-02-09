@@ -4,6 +4,7 @@ import com.fika.api.core.dto.PagedResponse;
 import com.fika.api.core.exceptions.product.ProductNotFoundException;
 import com.fika.api.features.products.dto.ProductRequest;
 import com.fika.api.features.products.dto.ProductResponse;
+import com.fika.api.features.products.model.Allergen;
 import com.fika.api.features.products.model.Category;
 import com.fika.api.features.products.model.Product;
 import jakarta.transaction.Transactional;
@@ -37,11 +38,11 @@ public class ProductService {
      * @return PagedResponse de {@link ProductResponse} avec métadonnées de
      *         navigation.
      */
-    public PagedResponse<ProductResponse> getAllProducts(String name, Category category, BigDecimal minPrice,
-            BigDecimal maxPrice, Boolean onlyAvailable, Pageable pageable) {
+    public PagedResponse<ProductResponse> getAllProducts(String name, Category category, Allergen excludedAllergen,
+            BigDecimal minPrice, BigDecimal maxPrice, Boolean onlyAvailable, Pageable pageable) {
         String nameFilter = (name != null && !name.isBlank()) ? "%" + name + "%" : null;
         Page<ProductResponse> productPage = productRepository
-                .findWithFilters(nameFilter, category, minPrice, maxPrice, onlyAvailable, pageable)
+                .findWithFilters(nameFilter, category, excludedAllergen, minPrice, maxPrice, onlyAvailable, pageable)
                 .map(productMapper::toResponse);
         return PagedResponse.of(productPage);
     }
