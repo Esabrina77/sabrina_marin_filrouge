@@ -20,18 +20,18 @@ export const Button = ({
   ...props
 }: ButtonProps) => {
   const variants = {
-    primary: "bg-amber-600 text-white hover:bg-amber-700 shadow-lg shadow-amber-900/20",
-    outline: "border border-amber-600 text-amber-600 hover:bg-amber-600/10",
-    ghost: "text-stone-300 hover:bg-stone-800 hover:text-white",
-    glass: "glass glass-hover text-white border-white/10"
+    primary: "bg-amber-500 text-white hover:bg-amber-600 shadow-md shadow-amber-200",
+    outline: "border-2 border-amber-500 text-amber-500 hover:bg-amber-50",
+    ghost: "text-gray-500 hover:bg-gray-100 hover:text-gray-900",
+    glass: "bg-white/80 backdrop-blur-md border border-gray-100 text-gray-900 shadow-sm"
   };
 
   return (
     <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
       className={cn(
-        "relative flex h-12 items-center justify-center rounded-xl px-6 py-2 text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        "relative flex h-12 items-center justify-center rounded-xl px-6 py-2 text-sm font-bold transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
         variants[variant],
         className
       )}
@@ -39,7 +39,7 @@ export const Button = ({
       {...props}
     >
       {isLoading ? (
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
       ) : (
         children
       )}

@@ -3,171 +3,217 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { 
-  TrendingUp, 
-  Users, 
-  ShoppingBag, 
-  DollarSign,
+  Search, 
+  Plus, 
   ArrowUpRight,
-  ArrowDownRight,
+  TrendingUp,
+  ShoppingBag,
+  Users,
+  DollarSign,
+  Package,
+  Clock,
+  ChevronRight,
   MoreVertical,
-  Clock
+  Activity
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 const stats = [
-  { 
-    label: 'Chiffre d\'affaires', 
-    value: '12,845 €', 
-    trend: '+12.5%', 
-    isPositive: true, 
-    icon: DollarSign, 
-    color: 'bg-green-500/10 text-green-500' 
-  },
-  { 
-    label: 'Commandes', 
-    value: '156', 
-    trend: '+8.2%', 
-    isPositive: true, 
-    icon: ShoppingBag, 
-    color: 'bg-amber-500/10 text-amber-500' 
-  },
-  { 
-    label: 'Nouveaux Clients', 
-    value: '42', 
-    trend: '-3.1%', 
-    isPositive: false, 
-    icon: Users, 
-    color: 'bg-blue-500/10 text-blue-500' 
-  },
-  { 
-    label: 'Taux de Conversion', 
-    value: '3.2%', 
-    trend: '+2.4%', 
-    isPositive: true, 
-    icon: TrendingUp, 
-    color: 'bg-purple-500/10 text-purple-500' 
-  },
+  { label: 'Revenu Total', value: '4,560.00 €', trend: '+12%', icon: DollarSign, color: 'text-green-500', bg: 'bg-green-50' },
+  { label: 'Commandes', value: '124', trend: '+5%', icon: ShoppingBag, color: 'text-amber-500', bg: 'bg-amber-50' },
+  { label: 'Nouveaux Clients', value: '18', trend: '+22%', icon: Users, color: 'text-blue-500', bg: 'bg-blue-50' },
+  { label: 'Articles en Rupture', value: '3', trend: '-2', icon: Package, color: 'text-red-500', bg: 'bg-red-50' },
 ];
 
-const recentOrders = [
-  { id: '#ORD-7241', customer: 'Jean Dupont', product: 'Espresso + Croissant', status: 'Terminé', amount: '8.50€', time: 'Il y a 5 min' },
-  { id: '#ORD-7240', customer: 'Marie Larue', product: 'Cappuccino XL', status: 'En préparation', amount: '4.80€', time: 'Il y a 12 min' },
-  { id: '#ORD-7239', customer: 'Thomas Petit', product: 'Latte Machiatto', status: 'En attente', amount: '5.20€', time: 'Il y a 18 min' },
+const topSelling = [
+  { name: 'Espresso Fika', orders: '156', revenue: '312.00€', rating: '5.0', image: 'https://images.unsplash.com/photo-1510707513152-3d606fd22164?w=200&h=200&fit=crop' },
+  { name: 'Croissant Beurre', orders: '98', revenue: '245.00€', rating: '4.8', image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=200&h=200&fit=crop' },
+  { name: 'Salmon Bagel', orders: '76', revenue: '684.00€', rating: '4.9', image: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=200&h=200&fit=crop' },
+];
+
+const liveOrders = [
+  { id: '#ORD-001', customer: 'Alice Martin', total: '12.50€', status: 'En préparation', time: '2 min ago' },
+  { id: '#ORD-002', customer: 'Robert Durand', total: '8.40€', status: 'En attente', time: '5 min ago' },
+  { id: '#ORD-003', customer: 'Julie Leroy', total: '24.90€', status: 'Prêt', time: '10 min ago' },
 ];
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-8">
-      {/* Welcome Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Bonjour, Admin 👋</h1>
-          <p className="text-stone-500 text-sm mt-1">Voici ce qui se passe dans votre établissement aujourd'hui.</p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="glass" className="h-10 text-xs">Aujourd'hui</Button>
-          <Button className="h-10 text-xs">Exporter le rapport</Button>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="glass p-6 rounded-2xl border-white/5 relative overflow-hidden group"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div className={stat.color + " p-3 rounded-xl"}>
-                <stat.icon className="h-5 w-5" />
-              </div>
-              <div className={stat.isPositive ? "text-green-500" : "text-red-500" + " flex items-center text-xs font-bold"}>
-                {stat.trend}
-                {stat.isPositive ? <ArrowUpRight className="h-3 w-3 ml-1" /> : <ArrowDownRight className="h-3 w-3 ml-1" />}
-              </div>
-            </div>
-            <div>
-              <p className="text-stone-500 text-xs font-medium uppercase tracking-wider mb-1">{stat.label}</p>
-              <h3 className="text-2xl font-bold text-white tracking-tight">{stat.value}</h3>
-            </div>
-            {/* Hover Decor */}
-            <div className="absolute -right-4 -bottom-4 h-24 w-24 bg-white/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Main Grid: Orders & Activities */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Orders */}
-        <div className="lg:col-span-2 glass rounded-2xl border-white/5 overflow-hidden">
-          <div className="px-6 py-5 border-b border-white/5 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-white tracking-tight">Dernières Commandes</h2>
-            <Button variant="ghost" className="h-8 text-xs underline decoration-amber-600/50">Voir tout</Button>
+    <div className="flex gap-8">
+      {/* Left Column: Manager Overview */}
+      <div className="flex-1 space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Tableau de Bord Gestion</h1>
+            <p className="text-sm text-gray-500">Supervision de l'activité en temps réel</p>
           </div>
-          <div className="p-0 overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-white/5 text-stone-500 text-[10px] uppercase font-bold tracking-widest">
-                  <th className="px-6 py-4">Commande</th>
-                  <th className="px-6 py-4">Client</th>
-                  <th className="px-6 py-4">Produit</th>
-                  <th className="px-6 py-4">Total</th>
-                  <th className="px-6 py-4">Statut</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {recentOrders.map((order) => (
-                  <tr key={order.id} className="text-sm hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-6 py-4 text-white font-medium">{order.id}</td>
-                    <td className="px-6 py-4 text-stone-400">{order.customer}</td>
-                    <td className="px-6 py-4 text-stone-400">{order.product}</td>
-                    <td className="px-6 py-4 text-white font-bold">{order.amount}</td>
-                    <td className="px-6 py-4">
-                      <span className={
-                        order.status === 'Terminé' ? "text-green-500 bg-green-500/10 px-2 py-1 rounded-md text-[10px] font-bold" :
-                        order.status === 'En préparation' ? "text-amber-500 bg-amber-500/10 px-2 py-1 rounded-md text-[10px] font-bold" :
-                        "text-blue-500 bg-blue-500/10 px-2 py-1 rounded-md text-[10px] font-bold"
-                      }>
-                        {order.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="relative w-80">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="Rechercher une commande, un client..."
+              className="w-full bg-white border-transparent focus:border-amber-500 rounded-2xl py-3 pl-12 pr-4 text-sm card-shadow focus:ring-0 transition-all font-medium"
+            />
           </div>
         </div>
 
-        {/* Real-time Activity */}
-        <div className="glass rounded-2xl border-white/5 flex flex-col">
-          <div className="px-6 py-5 border-b border-white/5">
-            <h2 className="text-lg font-bold text-white tracking-tight">Activité en direct</h2>
-          </div>
-          <div className="p-6 space-y-6 flex-1">
-            {recentOrders.map((order, i) => (
-              <div key={i} className="flex gap-4 relative">
-                {i !== recentOrders.length - 1 && <div className="absolute left-[11px] top-7 bottom-0 w-px bg-white/5" />}
-                <div className="h-6 w-6 rounded-full bg-amber-600/20 border border-amber-600/30 flex items-center justify-center shrink-0">
-                  <div className="h-2 w-2 rounded-full bg-amber-600 animate-pulse" />
+        {/* Operational Stats */}
+        <div className="grid grid-cols-4 gap-6">
+            {stats.map((stat, i) => (
+                <div key={i} className="bg-white p-6 rounded-[2rem] card-shadow border border-gray-50 group transition-all hover:scale-[1.02]">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className={`p-3 rounded-2xl ${stat.bg}`}>
+                            <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                        </div>
+                        <span className="text-xs font-bold text-green-500 flex items-center gap-0.5">
+                            {stat.trend} <ArrowUpRight className="h-3 w-3" />
+                        </span>
+                    </div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{stat.label}</p>
+                    <h3 className="text-xl font-black text-gray-900">{stat.value}</h3>
                 </div>
-                <div>
-                  <p className="text-sm text-white font-medium mb-1">Nouvelle commande {order.id}</p>
-                  <div className="flex items-center gap-2 text-stone-500 text-xs">
-                    <Clock className="h-3 w-3" />
-                    <span>{order.time}</span>
-                  </div>
-                </div>
-              </div>
             ))}
-          </div>
-          <div className="p-4 bg-amber-600/5 mt-auto">
-             <Button variant="ghost" className="w-full text-xs text-amber-500 hover:text-amber-400">
-               Consulter tout l'historique
-             </Button>
-          </div>
+        </div>
+
+        {/* Section: Best Sellers (Performance) */}
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">Produits les plus vendus</h2>
+                <button className="text-amber-500 text-sm font-bold flex items-center gap-1 group">
+                    Historique complet <ChevronRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
+                </button>
+            </div>
+            <div className="grid grid-cols-3 gap-6">
+                {topSelling.map((item, i) => (
+                    <motion.div key={i} whileHover={{ y: -5 }} className="bg-white p-4 rounded-[2rem] card-shadow space-y-4 relative">
+                        <div className="h-32 w-full rounded-2xl overflow-hidden bg-gray-50">
+                            <img src={item.image} className="h-full w-full object-cover" alt={item.name} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-gray-900">{item.name}</h3>
+                            <div className="flex items-center justify-between mt-2">
+                                <div className="space-y-0.5">
+                                    <p className="text-[10px] font-bold text-gray-400">COMMANDES</p>
+                                    <p className="font-black text-sm">{item.orders}</p>
+                                </div>
+                                <div className="text-right space-y-0.5">
+                                    <p className="text-[10px] font-bold text-gray-400">REVENU</p>
+                                    <p className="font-black text-sm text-amber-500">{item.revenue}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+        </div>
+
+        {/* Section: Real-time Kitchen Load / Orders Queue */}
+        <div className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-900">File d'attente des commandes</h2>
+            <div className="bg-white rounded-[2rem] card-shadow overflow-hidden">
+                <table className="w-full text-left">
+                    <thead>
+                        <tr className="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            <th className="px-6 py-4">ID</th>
+                            <th className="px-6 py-4">Client</th>
+                            <th className="px-6 py-4">Status</th>
+                            <th className="px-6 py-4">Total</th>
+                            <th className="px-6 py-4">Attente</th>
+                            <th className="px-6 py-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                        {liveOrders.map((order, i) => (
+                            <tr key={i} className="text-sm hover:bg-gray-50/50 transition-colors">
+                                <td className="px-6 py-4 font-bold text-gray-900">{order.id}</td>
+                                <td className="px-6 py-4 font-semibold text-gray-600">{order.customer}</td>
+                                <td className="px-6 py-4">
+                                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight
+                                        ${order.status === 'Prêt' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
+                                        {order.status}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 font-black">{order.total}</td>
+                                <td className="px-6 py-4 text-xs font-bold text-gray-400 flex items-center gap-1.5">
+                                    <Clock className="h-3 w-3" /> {order.time}
+                                </td>
+                                <td className="px-6 py-4">
+                                    <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                                        <MoreVertical className="h-4 w-4 text-gray-400" />
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+      </div>
+
+      {/* Right Column: Key Metrics & Quick Controls */}
+      <div className="w-80 space-y-8">
+        {/* Daily Summary Card */}
+        <div className="bg-white p-6 rounded-[2rem] card-shadow space-y-6">
+            <h2 className="text-lg font-bold">Résumé Journalier</h2>
+            <div className="bg-orange-gradient p-6 rounded-3xl space-y-4 shadow-xl shadow-amber-100 relative overflow-hidden">
+                <div className="relative z-10 flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-white/20 rounded-xl">
+                        <DollarSign className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                        <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest">C.A du jour</p>
+                        <p className="text-white text-2xl font-black">1,245.80€</p>
+                    </div>
+                </div>
+                <div className="relative z-10 h-1 bg-white/20 rounded-full overflow-hidden">
+                    <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: '75%' }}
+                        className="h-full bg-white rounded-full" 
+                    />
+                </div>
+                <p className="relative z-10 text-white/80 text-[10px] font-bold">Objectif quotidien : 75% atteint</p>
+                <div className="absolute -right-4 -bottom-4 h-24 w-24 bg-white/10 rounded-full blur-2xl" />
+            </div>
+
+            <div className="space-y-4 text-sm font-semibold text-gray-600">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-green-500" />
+                        <span>Ventes sur site</span>
+                    </div>
+                    <span className="text-gray-900">845€</span>
+                </div>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-blue-500" />
+                        <span>Ventes en ligne</span>
+                    </div>
+                    <span className="text-gray-900">400€</span>
+                </div>
+            </div>
+        </div>
+
+        {/* Quick Management Actions */}
+        <div className="bg-white p-6 rounded-[2rem] card-shadow space-y-6">
+            <h2 className="text-lg font-bold">Actions de Gestion</h2>
+            <div className="grid gap-3">
+                <button className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-amber-50 transition-colors group">
+                    <div className="p-2 bg-white rounded-xl shadow-sm text-amber-500 group-hover:scale-110 transition-transform">
+                        <Plus className="h-5 w-5" />
+                    </div>
+                    <span className="font-bold text-sm text-gray-700">Ajouter un produit</span>
+                </button>
+                <button className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-blue-50 transition-colors group">
+                    <div className="p-2 bg-white rounded-xl shadow-sm text-blue-500 group-hover:scale-110 transition-transform">
+                        <Activity className="h-5 w-5" />
+                    </div>
+                    <span className="font-bold text-sm text-gray-700">Gérer l'inventaire</span>
+                </button>
+            </div>
+            <button className="w-full bg-gray-900 text-white font-bold py-4 rounded-[1.5rem] hover:bg-gray-800 transition-colors mt-4">
+                Imprimer le rapport
+            </button>
         </div>
       </div>
     </div>
