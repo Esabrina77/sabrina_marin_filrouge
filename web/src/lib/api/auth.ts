@@ -1,17 +1,5 @@
 import api from './client';
-
-export interface User {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-    role: 'ADMIN' | 'CLIENT';
-}
-
-export interface LoginResponse {
-    user: User;
-    token: string;
-}
+import { User, LoginResponse } from '@/types/auth';
 
 const AuthService = {
     login: async (credentials: Record<string, string>): Promise<LoginResponse> => {

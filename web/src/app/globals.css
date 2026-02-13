@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+
 :root {
   --background: #0c0a09;
   --foreground: #f5f5f4;
@@ -31,6 +32,7 @@
   --color-accent: var(--accent);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --font-sans: var(--font-montserrat);
 
   --radius-xl: calc(var(--radius) + 4px);
   --radius-lg: var(--radius);
@@ -65,6 +67,7 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+    font-family: var(--font-montserrat), sans-serif;
     font-feature-settings:
       "rlig" 1,
       "calt" 1;

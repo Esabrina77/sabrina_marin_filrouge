@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { TokenRefreshResponse } from '@/types/auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
@@ -34,7 +35,7 @@ api.interceptors.response.use(
             try {
                 // Appel à l'endpoint refresh-token
                 // Le cookie refreshToken est envoyé automatiquement grâce à withCredentials: true
-                const { data } = await axios.post(`${API_URL}/auth/refresh-token`, {}, { withCredentials: true });
+                const { data } = await axios.post<TokenRefreshResponse>(`${API_URL}/auth/refresh-token`, {}, { withCredentials: true });
                 
                 if (data.accessToken) {
                     localStorage.setItem('accessToken', data.accessToken);

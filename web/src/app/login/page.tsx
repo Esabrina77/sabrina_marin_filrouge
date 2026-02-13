@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import AuthService from '@/lib/api/auth';
 import { useRouter } from 'next/navigation';
+import './login.css';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -36,35 +37,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 coffee-gradient">
+    <div className="login-container">
       {/* Background Decorative Elements */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-amber-600/10 blur-[120px] rounded-full" />
-        <div className="absolute -bottom-[10%] -right-[10%] w-[50%] h-[50%] bg-amber-900/10 blur-[120px] rounded-full" />
+      <div className="login-bg-decorative">
+        <div className="login-bg-blob-1" />
+        <div className="login-bg-blob-2" />
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-md"
+        className="login-card-wrapper"
       >
-        <div className="glass rounded-3xl p-8 md:p-12 shadow-2xl border-white/5 relative overflow-hidden">
+        <div className="login-card">
           {/* Logo Section */}
-          <div className="flex flex-col items-center mb-10">
+          <div className="login-header">
             <motion.div 
               whileHover={{ rotate: 15 }}
-              className="h-16 w-16 bg-amber-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-900/40 mb-4"
+              className="login-logo-box"
             >
               <Coffee className="text-white h-8 w-8" />
             </motion.div>
-            <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Fika Admin</h1>
-            <p className="text-stone-400 text-sm text-center">Connectez-vous pour gérer votre établissement</p>
+            <h1 className="login-title">Fika Admin</h1>
+            <p className="login-subtitle">Connectez-vous pour gérer votre établissement</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="login-form-group">
             <div className="space-y-4">
-              <div className="relative">
+              <div className="login-input-wrapper">
                 <Input
                   label="Email professionnel"
                   placeholder="admin@fika.com"
@@ -74,10 +75,10 @@ export default function LoginPage() {
                   className="pl-11"
                   required
                 />
-                <Mail className="absolute left-4 top-[3.1rem] h-5 w-5 text-stone-500" />
+                <Mail className="login-input-icon" />
               </div>
 
-              <div className="relative">
+              <div className="login-input-wrapper">
                 <Input
                   label="Mot de passe"
                   placeholder="••••••••"
@@ -87,7 +88,7 @@ export default function LoginPage() {
                   className="pl-11"
                   required
                 />
-                <Lock className="absolute left-4 top-[3.1rem] h-5 w-5 text-stone-500" />
+                <Lock className="login-input-icon" />
               </div>
             </div>
 
@@ -95,9 +96,9 @@ export default function LoginPage() {
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="bg-red-500/10 border border-red-500/20 rounded-xl p-3"
+                className="login-error-box"
               >
-                <p className="text-xs text-red-500 text-center font-medium leading-relaxed">{error}</p>
+                <p className="login-error-text">{error}</p>
               </motion.div>
             )}
 
@@ -111,8 +112,8 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-8 text-center pt-6 border-t border-white/5">
-            <p className="text-stone-500 text-xs">
+          <div className="login-footer">
+            <p className="login-footer-text">
               © {new Date().getFullYear()} Fika Restaurant & Coffee. Tous droits réservés.
             </p>
           </div>
