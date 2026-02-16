@@ -255,12 +255,12 @@ export default function ProductsPage() {
                         {product.available ? (
                           <>
                             <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                            En ligne
+                            En stock
                           </>
                         ) : (
                           <>
                             <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                            Indisponible
+                            Rupture de stock
                           </>
                         )}
                       </span>
