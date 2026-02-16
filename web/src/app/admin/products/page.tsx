@@ -275,21 +275,16 @@ export default function ProductsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {/* Logic for Status Badge */}
-                      {product.quantity === 0 ? (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1 bg-red-100 text-red-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                          Rupture de stock
-                        </span>
-                      ) : product.available ? (
+                      {/* Logic for Status Badge: Strictly based on Stock as per user request */}
+                      {product.quantity > 0 ? (
                         <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1 bg-green-100 text-green-700">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                           En stock
                         </span>
                       ) : (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1 bg-gray-100 text-gray-600">
-                          <span className="w-1.5 h-1.5 rounded-full bg-gray-500" />
-                          Non disponible
+                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1 bg-red-100 text-red-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                          Rupture de stock
                         </span>
                       )}
                     </td>
@@ -448,11 +443,14 @@ export default function ProductsPage() {
                 type="checkbox"
                 id="available"
                 className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                checked={formData.available}
-                onChange={(e) => setFormData({...formData, available: e.target.checked})}
-                disabled={formData.quantity === 0}
+                checked={formData.quantity > 0}
+                readOnly
+                disabled={true}
               />
-              <label htmlFor="available" className="text-sm font-medium text-gray-700">Produit disponible à la vente</label>
+              <div>
+                <label htmlFor="available" className="text-sm font-medium text-gray-700 block">Produit disponible à la vente</label>
+                <p className="text-xs text-gray-500">Le statut est géré automatiquement selon le stock.</p>
+              </div>
             </div>
           </div>
 
