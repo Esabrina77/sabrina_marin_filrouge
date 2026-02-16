@@ -86,7 +86,7 @@ export const Sidebar = () => {
       <div className="p-4 border-t border-gray-50">
         <button 
           onClick={() => AuthService.logout()}
-          className="flex items-center gap-4 px-6 py-3 w-full text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all group"
+          className="flex items-center gap-4 px-6 py-3 w-full text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all group cursor-pointer"
         >
           <LogOut className="h-5 w-5 group-hover:rotate-6 transition-transform" />
           <span className="font-semibold text-sm">Déconnexion</span>
