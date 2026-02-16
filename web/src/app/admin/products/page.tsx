@@ -399,7 +399,7 @@ export default function ProductsPage() {
                   setFormData({
                     ...formData, 
                     quantity: qty,
-                    available: qty === 0 ? false : formData.available 
+                    available: qty > 0 // Automatically set to true if stock > 0, false if 0
                   });
                 }}
               />
