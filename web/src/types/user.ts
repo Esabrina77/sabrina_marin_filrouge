@@ -23,5 +23,5 @@ export interface UserFilters {
   page?: number;
   size?: number;
   sort?: string;
-  // Add other filters if supported by backend in future
+  role?: Role;
 }

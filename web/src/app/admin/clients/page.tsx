@@ -18,7 +18,7 @@ import { Modal } from '@/components/ui/modal';
 import UserService from '@/lib/api/users';
 import { User as UserType, UserRequest, Role } from '@/types/user';
 
-export default function UsersPage() {
+export default function ClientsPage() {
   const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
@@ -38,20 +38,21 @@ export default function UsersPage() {
     role: Role.CLIENT
   });
 
-  // Fetch Users
+  // Fetch Users (Clients Only)
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const response = await UserService.getAll({
         page: currentPage,
         size: 10,
-        sort: 'createdAt,desc'
+        sort: 'createdAt,desc',
+        role: Role.CLIENT // Filter only clients
       });
       setUsers(response.content);
       setTotalPages(response.totalPages);
       setTotalElements(response.totalElements);
     } catch (error) {
-      console.error('Failed to fetch users', error);
+      console.error('Failed to fetch clients', error);
     } finally {
       setLoading(false);
     }
@@ -79,7 +80,7 @@ export default function UsersPage() {
         lastName: '',
         email: '',
         password: '',
-        role: Role.CLIENT
+        role: Role.CLIENT // Default to Client
       });
     }
     setIsModalOpen(true);
@@ -105,32 +106,33 @@ export default function UsersPage() {
       }
       closeModal();
       fetchUsers();
-    } catch (error) {
-      console.error('Failed to save user', error);
-      alert('Erreur lors de l\'enregistrement. Vérifiez les données.');
+    } catch (error: any) {
+      console.error('Failed to save client', error);
+      const msg = error.response?.data?.message || 'Erreur lors de l\'enregistrement. Vérifiez les données.';
+      alert(msg);
     }
   };
 
   // Handle Delete
   const handleDelete = async (id: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible.')) {
       try {
         await UserService.delete(id);
         fetchUsers();
       } catch (error) {
-        console.error('Failed to delete user', error);
+        console.error('Failed to delete client', error);
       }
     }
   };
 
   // Handle Role Promotion to Admin
   const handlePromote = async (id: string) => {
-     if (confirm('Voulez-vous vraiment promouvoir cet utilisateur Administrateur ?')) {
+     if (confirm('Voulez-vous vraiment promouvoir ce client Administrateur ? Il disparaitra de cette liste.')) {
         try {
            await UserService.setAdminRole(id);
            fetchUsers();
         } catch (error) {
-           console.error('Failed to promote user', error);
+           console.error('Failed to promote client', error);
         }
      }
   }
@@ -140,12 +142,12 @@ export default function UsersPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Utilisateurs</h1>
-          <p className="text-sm text-gray-500">Gérez les comptes clients et administrateurs.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
+          <p className="text-sm text-gray-500">Gérez les comptes clients uniquement.</p>
         </div>
         <Button onClick={() => openModal()} className="flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
-          Nouvel utilisateur
+          Nouveau client
         </Button>
       </div>
 
@@ -158,14 +160,14 @@ export default function UsersPage() {
              <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center">
                 <Users className="h-6 w-6 text-gray-400" />
              </div>
-             <p className="text-gray-500 font-medium">Aucun utilisateur trouvé.</p>
+             <p className="text-gray-500 font-medium">Aucun client trouvé.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-50 text-xs uppercase text-gray-500 font-bold border-b border-gray-100">
-                  <th className="px-6 py-4">Utilisateur</th>
+                  <th className="px-6 py-4">Client</th>
                   <th className="px-6 py-4">Email</th>
                   <th className="px-6 py-4">Rôle</th>
                   <th className="px-6 py-4 text-right">Actions</th>
@@ -312,18 +314,7 @@ export default function UsersPage() {
               />
             </div>
 
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700 mb-1 block">Rôle</label>
-              <select
-                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white"
-                value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value as Role})}
-              >
-                {Object.values(Role).map((role) => (
-                  <option key={role} value={role}>{role}</option>
-                ))}
-              </select>
-            </div>
+            {/* Role selector removed: Only creating Clients here */}
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">

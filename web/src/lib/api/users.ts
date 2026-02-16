@@ -12,6 +12,7 @@ export const UserService = {
       if (filters.page !== undefined) params.append('page', filters.page.toString());
       if (filters.size !== undefined) params.append('size', filters.size.toString());
       if (filters.sort) params.append('sort', filters.sort);
+      if (filters.role) params.append('role', filters.role);
 
       const response = await api.get<PagedResponse<User>>(USER_API_BASE, { params });
       return response.data;
@@ -37,8 +38,13 @@ export const UserService = {
     try {
       const response = await api.post<User>(USER_API_BASE, user);
       return response.data;
-    } catch (error) {
-       console.error('Error creating user:', error);
+    } catch (error: any) {
+        // Log detailed error from backend if available
+        if (error.response && error.response.data) {
+           console.error('Error creating user (Backend):', error.response.data);
+        } else {
+           console.error('Error creating user:', error);
+        }
        throw error;
     }
   },

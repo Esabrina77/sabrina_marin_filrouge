@@ -26,7 +26,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: 'Tableau de bord', href: '/admin/dashboard' },
   { icon: ShoppingBag, label: 'Commandes', href: '/admin/orders' },
   { icon: Package, label: 'Produits', href: '/admin/products' },
-  { icon: Users, label: 'Utilisateurs', href: '/admin/users' },
+  { icon: Users, label: 'Clients', href: '/admin/clients' },
   { icon: Settings, label: 'Paramètres', href: '/admin/settings' },
 ];
 

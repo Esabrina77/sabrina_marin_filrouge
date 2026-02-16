@@ -353,6 +353,7 @@ export default function ProductsPage() {
               <input
                 required
                 type="text"
+                maxLength={255}
                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -363,10 +364,12 @@ export default function ProductsPage() {
               <label className="text-sm font-bold text-gray-700 mb-1 block">Description</label>
               <textarea
                 required
+                maxLength={1000}
                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm min-h-[80px]"
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
               />
+              <p className="text-xs text-gray-400 text-right mt-1">{formData.description.length}/1000</p>
             </div>
 
             <div>
@@ -430,12 +433,17 @@ export default function ProductsPage() {
             <div className="col-span-2">
               <label className="text-sm font-bold text-gray-700 mb-1 block">Image URL</label>
               <input
+                required
                 type="url"
+                maxLength={255}
                 placeholder="https://example.com/image.jpg"
                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
                 value={formData.imgUrl}
                 onChange={(e) => setFormData({...formData, imgUrl: e.target.value})}
               />
+              <p className="text-xs text-red-500 mt-1">
+                L'URL ne doit pas dépasser 255 caractères.
+              </p>
             </div>
 
             <div className="col-span-2 flex items-center gap-2">
