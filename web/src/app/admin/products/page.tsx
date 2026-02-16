@@ -249,7 +249,21 @@ export default function ProductsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`flex h-2 w-2 rounded-full ${product.available ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1 ${
+                        product.available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {product.available ? (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                            En ligne
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                            Indisponible
+                          </>
+                        )}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
