@@ -118,11 +118,11 @@ export default function ClientsPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
             <input 
               type="text"
               placeholder="Rechercher..."
-              className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-64"
+              className="pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-64 placeholder:text-gray-500 text-gray-900"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -130,7 +130,7 @@ export default function ClientsPage() {
 
           {/* Sort */}
           <select 
-            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-900"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
           >
@@ -143,7 +143,7 @@ export default function ClientsPage() {
       </div>
 
       {/* Clients List */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-gray-500">Chargement des données clients...</div>
         ) : filteredAndSortedClients.length === 0 ? (
@@ -157,7 +157,7 @@ export default function ClientsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-gray-50 text-xs uppercase text-gray-500 font-bold border-b border-gray-100">
+                <tr className="bg-gray-50 text-xs uppercase text-gray-600 font-bold border-b border-gray-200">
                   <th className="px-6 py-4">Client</th>
                   <th className="px-6 py-4">Email</th>
                   <th className="px-6 py-4 text-center">Commandes</th>

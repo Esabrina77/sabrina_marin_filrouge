@@ -132,18 +132,26 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold text-gray-900">Tableau de Bord</h1>
             <p className="text-sm text-gray-500">Aperçu en temps réel de votre activité.</p>
           </div>
+          <div className="relative w-80">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <input 
+              type="text" 
+              placeholder="Rechercher une commande, un client..."
+              className="w-full bg-white border border-gray-300 focus:border-amber-500 rounded-2xl py-3 pl-12 pr-4 text-sm shadow-sm focus:ring-1 focus:ring-amber-500 transition-all font-medium placeholder:text-gray-500 text-gray-900"
+            />
+          </div>
         </div>
 
         {/* Operational Stats */}
         <div className="grid grid-cols-4 gap-6">
             {statCards.map((stat, i) => (
-                <div key={i} className="bg-white p-6 rounded-[2rem] card-shadow border border-gray-50 group transition-all hover:scale-[1.02]">
+                <div key={i} className="bg-white p-6 rounded-[2rem] card-shadow border border-gray-100 group transition-all hover:scale-[1.02]">
                     <div className="flex items-center justify-between mb-4">
                         <div className={`p-3 rounded-2xl ${stat.bg}`}>
                             <stat.icon className={`h-5 w-5 ${stat.color}`} />
                         </div>
                     </div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{stat.label}</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{stat.label}</p>
                     <h3 className="text-xl font-black text-gray-900">{stat.value}</h3>
                 </div>
             ))}
@@ -179,7 +187,12 @@ export default function DashboardPage() {
 
         {/* Section: Recent Orders */}
         <div className="space-y-4">
-            <h2 className="text-xl font-bold text-gray-900">Dernières Commandes</h2>
+            <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">Dernières Commandes</h2>
+                <Link href="/admin/orders" className="text-sm font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1">
+                  Voir toutes les commandes <ArrowUpRight className="h-4 w-4" />
+                </Link>
+            </div>
             <div className="bg-white rounded-[2rem] card-shadow overflow-hidden border border-gray-50">
                 <table className="w-full text-left">
                     <thead>
@@ -214,11 +227,7 @@ export default function DashboardPage() {
                     </tbody>
                 </table>
             </div>
-            <div className="flex justify-end">
-               <Link href="/admin/orders" className="text-sm font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1">
-                 Voir toutes les commandes <ArrowUpRight className="h-4 w-4" />
-               </Link>
-            </div>
+
         </div>
       </div>
 
@@ -255,6 +264,7 @@ export default function DashboardPage() {
                     </div>
                     <span className="font-bold text-sm text-gray-700">Nouveau Produit</span>
                 </Link>
+
                 <Link href="/admin/clients" className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-blue-50 transition-colors group">
                     <div className="p-2 bg-white rounded-xl shadow-sm text-blue-500 group-hover:scale-110 transition-transform">
                         <Users className="h-5 w-5" />

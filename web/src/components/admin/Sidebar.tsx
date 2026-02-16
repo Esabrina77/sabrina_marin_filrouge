@@ -34,7 +34,7 @@ export const Sidebar = () => {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-100 z-50 flex flex-col">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-50 flex flex-col">
       {/* Brand Header */}
       <div className="p-8 flex items-center gap-2">
         <div className="h-8 w-8 bg-amber-500 rounded-lg flex items-center justify-center">
@@ -58,10 +58,10 @@ export const Sidebar = () => {
                   "flex items-center gap-4 px-6 py-3 rounded-xl transition-all duration-200 group",
                   isActive 
                     ? "bg-amber-500 text-white shadow-lg shadow-amber-200" 
-                    : "text-gray-400 hover:text-gray-900 hover:bg-gray-50"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 )}
               >
-                <item.icon className={cn("h-5 w-5", isActive ? "text-white" : "text-gray-400 group-hover:text-amber-500")} />
+                <item.icon className={cn("h-5 w-5", isActive ? "text-white" : "text-gray-500 group-hover:text-amber-500")} />
                 <span className="font-semibold text-sm">{item.label}</span>
               </motion.div>
             </Link>
@@ -83,12 +83,12 @@ export const Sidebar = () => {
       </div>
 
       {/* Logout */}
-      <div className="p-4 border-t border-gray-50">
+      <div className="p-4 border-t border-gray-200">
         <button 
           onClick={() => AuthService.logout()}
-          className="flex items-center gap-4 px-6 py-3 w-full text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all group cursor-pointer"
+          className="flex items-center gap-4 px-6 py-3 w-full text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all group cursor-pointer"
         >
-          <LogOut className="h-5 w-5 group-hover:rotate-6 transition-transform" />
+          <LogOut className="h-5 w-5 group-hover:rotate-6 transition-transform text-gray-500 group-hover:text-red-500" />
           <span className="font-semibold text-sm">Déconnexion</span>
         </button>
       </div>
