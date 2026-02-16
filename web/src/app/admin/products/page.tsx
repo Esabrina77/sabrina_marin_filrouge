@@ -75,7 +75,33 @@ export default function ProductsPage() {
     fetchProducts();
   }, [currentPage, filters]); // Re-fetch when page or comparison filters change
 
-  // Handle Search Input (Debounce could be added here)
+  // Auto-correct inconsistent data: If stock is 0 but available is true, switch available to false
+  useEffect(() => {
+    if (products.length > 0) {
+      products.forEach(async (product) => {
+        if (product.quantity === 0 && product.available) {
+           console.log(`Auto-correcting availability for ${product.name} (Stock: 0)`);
+           try {
+             // We need to send the full object as per ProductRequest requirements
+             const updateRequest: UpdateProductRequest = {
+               name: product.name,
+               description: product.description,
+               price: product.price,
+               category: product.category,
+               allergen: product.allergen,
+               imgUrl: product.imgUrl,
+               quantity: product.quantity,
+               available: false // Force available to false
+             };
+             await ProductService.update(product.id, updateRequest);
+             // Verify or refresh logic could be added here, but avoiding loops
+           } catch (err) {
+             console.error(`Failed to auto-correct product ${product.id}`, err);
+           }
+        }
+      });
+    }
+  }, [products]);
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilters({ ...filters, name: e.target.value });
     setCurrentPage(0); // Reset to first page on search
@@ -249,10 +275,21 @@ export default function ProductsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`flex h-2 w-2 rounded-full ${product.available ? 'bg-green-500' : 'bg-red-500'}`} />
+                      {/* Logic for Status Badge: Strictly based on Stock as per user request */}
+                      {product.quantity > 0 ? (
+                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1 bg-green-100 text-green-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                          En stock
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1 bg-red-100 text-red-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                          Rupture de stock
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => openModal(product)}
                           className="p-2 hover:bg-amber-50 text-gray-400 hover:text-amber-500 rounded-lg transition-colors"
@@ -316,6 +353,7 @@ export default function ProductsPage() {
               <input
                 required
                 type="text"
+                maxLength={255}
                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -326,10 +364,12 @@ export default function ProductsPage() {
               <label className="text-sm font-bold text-gray-700 mb-1 block">Description</label>
               <textarea
                 required
+                maxLength={1000}
                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm min-h-[80px]"
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
               />
+              <p className="text-xs text-gray-400 text-right mt-1">{formData.description.length}/1000</p>
             </div>
 
             <div>
@@ -353,7 +393,14 @@ export default function ProductsPage() {
                 min="0"
                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
                 value={formData.quantity}
-                onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value)})}
+                onChange={(e) => {
+                  const qty = parseInt(e.target.value);
+                  setFormData({
+                    ...formData, 
+                    quantity: qty,
+                    available: qty > 0 // Automatically set to true if stock > 0, false if 0
+                  });
+                }}
               />
             </div>
 
@@ -386,23 +433,32 @@ export default function ProductsPage() {
             <div className="col-span-2">
               <label className="text-sm font-bold text-gray-700 mb-1 block">Image URL</label>
               <input
+                required
                 type="url"
+                maxLength={255}
                 placeholder="https://example.com/image.jpg"
                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
                 value={formData.imgUrl}
                 onChange={(e) => setFormData({...formData, imgUrl: e.target.value})}
               />
+              <p className="text-xs text-red-500 mt-1">
+                L'URL ne doit pas dépasser 255 caractères.
+              </p>
             </div>
 
             <div className="col-span-2 flex items-center gap-2">
               <input
                 type="checkbox"
                 id="available"
-                className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                checked={formData.available}
-                onChange={(e) => setFormData({...formData, available: e.target.checked})}
+                className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                checked={formData.quantity > 0}
+                readOnly
+                disabled={true}
               />
-              <label htmlFor="available" className="text-sm font-medium text-gray-700">Produit disponible à la vente</label>
+              <div>
+                <label htmlFor="available" className="text-sm font-medium text-gray-700 block">Produit disponible à la vente</label>
+                <p className="text-xs text-gray-500">Le statut est géré automatiquement selon le stock.</p>
+              </div>
             </div>
           </div>
 
