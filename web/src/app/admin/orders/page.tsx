@@ -143,8 +143,8 @@ export default function OrdersPage() {
                   <th className="px-6 py-4">Client</th>
                   <th className="px-6 py-4">Date</th>
                   <th className="px-6 py-4">Total</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                  <th className="px-6 py-4 w-[1%] whitespace-nowrap">Status</th>
+                  <th className="px-6 py-4 text-right w-[1%] whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -170,10 +170,10 @@ export default function OrdersPage() {
                     <td className="px-6 py-4 font-bold text-gray-900">
                       {order.total?.toFixed(2)} €
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(order.status)}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <Button className="h-8 w-8 p-0 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-blue-600" onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); setIsModalOpen(true); }}>
                          <Eye className="h-4 w-4" />
                       </Button>
