@@ -75,7 +75,33 @@ export default function ProductsPage() {
     fetchProducts();
   }, [currentPage, filters]); // Re-fetch when page or comparison filters change
 
-  // Handle Search Input (Debounce could be added here)
+  // Auto-correct inconsistent data: If stock is 0 but available is true, switch available to false
+  useEffect(() => {
+    if (products.length > 0) {
+      products.forEach(async (product) => {
+        if (product.quantity === 0 && product.available) {
+           console.log(`Auto-correcting availability for ${product.name} (Stock: 0)`);
+           try {
+             // We need to send the full object as per ProductRequest requirements
+             const updateRequest: UpdateProductRequest = {
+               name: product.name,
+               description: product.description,
+               price: product.price,
+               category: product.category,
+               allergen: product.allergen,
+               imgUrl: product.imgUrl,
+               quantity: product.quantity,
+               available: false // Force available to false
+             };
+             await ProductService.update(product.id, updateRequest);
+             // Verify or refresh logic could be added here, but avoiding loops
+           } catch (err) {
+             console.error(`Failed to auto-correct product ${product.id}`, err);
+           }
+        }
+      });
+    }
+  }, [products]);
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilters({ ...filters, name: e.target.value });
     setCurrentPage(0); // Reset to first page on search
@@ -249,10 +275,11 @@ export default function ProductsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
+                      {/* Logic: If quantity is 0, it is essentially Out of Stock, regardless of available flag */}
                       <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1 ${
-                        product.available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        (product.quantity > 0 && product.available) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                       }`}>
-                        {product.available ? (
+                        {(product.quantity > 0 && product.available) ? (
                           <>
                             <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                             En stock
@@ -367,7 +394,14 @@ export default function ProductsPage() {
                 min="0"
                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
                 value={formData.quantity}
-                onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value)})}
+                onChange={(e) => {
+                  const qty = parseInt(e.target.value);
+                  setFormData({
+                    ...formData, 
+                    quantity: qty,
+                    available: qty === 0 ? false : formData.available 
+                  });
+                }}
               />
             </div>
 
@@ -412,9 +446,10 @@ export default function ProductsPage() {
               <input
                 type="checkbox"
                 id="available"
-                className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 checked={formData.available}
                 onChange={(e) => setFormData({...formData, available: e.target.checked})}
+                disabled={formData.quantity === 0}
               />
               <label htmlFor="available" className="text-sm font-medium text-gray-700">Produit disponible à la vente</label>
             </div>
