@@ -1,27 +1,24 @@
 @import "tailwindcss";
 
-
 :root {
-  --background: #0c0a09;
-  --foreground: #f5f5f4;
-  --card: rgba(28, 25, 23, 0.7);
-  --card-foreground: #fafaf9;
-  --popover: rgba(28, 25, 23, 0.9);
-  --popover-foreground: #fafaf9;
-  --primary: #d97706;
-  --primary-foreground: #fffbeb;
-  --secondary: #44403c;
-  --secondary-foreground: #fafaf9;
-  --muted: #292524;
-  --muted-foreground: #a8a29e;
-  --accent: #f59e0b;
-  --accent-foreground: #1c1917;
+  --background: #f8f9fa;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --primary: #f5a623;
+  --primary-foreground: #ffffff;
+  --secondary: #f0f2f5;
+  --secondary-foreground: #4a4a4a;
+  --muted: #f9fafb;
+  --muted-foreground: #6b7280;
+  --accent: #f5a623;
+  --accent-foreground: #ffffff;
   --destructive: #ef4444;
-  --destructive-foreground: #fafaf9;
-  --border: rgba(68, 64, 60, 0.5);
-  --input: #44403c;
-  --ring: #d97706;
-  --radius: 0.75rem;
+  --destructive-foreground: #ffffff;
+  --border: #e5e7eb;
+  --input: #ffffff;
+  --ring: #f5a623;
+  --radius: 1rem;
 }
 
 @theme inline {
@@ -33,31 +30,11 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --font-sans: var(--font-montserrat);
-
+  
   --radius-xl: calc(var(--radius) + 4px);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
-
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
-
-  @keyframes accordion-down {
-    from {
-      height: 0;
-    }
-    to {
-      height: var(--radix-accordion-content-height);
-    }
-  }
-  @keyframes accordion-up {
-    from {
-      height: var(--radix-accordion-content-height);
-    }
-    to {
-      height: 0;
-    }
-  }
 }
 
 @layer base {
@@ -68,30 +45,22 @@
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-montserrat), sans-serif;
-    font-feature-settings:
-      "rlig" 1,
-      "calt" 1;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
 @layer utilities {
-  .glass {
-    background: rgba(28, 25, 23, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  .card-shadow {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  }
+  
+  .sidebar-active {
+    background-color: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
   }
 
-  .glass-hover:hover {
-    background: rgba(41, 37, 36, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  .coffee-gradient {
-    background: linear-gradient(135deg, #1c1917 0%, #0c0a09 100%);
-  }
-
-  .text-shadow-gold {
-    text-shadow: 0 0 15px rgba(217, 119, 6, 0.5);
+  .bg-orange-gradient {
+    background: linear-gradient(135deg, #f5a623 0%, #ffc107 100%);
   }
 }
