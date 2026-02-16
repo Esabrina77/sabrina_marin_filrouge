@@ -63,7 +63,7 @@ export default function DashboardPage() {
         
         const totalOrders = orders.length;
         const totalClients = users.filter(u => u.role === Role.CLIENT).length;
-        const outOfStock = products.filter(p => p.quantity <= 0);
+        const outOfStock = products.filter(p => p.quantity < 5);
 
         setStats({
           totalRevenue,
@@ -99,7 +99,7 @@ export default function DashboardPage() {
           .slice(0, 3);
 
         setTopSelling(sortedTopSelling);
-        setOutOfStockProducts(outOfStock.slice(0, 5)); // Show up to 5 out of stock items
+        setOutOfStockProducts(outOfStock.slice(0, 5)); // Show up to 5 low stock items
 
       } catch (error) {
         console.error("Failed to load dashboard data", error);
@@ -233,22 +233,26 @@ export default function DashboardPage() {
 
       {/* Right Column: Key Metrics & Quick Controls */}
       <div className="w-80 space-y-8">
-        {/* Alerts: Out of Stock */}
+        {/* Alerts: Low Stock */}
         {outOfStockProducts.length > 0 && (
-          <div className="bg-white p-6 rounded-[2rem] card-shadow space-y-4 border border-red-100">
-             <div className="flex items-center gap-3 text-red-500">
+          <div className="bg-white p-6 rounded-[2rem] card-shadow space-y-4 border border-amber-100">
+             <div className="flex items-center gap-3 text-amber-600">
                 <AlertTriangle className="h-5 w-5" />
-                <h2 className="text-lg font-bold">Attention Stock</h2>
+                <h2 className="text-lg font-bold">Alertes Stock</h2>
              </div>
              <ul className="space-y-3">
                 {outOfStockProducts.map(product => (
                   <li key={product.id} className="flex items-center justify-between text-sm">
                      <span className="font-semibold text-gray-700 truncate max-w-[150px]">{product.name}</span>
-                     <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs font-bold">0</span>
+                     <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                        product.quantity === 0 ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
+                     }`}>
+                        {product.quantity}
+                     </span>
                   </li>
                 ))}
              </ul>
-             <Link href="/admin/products" className="block text-center text-xs font-bold text-gray-400 hover:text-gray-600 mt-2">
+             <Link href="/admin/products" className="block text-center text-xs font-bold text-gray-500 hover:text-amber-600 mt-2">
                 Gérer l'inventaire
              </Link>
           </div>

@@ -174,8 +174,8 @@ export default function OrdersPage() {
                       {getStatusBadge(order.status)}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); setIsModalOpen(true); }}>
-                         <Eye className="h-4 w-4 text-gray-500 hover:text-blue-600" />
+                      <Button className="h-8 w-8 p-0 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-blue-600" onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); setIsModalOpen(true); }}>
+                         <Eye className="h-4 w-4" />
                       </Button>
                     </td>
                   </tr>
