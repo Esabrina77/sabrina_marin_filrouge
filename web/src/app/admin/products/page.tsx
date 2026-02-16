@@ -252,7 +252,7 @@ export default function ProductsPage() {
                       <span className={`flex h-2 w-2 rounded-full ${product.available ? 'bg-green-500' : 'bg-red-500'}`} />
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => openModal(product)}
                           className="p-2 hover:bg-amber-50 text-gray-400 hover:text-amber-500 rounded-lg transition-colors"
