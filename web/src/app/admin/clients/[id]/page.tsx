@@ -123,29 +123,29 @@ export default function ClientDetailsPage() {
               </span>
             </div>
 
-            <div className="space-y-4 pt-6 border-t border-gray-50">
+            <div className="space-y-4 pt-6 border-t border-gray-100">
               <div className="flex items-center gap-3 text-sm">
-                <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400">
+                <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500">
                   <Mail className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Email</p>
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Email</p>
                   <p className="text-gray-900 font-medium truncate">{client.email}</p>
                 </div>
               </div>
               
               <div className="flex items-center gap-3 text-sm">
-                <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400">
+                <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500">
                   <User className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">ID Client</p>
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">ID Client</p>
                   <p className="text-gray-900 font-medium truncate max-w-[200px]" title={client.id}>{client.id}</p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-gray-50">
+            <div className="mt-8 pt-6 border-t border-gray-100">
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 bg-amber-50 rounded-xl">
                   <p className="text-amber-600 text-xs font-bold uppercase mb-1">Commandes</p>
@@ -178,7 +178,7 @@ export default function ClientDetailsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-gray-50 text-xs uppercase text-gray-500 font-bold border-b border-gray-100">
+                    <tr className="bg-gray-50 text-xs uppercase text-gray-600 font-bold border-b border-gray-200">
                       <th className="px-6 py-4">Référence</th>
                       <th className="px-6 py-4">Date</th>
                       <th className="px-6 py-4">Total</th>

@@ -12,7 +12,8 @@ import {
   Eye, 
   Calendar,
   User,
-  MoreVertical
+  MoreVertical,
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
@@ -22,12 +23,14 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [displayedOrders, setDisplayedOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
+  const [itemsPerPage] = useState(10);
   const [currentStatus, setCurrentStatus] = useState<OrderStatus | 'ALL'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Modal State
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -37,17 +40,13 @@ export default function OrdersPage() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const filters: OrderFilters = {
-        page: currentPage,
-        size: 10,
-        sort: 'createdAt,desc', // Sort by newest first
-        status: currentStatus === 'ALL' ? undefined : currentStatus
-      };
-      
-      const response = await OrderService.getAll(filters);
-      setOrders(response.content);
-      setTotalPages(response.totalPages);
-      setTotalElements(response.totalElements);
+      // Fetch all orders for client-side filtering
+      const response = await OrderService.getAll({
+        size: 1000,
+        sort: 'createdAt,desc'
+      });
+      setAllOrders(response.content);
+      setFilteredOrders(response.content);
     } catch (error) {
       console.error('Failed to fetch orders', error);
     } finally {
@@ -56,22 +55,51 @@ export default function OrdersPage() {
   };
 
   useEffect(() => {
-    setCurrentPage(0); // Reset page on status change
-  }, [currentStatus]);
-
-  useEffect(() => {
     fetchOrders();
-  }, [currentPage, currentStatus]);
+  }, []);
+
+  // Filter & Search Logic
+  useEffect(() => {
+    let result = allOrders;
+
+    // 1. Filter by Status
+    if (currentStatus !== 'ALL') {
+      result = result.filter(order => order.status === currentStatus);
+    }
+
+    // 2. Filter by Search Query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(order => 
+        order.orderReference.toLowerCase().includes(query) ||
+        order.userFirstName?.toLowerCase().includes(query) ||
+        order.userLastName?.toLowerCase().includes(query) ||
+        order.userEmail?.toLowerCase().includes(query)
+      );
+    }
+
+    setFilteredOrders(result);
+    setCurrentPage(0); // Reset to first page
+  }, [allOrders, currentStatus, searchQuery]);
+
+  // Pagination Logic
+  useEffect(() => {
+    const start = currentPage * itemsPerPage;
+    const end = start + itemsPerPage;
+    setDisplayedOrders(filteredOrders.slice(start, end));
+  }, [filteredOrders, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
   // Handle Status Update
   const handleStatusUpdate = async (id: string, newStatus: OrderStatus) => {
     try {
       await OrderService.updateStatus(id, newStatus);
-      fetchOrders(); // Refresh list
+      // Update local state without refetching everything for speed
+      setAllOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+      
       if (selectedOrder && selectedOrder.id === id) {
-         // Update modal if open
-         const updatedOrder = await OrderService.getById(id);
-         setSelectedOrder(updatedOrder);
+         setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
       }
     } catch (error) {
       console.error('Failed to update status', error);
@@ -97,9 +125,23 @@ export default function OrdersPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Gestion des Commandes</h1>
-        <p className="text-sm text-gray-500">Suivez et gérez les commandes clients en temps réel.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Gestion des Commandes</h1>
+          <p className="text-sm text-gray-500">Suivez et gérez les commandes clients en temps réel.</p>
+        </div>
+        
+        {/* Search Bar */}
+        <div className="relative w-full md:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+          <input 
+            type="text"
+            placeholder="Rechercher une commande, un client..."
+            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder:text-gray-500 text-gray-900 shadow-sm"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* Tabs */}
@@ -127,7 +169,7 @@ export default function OrdersPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-gray-500">Chargement...</div>
-        ) : orders.length === 0 ? (
+        ) : filteredOrders.length === 0 ? (
           <div className="p-12 text-center flex flex-col items-center gap-3">
              <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center">
                 <ShoppingBag className="h-6 w-6 text-gray-500" />
@@ -148,7 +190,7 @@ export default function OrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {orders.map((order) => (
+                {displayedOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => { setSelectedOrder(order); setIsModalOpen(true); }}>
                     <td className="px-6 py-4 font-bold text-gray-900">
                       {order.orderReference}
@@ -189,7 +231,7 @@ export default function OrdersPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50/50">
             <p className="text-xs text-gray-500">
-              Affichage de {orders.length} sur {totalElements} commandes
+              Affichage de {displayedOrders.length} sur {filteredOrders.length} commandes
             </p>
             <div className="flex gap-2">
                <Button 

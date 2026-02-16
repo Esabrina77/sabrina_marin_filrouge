@@ -192,7 +192,7 @@ export default function ProductsPage() {
           <input
             type="text"
             placeholder="Rechercher un produit..."
-            className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder:text-gray-500 text-gray-900 shadow-sm"
             value={filters.name}
             onChange={handleSearch}
           />
