@@ -215,7 +215,7 @@ export default function DashboardPage() {
       >
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-            {greeting} 👋
+            {greeting}
           </h1>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 3 }}>
             {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}

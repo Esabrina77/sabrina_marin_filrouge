@@ -3,8 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Coffee, ArrowRight, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ArrowRight, User, UtensilsCrossed, ExternalLink } from 'lucide-react';
 import AuthService from '@/lib/api/auth';
 import './home.css';
 
@@ -19,66 +18,63 @@ export default function HomePage() {
 
   return (
     <div className="home-container">
-      {/* Background Image */}
-      <img 
-        src="/images/bg-home.png" 
-        alt="Fika Coffee Shop" 
-        className="home-bg-image"
-      />
-      <div className="home-overlay" />
+      {/* ── Decorative Background ── */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+        <div style={{ position: 'absolute', top: '-10%', left: '-5%', width: '40%', height: '40%', background: 'rgba(255,107,0,0.04)', filter: 'blur(100px)', borderRadius: '50%' }} />
+        <div style={{ position: 'absolute', bottom: '-10%', right: '-5%', width: '40%', height: '40%', background: 'rgba(37,99,235,0.04)', filter: 'blur(100px)', borderRadius: '50%' }} />
+      </div>
 
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
+        initial={{ opacity: 0, scale: 0.98, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
         className="home-content"
       >
-        <div className="flex justify-center mb-6">
-          <div className="h-12 w-12 bg-amber-600 rounded-xl flex items-center justify-center shadow-xl">
-            <Coffee className="text-white h-6 w-6" />
-          </div>
+        <div className="home-logo-box">
+          <UtensilsCrossed size={36} strokeWidth={2.5} />
         </div>
 
         <h1 className="home-title">
-          Gestion du portail <span className="text-amber-500">Fika Admin</span>
+          Portail Administrateur<br /><span>Fika Restaurant</span>
         </h1>
         
         <p className="home-description">
-          Plateforme centralisée pour la gestion de votre établissement, 
-          suivi des commandes et contrôle du catalogue en temps réel.
+          Une plateforme premium conçue pour la gestion complète de votre établissement, 
+          le suivi opérationnel en temps réel et le pilotage du catalogue.
         </p>
 
         <div className="home-actions">
           {isAuthenticated ? (
-            <Link href="/admin/dashboard">
-              <Button className="px-8 flex items-center gap-2">
-                <User className="h-4 w-4" />
+            <Link href="/admin/dashboard" style={{ textDecoration: 'none' }}>
+              <button className="btn-primary" style={{ padding: '14px 28px', fontSize: 16, fontWeight: 700, borderRadius: 14 }}>
+                <User size={18} strokeWidth={2.5} />
                 Tableau de bord
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+                <ArrowRight size={18} strokeWidth={2.5} />
+              </button>
             </Link>
           ) : (
-            <Link href="/login">
-              <Button className="px-8 flex items-center gap-2">
-                Connexion Admin
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+            <Link href="/login" style={{ textDecoration: 'none' }}>
+              <button className="btn-primary" style={{ padding: '14px 32px', fontSize: 16, fontWeight: 700, borderRadius: 14 }}>
+                Accès Administrateur
+                <ArrowRight size={18} strokeWidth={2.5} />
+              </button>
             </Link>
           )}
           
-          <Link href="/admin/orders">
-            <Button variant="glass" className="px-8">
-              Commandes en cours
-            </Button>
+          <Link href="/admin/orders" style={{ textDecoration: 'none' }}>
+            <button className="btn-outline" style={{ padding: '14px 28px', fontSize: 16, borderStyle: 'dashed', borderRadius: 14 }}>
+               <ExternalLink size={18} />
+               Commandes Directes
+            </button>
           </Link>
         </div>
       </motion.div>
 
-      {/* Footer / Info bar */}
-      <div className="absolute bottom-8 w-full px-8 flex justify-between items-center text-stone-400 text-xs tracking-widest uppercase">
-        <span>Fika Restaurant & Coffee Shop</span>
-        <span>© {new Date().getFullYear()} — Premium Experience</span>
-      </div>
+      {/* Footer bar */}
+      <footer className="home-footer">
+        <span>Fika Management System v2.0</span>
+        <span>© {new Date().getFullYear()} — Premium Professional Hub</span>
+      </footer>
     </div>
   );
 }

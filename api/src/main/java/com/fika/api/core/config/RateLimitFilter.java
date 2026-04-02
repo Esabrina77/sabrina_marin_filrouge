@@ -73,9 +73,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private Bucket createNewAuthBucket(String key) {
         return Bucket.builder()
                 .addLimit(Bandwidth.builder()
-                        .capacity(10)
-                        .refillIntervally(10, Duration.ofMinutes(1))
-                        .initialTokens(10)
+                        .capacity(20)
+                        .refillIntervally(20, Duration.ofMinutes(1))
+                        .initialTokens(20)
                         .build())
                 .build();
     }
@@ -83,9 +83,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private Bucket createNewApiBucket(String key) {
         return Bucket.builder()
                 .addLimit(Bandwidth.builder()
-                        .capacity(30)
-                        .refillIntervally(30, Duration.ofMinutes(1))
-                        .initialTokens(30)
+                        .capacity(1000)
+                        .refillIntervally(1000, Duration.ofMinutes(1))
+                        .initialTokens(1000)
                         .build())
                 .build();
     }

@@ -117,21 +117,40 @@ export default function ClientsPage() {
               onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
             />
           </div>
-
-          <select
-            style={{
-              padding: '9px 16px', background: '#fff', border: '1px solid var(--border)', cursor: 'pointer',
-              borderRadius: 12, fontSize: 13, color: 'var(--text-primary)', outline: 'none'
-            }}
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortOption)}
-          >
-            <option value="name-asc">Nom (A-Z)</option>
-            <option value="name-desc">Nom (Z-A)</option>
-            <option value="orders-desc">Trier par Commandes (Max)</option>
-            <option value="orders-asc">Trier par Commandes (Min)</option>
-          </select>
         </div>
+      </motion.div>
+
+      {/* ── Tabs (Sorting) ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
+        style={{ display: 'flex', gap: 8, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}
+      >
+        {[
+          { id: 'name-asc', label: 'Nom (A-Z)' },
+          { id: 'name-desc', label: 'Nom (Z-A)' },
+          { id: 'orders-desc', label: 'Meilleurs Clients' },
+          { id: 'orders-asc', label: 'Moins de Commandes' }
+        ].map((sortOption) => {
+          const isActive = sortBy === sortOption.id;
+          return (
+            <button
+              key={sortOption.id}
+              onClick={() => setSortBy(sortOption.id as SortOption)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                transition: 'all 0.2s', border: 'none',
+                background: isActive ? 'var(--text-primary)' : 'transparent',
+                color: isActive ? '#fff' : 'var(--text-secondary)',
+                boxShadow: isActive ? 'var(--shadow-card)' : 'none',
+              }}
+            >
+              {sortOption.label}
+            </button>
+          );
+        })}
       </motion.div>
 
       {/* ── Table Container ── */}

@@ -30,6 +30,7 @@ export default function ProductsPage() {
     name: '',
     category: '' as Category | '',
   });
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -68,36 +69,22 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
+    const handler = setTimeout(() => {
+      setFilters(prev => ({ ...prev, name: searchTerm }));
+      setCurrentPage(0);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  useEffect(() => {
     fetchProducts();
   }, [currentPage, filters]);
 
-  useEffect(() => {
-    if (products.length > 0) {
-      products.forEach(async (product) => {
-        if (product.quantity === 0 && product.available) {
-          try {
-            const updateRequest: UpdateProductRequest = {
-              name: product.name,
-              description: product.description,
-              price: product.price,
-              category: product.category,
-              allergen: product.allergen,
-              imgUrl: product.imgUrl,
-              quantity: product.quantity,
-              available: false
-            };
-            await ProductService.update(product.id, updateRequest);
-          } catch (err) {
-            console.error(`Failed to auto-correct product ${product.id}`, err);
-          }
-        }
-      });
-    }
-  }, [products]);
-
+  // Removed problematic auto-update loop that caused 429 errors.
+  
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters({ ...filters, name: e.target.value });
-    setCurrentPage(0);
+    setSearchTerm(e.target.value);
   };
 
   const openModal = (product?: Product) => {
@@ -184,10 +171,10 @@ export default function ProductsPage() {
             <input
               type="text"
               placeholder="Rechercher un produit..."
-              value={filters.name}
+              value={searchTerm}
               onChange={handleSearch}
               style={{
-                width: 220, padding: '9px 12px 9px 36px',
+                width: 260, padding: '9px 12px 9px 36px',
                 background: '#fff', border: '1px solid var(--border)',
                 borderRadius: 12, fontSize: 13, color: 'var(--text-primary)',
                 outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s',
@@ -197,24 +184,49 @@ export default function ProductsPage() {
             />
           </div>
 
-          <select
-            style={{
-              padding: '9px 16px', background: '#fff', border: '1px solid var(--border)', cursor: 'pointer',
-              borderRadius: 12, fontSize: 13, color: 'var(--text-primary)', outline: 'none'
-            }}
-            value={filters.category}
-            onChange={(e) => setFilters({ ...filters, category: e.target.value as Category | '' })}
-          >
-            <option value="">Toutes les catégories</option>
-            {Object.values(Category).map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-
           <button className="btn-primary" onClick={() => openModal()}>
             <Plus size={15} strokeWidth={2.5} /> Nouveau produit
           </button>
         </div>
+      </motion.div>
+
+      {/* ── Tabs ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
+        style={{ display: 'flex', gap: 8, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}
+      >
+        <button
+          onClick={() => setFilters({ ...filters, category: '' })}
+          style={{
+            padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            transition: 'all 0.2s', border: 'none',
+            background: filters.category === '' ? 'var(--text-primary)' : 'transparent',
+            color: filters.category === '' ? '#fff' : 'var(--text-secondary)'
+          }}
+        >
+          Tous
+        </button>
+        {Object.values(Category).map((cat) => {
+          const isActive = filters.category === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => setFilters({ ...filters, category: cat })}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                transition: 'all 0.2s', border: 'none',
+                background: isActive ? 'var(--bg-card)' : 'transparent',
+                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                boxShadow: isActive ? 'var(--shadow-card)' : 'none',
+              }}
+            >
+              {cat}
+            </button>
+          );
+        })}
       </motion.div>
 
       {/* ── Table Container ── */}
