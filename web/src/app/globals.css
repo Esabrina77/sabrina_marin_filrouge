@@ -1,66 +1,193 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f9fa;
-  --foreground: #1a1a1a;
-  --card: #ffffff;
-  --card-foreground: #1a1a1a;
-  --primary: #f5a623;
-  --primary-foreground: #ffffff;
-  --secondary: #f0f2f5;
-  --secondary-foreground: #4a4a4a;
-  --muted: #f9fafb;
-  --muted-foreground: #6b7280;
-  --accent: #f5a623;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #e5e7eb;
-  --input: #ffffff;
-  --ring: #f5a623;
-  --radius: 1rem;
+  /* Core Palette */
+  --bg-base: #F8F9FA;
+  --bg-card: #FFFFFF;
+  --bg-surface: #F4F5F7;
+
+  /* Orange Accent — CTA, Indicators, Hover states */
+  --accent: #FF6B00;
+  --accent-hover: #E05E00;
+  --accent-subtle: rgba(255, 107, 0, 0.08);
+  --accent-glow: rgba(255, 107, 0, 0.2);
+
+  /* Text */
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-tertiary: #9CA3AF;
+
+  /* Borders */
+  --border: #E5E7EB;
+  --border-subtle: #F3F4F6;
+
+  /* Status Colors */
+  --status-pending-bg: #FFF7ED;
+  --status-pending-text: #EA580C;
+  --status-ready-bg: #EFF6FF;
+  --status-ready-text: #2563EB;
+  --status-completed-bg: #F0FDF4;
+  --status-completed-text: #16A34A;
+  --status-cancelled-bg: #FEF2F2;
+  --status-cancelled-text: #DC2626;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06);
+  --shadow-accent: 0 4px 14px rgba(255, 107, 0, 0.25);
+
+  /* Layout */
+  --sidebar-width: 256px;
+  --radius-card: 16px;
+  --radius-pill: 999px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-primary: var(--primary);
-  --color-accent: var(--accent);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
-  --font-sans: var(--font-montserrat);
-  
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
+/* Base Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-@layer base {
-  * {
-    border-color: var(--border);
-  }
-  body {
-    background-color: var(--background);
-    color: var(--foreground);
-    font-family: var(--font-montserrat), sans-serif;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@layer utilities {
-  .card-shadow {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  }
-  
-  .sidebar-active {
-    background-color: var(--primary);
-    color: white;
-    box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
-  }
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+}
 
-  .bg-orange-gradient {
-    background: linear-gradient(135deg, #f5a623 0%, #ffc107 100%);
-  }
+/* ─── Utility Classes ─────────────────────────────────────── */
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* KPI Card accent bar */
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.kpi-card:hover::before {
+  opacity: 1;
+}
+
+/* Status Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.badge-pending  { background: var(--status-pending-bg);   color: var(--status-pending-text); }
+.badge-ready    { background: var(--status-ready-bg);     color: var(--status-ready-text); }
+.badge-completed{ background: var(--status-completed-bg); color: var(--status-completed-text); }
+.badge-cancelled{ background: var(--status-cancelled-bg); color: var(--status-cancelled-text); }
+
+/* Orange CTA Button */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  box-shadow: var(--shadow-accent);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 6px 20px rgba(255, 107, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Outline Button with Orange hover */
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-outline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-subtle);
+}
+
+/* Sidebar Active Item */
+.nav-item-active {
+  background: var(--accent);
+  color: #fff !important;
+  box-shadow: var(--shadow-accent);
+}
+
+/* Micro-sparkline graph area — gradient under line */
+.chart-gradient {
+  background: linear-gradient(180deg, rgba(255,107,0,0.15) 0%, rgba(255,107,0,0) 100%);
+}
+
+/* Table rows */
+.table-row-hover:hover {
+  background: #FAFAFA;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #D1D5DB; }
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

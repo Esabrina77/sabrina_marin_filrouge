@@ -108,7 +108,7 @@ class OrderServiceTest {
         given(orderRepository.findAllByOrderByCreatedAtDesc(pageable)).willReturn(orderPage);
         given(orderMapper.toResponse(order)).willReturn(orderResponse);
 
-        PagedResponse<OrderResponse> result = orderService.getAllOrders(pageable);
+        PagedResponse<OrderResponse> result = orderService.getAllOrders(null, pageable);
 
         assertThat(result.content()).hasSize(1);
         assertThat(result.content().get(0)).isEqualTo(orderResponse);

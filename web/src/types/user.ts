@@ -24,4 +24,6 @@ export interface UserFilters {
   size?: number;
   sort?: string;
   role?: Role;
+  name?: string;
+  search?: string;
 }

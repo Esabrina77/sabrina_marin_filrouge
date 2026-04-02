@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
@@ -15,6 +15,11 @@ interface ModalProps {
 
 export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close on Escape key
   useEffect(() => {
@@ -37,56 +42,72 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalPr
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!mounted) return null;
 
   const sizeClasses = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-2xl',
+    sm: 400,
+    md: 500,
+    lg: 600,
+    xl: 800,
   };
 
   const content = (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-      />
-      
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className={`relative w-full ${sizeClasses[size]} bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]`}
-        onClick={(e) => e.stopPropagation()}
-        ref={modalRef}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-          <button
+    <AnimatePresence>
+      {isOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+        }}>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             onClick={onClose}
-            className="p-2 -mr-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', zIndex: -1 }}
+          />
+          
+          {/* Modal Card */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: sizeClasses[size],
+              background: 'var(--bg-card)',
+              borderRadius: 'var(--radius-card)',
+              boxShadow: 'var(--shadow-card-hover)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '90vh',
+            }}
+            onClick={(e) => e.stopPropagation()}
+            ref={modalRef}
           >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: '1px solid var(--border-subtle)' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{title}</h3>
+              <button
+                onClick={onClose}
+                className="btn-outline"
+                style={{ padding: 6, borderRadius: 10, border: 'none' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto">
-          {children}
+            {/* Content */}
+            <div style={{ padding: '24px', overflowY: 'auto' }}>
+              {children}
+            </div>
+          </motion.div>
         </div>
-      </motion.div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 
-  // Use portal if document is available (client-side)
-  if (typeof document !== 'undefined') {
-    return createPortal(<AnimatePresence>{content}</AnimatePresence>, document.body);
-  }
-  
-  return null;
+  return createPortal(content, document.body);
 };

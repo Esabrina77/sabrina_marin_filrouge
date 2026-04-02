@@ -2,20 +2,21 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Search, 
-  Plus, 
+import {
+  Search,
+  Plus,
   ArrowUpRight,
-  TrendingUp,
   ShoppingBag,
   Users,
   DollarSign,
   Package,
   Clock,
-  ChevronRight,
-  MoreVertical,
-  Activity,
-  AlertTriangle
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  CheckCircle2,
+  Circle,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import OrderService from '@/lib/api/orders';
@@ -24,260 +25,762 @@ import UserService from '@/lib/api/users';
 import { Order, OrderStatus } from '@/types/order';
 import { Product } from '@/types/product';
 import { User, Role } from '@/types/user';
+import { useSearchParams } from 'next/navigation';
+
+import { Modal } from '@/components/ui/modal';
+import { OrderDetailsContent } from '@/components/admin/OrderDetailsContent';
+import { ProductDetailsContent } from '@/components/admin/ProductDetailsContent';
+
+function formatCurrency(val: number) {
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
+}
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+const STATUS_CONFIG: Record<string, { label: string; className: string; dot: string }> = {
+  PENDING: { label: 'En attente', className: 'badge badge-pending', dot: '#EA580C' },
+  READY: { label: 'Prête', className: 'badge badge-ready', dot: '#2563EB' },
+  COMPLETED: { label: 'Livrée', className: 'badge badge-completed', dot: '#16A34A' },
+  CANCELLED: { label: 'Annulée', className: 'badge badge-cancelled', dot: '#DC2626' },
+};
+
+function Sparkline({ data, color = '#FF6B00' }: { data: number[]; color?: string }) {
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data);
+  const W = 80, H = 36;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * W;
+    const y = H - ((v - min) / (max - min || 1)) * (H - 4);
+    return `${x},${y}`;
+  });
+  const polyline = pts.join(' ');
+  const area = `0,${H} ${polyline} ${W},${H}`;
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} fill="none">
+      <defs>
+        <linearGradient id={`grad-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={area} fill={`url(#grad-${color.replace('#', '')})`} />
+      <polyline points={polyline} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function KPICard({
+  label, value, icon: Icon, iconColor, iconBg, trend, sparkData, delay = 0
+}: {
+  label: string; value: string; icon: any; iconColor: string; iconBg: string;
+  trend?: { value: string; up: boolean }; sparkData?: number[]; delay?: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+      className="card kpi-card"
+      style={{ padding: '20px 22px', cursor: 'default' }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div style={{
+          width: 38, height: 38,
+          background: iconBg, borderRadius: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <Icon size={18} color={iconColor} strokeWidth={2.2} />
+        </div>
+        {sparkData && <Sparkline data={sparkData} />}
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 4 }}>
+          {label}
+        </p>
+        <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
+          {value}
+        </p>
+        {trend && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
+            {trend.up
+              ? <TrendingUp size={13} color="#16A34A" />
+              : <TrendingDown size={13} color="#DC2626" />}
+            <span style={{ fontSize: 12, fontWeight: 600, color: trend.up ? '#16A34A' : '#DC2626' }}>
+              {trend.value}
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>vs hier</span>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
-  
-  // State for Dashboard Data
-  const [stats, setStats] = useState({
-    totalRevenue: 0,
-    totalOrders: 0,
-    totalClients: 0,
-    outOfStockItems: 0
-  });
+  const [search, setSearch] = useState('');
+  const [showResults, setShowResults] = useState(false);
+  const [stats, setStats] = useState({ totalRevenue: 0, totalOrders: 0, totalClients: 0, outOfStockItems: 0 });
 
-  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+
   const [topSelling, setTopSelling] = useState<any[]>([]);
   const [outOfStockProducts, setOutOfStockProducts] = useState<Product[]>([]);
+
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<{ orders: any[]; products: any[]; clients: any[] }>({ orders: [], products: [], clients: [] });
+  const [isSearching, setIsSearching] = useState(false);
+
+  const now = new Date();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-
-        // 1. Fetch All Data (Parallel)
         const [ordersRes, productsRes, usersRes] = await Promise.all([
-          OrderService.getAll({ size: 1000, sort: 'createdAt,desc' }), // Get latest orders
-          ProductService.getAll({ size: 1000 }),
-          UserService.getAll({ size: 1000 })
+          OrderService.getAll({ size: 100, sort: 'createdAt,desc' }),
+          ProductService.getAll({ size: 20 }),
+          UserService.getAll({ size: 20 }),
         ]);
 
         const orders = ordersRes.content;
         const products = productsRes.content;
         const users = usersRes.content;
 
-        // 2. Calculate Stats
-        const totalRevenue = orders
-          .filter(o => o.status !== OrderStatus.CANCELLED)
-          .reduce((acc, order) => acc + order.total, 0);
-        
-        const totalOrders = orders.length;
-        const totalClients = users.filter(u => u.role === Role.CLIENT).length;
-        const outOfStock = products.filter(p => p.quantity < 5);
+        const totalRevenue = orders.filter(o => o.status !== OrderStatus.CANCELLED).reduce((a, o) => a + o.total, 0);
+        const outOfStock = products.filter((p: Product) => (p as any).quantity < 5);
 
         setStats({
           totalRevenue,
-          totalOrders,
-          totalClients,
-          outOfStockItems: outOfStock.length
+          totalOrders: ordersRes.totalElements,
+          totalClients: usersRes.totalElements,
+          outOfStockItems: outOfStock.length,
         });
 
-        // 3. Process Recent Orders
-        setRecentOrders(orders.slice(0, 5)); // First 5 orders
+        setAllOrders(orders);
+        setAllProducts(products);
+        setAllUsers(users);
+        setOutOfStockProducts(outOfStock.slice(0, 5));
 
-        // 4. Process Top Selling Products (Aggregation)
-        const productSales: Record<string, { name: string, quantity: number, revenue: number }> = {};
-        
-        orders.forEach(order => {
+        const productSales: Record<string, { name: string; quantity: number; revenue: number }> = {};
+        orders.slice(0, 50).forEach(order => {
           if (order.status !== OrderStatus.CANCELLED) {
-            order.items.forEach(item => {
+            order.items.forEach((item: any) => {
               if (!productSales[item.productName]) {
-                productSales[item.productName] = { 
-                  name: item.productName, 
-                  quantity: 0, 
-                  revenue: 0 
-                };
+                productSales[item.productName] = { name: item.productName, quantity: 0, revenue: 0 };
               }
               productSales[item.productName].quantity += item.quantity;
-              productSales[item.productName].revenue += (item.priceAtReservation * item.quantity);
+              productSales[item.productName].revenue += item.priceAtReservation * item.quantity;
             });
           }
         });
-
-        const sortedTopSelling = Object.values(productSales)
-          .sort((a, b) => b.quantity - a.quantity)
-          .slice(0, 3);
-
-        setTopSelling(sortedTopSelling);
-        setOutOfStockProducts(outOfStock.slice(0, 5)); // Show up to 5 low stock items
-
-      } catch (error) {
-        console.error("Failed to load dashboard data", error);
+        setTopSelling(Object.values(productSales).sort((a, b) => b.quantity - a.quantity).slice(0, 3));
+      } catch (e) {
+        console.error(e);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  const statCards = [
-    { label: 'Revenu Total', value: `${stats.totalRevenue.toFixed(2)} €`, icon: DollarSign, color: 'text-green-500', bg: 'bg-green-50' },
-    { label: 'Commandes', value: stats.totalOrders.toString(), icon: ShoppingBag, color: 'text-amber-500', bg: 'bg-amber-50' },
-    { label: 'Clients', value: stats.totalClients.toString(), icon: Users, color: 'text-blue-500', bg: 'bg-blue-50' },
-    { label: 'Rupture de Stock', value: stats.outOfStockItems.toString(), icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-50' },
-  ];
+  useEffect(() => {
+    if (search.length <= 1) {
+      setSearchResults({ orders: [], products: [], clients: [] });
+      return;
+    }
+
+    const handler = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const [ordersRes, productsRes, usersRes] = await Promise.all([
+          OrderService.getAll({ search: search, size: 2 }),
+          ProductService.getAll({ name: search, size: 2 }),
+          UserService.getAll({ name: search, size: 2 }),
+        ]);
+
+        setSearchResults({
+          orders: ordersRes.content.slice(0, 3),
+          products: productsRes.content.slice(0, 3),
+          clients: usersRes.content.slice(0, 3)
+        });
+      } catch (e) {
+        console.error("Search failed", e);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  const recentOrders = allOrders.slice(0, 8);
+
+  const filteredOrdersTable = recentOrders.filter(o =>
+    search === '' ||
+    o.orderReference.toLowerCase().includes(search.toLowerCase()) ||
+    `${o.userFirstName} ${o.userLastName}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const hasAnyResult = searchResults.orders.length > 0 || searchResults.products.length > 0 || searchResults.clients.length > 0;
+
+  const revenueSpark = [40, 55, 48, 70, 62, 85, 78, 92, 88, stats.totalRevenue > 0 ? 100 : 60];
+  const orderSpark = [3, 5, 4, 8, 6, 10, 9, 12, 11, stats.totalOrders % 15 || 8];
 
   if (loading) {
-     return <div className="p-12 text-center text-gray-500">Chargement du tableau de bord...</div>;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 12, color: 'var(--text-tertiary)' }}>
+        <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
+        <span style={{ fontSize: 14, fontWeight: 500 }}>Chargement du tableau de bord…</span>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
   }
 
   return (
-    <div className="flex gap-8">
-      {/* Left Column: Manager Overview */}
-      <div className="flex-1 space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Tableau de Bord</h1>
-            <p className="text-sm text-gray-500">Aperçu en temps réel de votre activité.</p>
+    <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="top-bar-admin"
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}
+      >
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', textTransform: 'capitalize' }}>
+            {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </h1>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="search-container" style={{ position: 'relative' }}>
+            <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+            <input
+              type="text"
+              placeholder="Recherche globale..."
+              value={search}
+              onChange={e => {
+                setSearch(e.target.value);
+                setShowResults(true);
+              }}
+              onFocus={() => setShowResults(true)}
+              style={{
+                width: 260, padding: '9px 12px 9px 36px',
+                background: '#fff', border: '1px solid var(--border)',
+                borderRadius: 12, fontSize: 13, color: 'var(--text-primary)',
+                outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s',
+              }}
+              onFocusCapture={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--accent-glow)'; }}
+              onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
+            />
+
+            {search.length > 1 && showResults && (
+              <div className="search-results-overlay">
+                {!hasAnyResult && (
+                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>
+                    Aucun résultat pour "{search}"
+                  </div>
+                )}
+
+                {searchResults.orders.length > 0 && (
+                  <>
+                    <div className="search-result-category">Commandes</div>
+                    {searchResults.orders.map(o => (
+                      <div
+                        key={o.id}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          setSelectedOrder(o);
+                          setIsOrderModalOpen(true);
+                          setShowResults(false);
+                        }}
+                      >
+                        <div className="search-result-item">
+                          <div className="search-result-icon" style={{ background: 'rgba(37, 99, 235, 0.1)' }}>
+                            <ShoppingBag size={14} color="#2563EB" />
+                          </div>
+                          <div>
+                            <div className="search-result-title">#{o.orderReference}</div>
+                            <div className="search-result-subtitle">{o.userFirstName} {o.userLastName}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {searchResults.products.length > 0 && (
+                  <>
+                    <div className="search-result-category">Produits</div>
+                    {searchResults.products.map(p => (
+                      <div
+                        key={p.id}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          setSelectedProduct(p);
+                          setIsProductModalOpen(true);
+                          setShowResults(false);
+                        }}
+                      >
+                        <div className="search-result-item">
+                          <div className="search-result-icon" style={{ background: 'rgba(255, 107, 0, 0.1)' }}>
+                            <Package size={14} color="#FF6B00" />
+                          </div>
+                          <div>
+                            <div className="search-result-title">{p.name}</div>
+                            <div className="search-result-subtitle">{p.category} • {formatCurrency(p.price)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {searchResults.clients.length > 0 && (
+                  <>
+                    <div className="search-result-category">utilisateurs</div>
+                    {searchResults.clients.map(u => (
+                      <Link key={u.id} href={`/admin/clients?search=${u.email}`} onClick={() => setShowResults(false)}>
+                        <div className="search-result-item">
+                          <div className="search-result-icon" style={{ background: 'rgba(22, 163, 74, 0.1)' }}>
+                            <Users size={14} color="#16A34A" />
+                          </div>
+                          <div>
+                            <div className="search-result-title">{u.firstName} {u.lastName}</div>
+                            <div className="search-result-subtitle">{u.email}</div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
           </div>
-          <div className="relative w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-            <input 
-              type="text" 
-              placeholder="Rechercher une commande, un client..."
-              className="w-full bg-white border border-gray-300 focus:border-amber-500 rounded-2xl py-3 pl-12 pr-4 text-sm shadow-sm focus:ring-1 focus:ring-amber-500 transition-all font-medium placeholder:text-gray-500 text-gray-900"
+
+          <button
+            className="btn-primary"
+            onClick={() => {
+              setSelectedProduct(null);
+              setIsProductModalOpen(true);
+            }}
+          >
+            <Plus size={15} strokeWidth={2.5} />
+            Nouveau produit
+          </button>
+        </div>
+      </motion.div>
+
+      <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+            <KPICard
+              label="Revenu total" value={formatCurrency(stats.totalRevenue)}
+              icon={DollarSign} iconColor="#FF6B00" iconBg="rgba(255,107,0,0.1)"
+              trend={{ value: '+12.4%', up: true }} sparkData={revenueSpark} delay={0}
+            />
+            <KPICard
+              label="Commandes" value={stats.totalOrders.toString()}
+              icon={ShoppingBag} iconColor="#2563EB" iconBg="rgba(37,99,235,0.1)"
+              trend={{ value: '+5.1%', up: true }} sparkData={orderSpark} delay={0.05}
+            />
+            <KPICard
+              label="Clients" value={stats.totalClients.toString()}
+              icon={Users} iconColor="#16A34A" iconBg="rgba(22,163,74,0.1)"
+              trend={{ value: '+3.2%', up: true }} delay={0.1}
+            />
+            <KPICard
+              label="Rupture stock" value={stats.outOfStockItems.toString()}
+              icon={AlertTriangle} iconColor={stats.outOfStockItems > 0 ? '#DC2626' : '#9CA3AF'}
+              iconBg={stats.outOfStockItems > 0 ? 'rgba(220,38,38,0.1)' : 'rgba(156,163,175,0.1)'}
+              delay={0.15}
             />
           </div>
-        </div>
 
-        {/* Operational Stats */}
-        <div className="grid grid-cols-4 gap-6">
-            {statCards.map((stat, i) => (
-                <div key={i} className="bg-white p-6 rounded-[2rem] card-shadow border border-gray-100 group transition-all hover:scale-[1.02]">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className={`p-3 rounded-2xl ${stat.bg}`}>
-                            <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                        </div>
-                    </div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{stat.label}</p>
-                    <h3 className="text-xl font-black text-gray-900">{stat.value}</h3>
-                </div>
-            ))}
-        </div>
-
-        {/* Section: Best Sellers */}
-        {topSelling.length > 0 && (
-          <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-gray-900">Meilleures Ventes</h2>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+            className="card"
+            style={{ overflow: 'hidden' }}
+          >
+            <div className="top-bar-admin" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid var(--border-subtle)' }}>
+              <div>
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Dernières commandes</h2>
+                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>{filteredOrdersTable.length} commande{filteredOrdersTable.length > 1 ? 's' : ''} affichée{filteredOrdersTable.length > 1 ? 's' : ''}</p>
               </div>
-              <div className="grid grid-cols-3 gap-6">
-                  {topSelling.map((item, i) => (
-                      <motion.div key={i} whileHover={{ y: -5 }} className="bg-white p-4 rounded-[2rem] card-shadow space-y-4 relative border border-gray-50">
-                          <div>
-                              <h3 className="font-bold text-gray-900">{item.name}</h3>
-                              <div className="flex items-center justify-between mt-2">
-                                  <div className="space-y-0.5">
-                                      <p className="text-[10px] font-bold text-gray-400">VENTES</p>
-                                      <p className="font-black text-sm">{item.quantity}</p>
-                                  </div>
-                                  <div className="text-right space-y-0.5">
-                                      <p className="text-[10px] font-bold text-gray-400">REVENU</p>
-                                      <p className="font-black text-sm text-amber-500">{item.revenue.toFixed(2)}€</p>
-                                  </div>
+              <Link href="/admin/orders" style={{ textDecoration: 'none' }}>
+                <button className="btn-outline" style={{ fontSize: 12, padding: '6px 14px' }}>
+                  Voir tout <ArrowUpRight size={13} />
+                </button>
+              </Link>
+            </div>
+
+            <div className="desktop-only">
+              <div className="table-container">
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg-surface)' }}>
+                      {['Référence', 'Client', 'Date', 'Statut', 'Total'].map(h => (
+                        <th key={h} style={{ padding: '10px 22px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredOrdersTable.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ padding: '32px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
+                          Aucune commande trouvée
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredOrdersTable.map((order, i) => {
+                        const sc = STATUS_CONFIG[order.status] ?? STATUS_CONFIG['PENDING'];
+                        return (
+                          <motion.tr
+                            key={order.id}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.25 + i * 0.03 }}
+                            className="table-row-hover"
+                            style={{ borderTop: '1px solid var(--border-subtle)', transition: 'background 0.15s', cursor: 'pointer' }}
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setIsOrderModalOpen(true);
+                            }}
+                          >
+                            <td style={{ padding: '13px 22px' }}>
+                              <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                                #{order.orderReference}
+                              </span>
+                            </td>
+                            <td style={{ padding: '13px 22px' }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                                {order.userFirstName} {order.userLastName}
                               </div>
-                          </div>
-                      </motion.div>
-                  ))}
-              </div>
-          </div>
-        )}
-
-        {/* Section: Recent Orders */}
-        <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Dernières Commandes</h2>
-                <Link href="/admin/orders" className="text-sm font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1">
-                  Voir toutes les commandes <ArrowUpRight className="h-4 w-4" />
-                </Link>
-            </div>
-            <div className="bg-white rounded-[2rem] card-shadow overflow-hidden border border-gray-50">
-                <table className="w-full text-left">
-                    <thead>
-                        <tr className="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                            <th className="px-6 py-4">Réf</th>
-                            <th className="px-6 py-4">Client</th>
-                            <th className="px-6 py-4">Status</th>
-                            <th className="px-6 py-4">Total</th>
-                            <th className="px-6 py-4">Date</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                        {recentOrders.map((order) => (
-                            <tr key={order.id} className="text-sm hover:bg-gray-50/50 transition-colors">
-                                <td className="px-6 py-4 font-bold text-gray-900">#{order.orderReference}</td>
-                                <td className="px-6 py-4 font-semibold text-gray-600">{order.userFirstName} {order.userLastName}</td>
-                                <td className="px-6 py-4">
-                                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight
-                                        ${order.status === 'READY' ? 'bg-blue-100 text-blue-600' : 
-                                          order.status === 'COMPLETED' ? 'bg-green-100 text-green-600' : 
-                                          order.status === 'CANCELLED' ? 'bg-red-100 text-red-600' :
-                                          'bg-amber-100 text-amber-600'}`}>
-                                        {order.status}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 font-black">{order.total.toFixed(2)}€</td>
-                                <td className="px-6 py-4 text-xs font-bold text-gray-400 flex items-center gap-1.5">
-                                    <Clock className="h-3 w-3" /> {new Date(order.createdAt).toLocaleDateString()}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
+                            </td>
+                            <td style={{ padding: '13px 22px' }}>
+                              <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                                {formatDate(order.createdAt)}
+                                <br />
+                                <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>{formatTime(order.createdAt)}</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '13px 22px' }}>
+                              <span className={sc.className}>
+                                <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot, display: 'inline-block' }} />
+                                {sc.label}
+                              </span>
+                            </td>
+                            <td style={{ padding: '13px 22px' }}>
+                              <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                                {formatCurrency(order.total)}
+                              </span>
+                            </td>
+                          </motion.tr>
+                        );
+                      })
+                    )}
+                  </tbody>
                 </table>
+              </div>
             </div>
 
-        </div>
-      </div>
+            <div className="mobile-only" style={{ padding: '0 16px 16px', marginTop: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {filteredOrdersTable.length === 0 ? (
+                  <div style={{ padding: '32px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
+                    Aucune commande trouvée
+                  </div>
+                ) : (
+                  filteredOrdersTable.map((order, i) => {
+                    const sc = STATUS_CONFIG[order.status] ?? STATUS_CONFIG['PENDING'];
+                    return (
+                      <motion.div
+                        key={order.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 + i * 0.05 }}
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setIsOrderModalOpen(true);
+                        }}
+                        style={{
+                          padding: 16,
+                          background: 'var(--bg-surface)',
+                          borderRadius: 16,
+                          border: '1px solid var(--border-subtle)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                          <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                            #{order.orderReference}
+                          </span>
+                          <span className={sc.className}>
+                            {sc.label}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                              {order.userFirstName} {order.userLastName}
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>
+                              {formatDate(order.createdAt)} à {formatTime(order.createdAt)}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>
+                              {formatCurrency(order.total)}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </motion.div>
 
-      {/* Right Column: Key Metrics & Quick Controls */}
-      <div className="w-80 space-y-8">
-        {/* Alerts: Low Stock */}
-        {outOfStockProducts.length > 0 && (
-          <div className="bg-white p-6 rounded-[2rem] card-shadow space-y-4 border border-amber-100">
-             <div className="flex items-center gap-3 text-amber-600">
-                <AlertTriangle className="h-5 w-5" />
-                <h2 className="text-lg font-bold">Alertes Stock</h2>
-             </div>
-             <ul className="space-y-3">
-                {outOfStockProducts.map(product => (
-                  <li key={product.id} className="flex items-center justify-between text-sm">
-                     <span className="font-semibold text-gray-700 truncate max-w-[150px]">{product.name}</span>
-                     <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                        product.quantity === 0 ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
-                     }`}>
-                        {product.quantity}
-                     </span>
-                  </li>
+          {topSelling.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+            >
+              <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: 'var(--text-primary)' }}>
+                Meilleures ventes
+              </h2>
+              <div className="top-selling-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+                {topSelling.map((item, i) => (
+                  <motion.div
+                    key={i}
+                    whileHover={{ y: -3, boxShadow: 'var(--shadow-card-hover)' }}
+                    className="card"
+                    style={{ padding: '18px 20px', cursor: 'default', transition: 'all 0.2s' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 8,
+                        background: i === 0 ? 'rgba(255,107,0,0.1)' : 'var(--bg-surface)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 13, fontWeight: 800,
+                        color: i === 0 ? 'var(--accent)' : 'var(--text-tertiary)',
+                      }}>
+                        #{i + 1}
+                      </div>
+                      {i === 0 && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-subtle)', padding: '2px 7px', borderRadius: 999, letterSpacing: '0.04em' }}>
+                          TOP
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 10, lineHeight: 1.3 }}>
+                      {item.name}
+                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <div>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Ventes</p>
+                        <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{item.quantity}</p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Revenu</p>
+                        <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)', letterSpacing: '-0.02em' }}>{formatCurrency(item.revenue)}</p>
+                      </div>
+                    </div>
+                  </motion.div>
                 ))}
-             </ul>
-             <Link href="/admin/products" className="block text-center text-xs font-bold text-gray-500 hover:text-amber-600 mt-2">
-                Gérer l'inventaire
-             </Link>
-          </div>
-        )}
+              </div>
+            </motion.div>
+          )}
+        </div>
 
-        {/* Quick Management Actions */}
-        <div className="bg-white p-6 rounded-[2rem] card-shadow space-y-6">
-            <h2 className="text-lg font-bold">Actions Rapides</h2>
-            <div className="grid gap-3">
-                <Link href="/admin/products" className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-amber-50 transition-colors group">
-                    <div className="p-2 bg-white rounded-xl shadow-sm text-amber-500 group-hover:scale-110 transition-transform">
-                        <Plus className="h-5 w-5" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <motion.div
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="card"
+            style={{ padding: '18px 20px' }}
+          >
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14 }}>Actions rapides</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                { href: '/admin/products', icon: Package, label: 'Gérer les produits', color: '#FF6B00', bg: 'rgba(255,107,0,0.08)' },
+                { href: '/admin/orders', icon: ShoppingBag, label: 'Voir les commandes', color: '#2563EB', bg: 'rgba(37,99,235,0.08)' },
+                { href: '/admin/clients', icon: Users, label: 'Gérer les clients', color: '#16A34A', bg: 'rgba(22,163,74,0.08)' },
+              ].map(action => (
+                <Link key={action.href} href={action.href} style={{ textDecoration: 'none' }}>
+                  <motion.div
+                    whileHover={{ x: 3 }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 12px', borderRadius: 12,
+                      border: '1px solid var(--border-subtle)',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                      background: '#fff',
+                    }}
+                    className="quick-action-card"
+                  >
+                    <div style={{ width: 32, height: 32, borderRadius: 9, background: action.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <action.icon size={15} color={action.color} strokeWidth={2.2} />
                     </div>
-                    <span className="font-bold text-sm text-gray-700">Nouveau Produit</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{action.label}</span>
+                    <ArrowUpRight size={13} style={{ marginLeft: 'auto', color: 'var(--text-tertiary)' }} />
+                  </motion.div>
                 </Link>
-
-                <Link href="/admin/clients" className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-blue-50 transition-colors group">
-                    <div className="p-2 bg-white rounded-xl shadow-sm text-blue-500 group-hover:scale-110 transition-transform">
-                        <Users className="h-5 w-5" />
-                    </div>
-                    <span className="font-bold text-sm text-gray-700">Gérer Clients</span>
-                </Link>
+              ))}
             </div>
+          </motion.div>
+
+          {outOfStockProducts.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.25, duration: 0.4 }}
+              className="card"
+              style={{ padding: '18px 20px', borderColor: '#FECACA' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <div style={{ width: 28, height: 28, background: 'rgba(220,38,38,0.1)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <AlertTriangle size={14} color="#DC2626" />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: 13, fontWeight: 700, color: '#DC2626' }}>Alertes stock</h2>
+                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{outOfStockProducts.length} produit{outOfStockProducts.length > 1 ? 's' : ''} en tension</p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {outOfStockProducts.map(p => (
+                  <div
+                    key={p.id}
+                    onClick={() => {
+                      setSelectedProduct(p);
+                      setIsProductModalOpen(true);
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--bg-surface)', borderRadius: 10, cursor: 'pointer' }}
+                  >
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
+                      background: (p as any).quantity === 0 ? 'rgba(220,38,38,0.12)' : 'rgba(234,88,12,0.1)',
+                      color: (p as any).quantity === 0 ? '#DC2626' : '#EA580C',
+                      marginLeft: 8, flexShrink: 0,
+                    }}>
+                      {(p as any).quantity === 0 ? 'Épuisé' : `${(p as any).quantity} restants`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <Link href="/admin/products" style={{ display: 'block', textAlign: 'center', marginTop: 12, fontSize: 12, fontWeight: 600, color: '#DC2626', textDecoration: 'none', opacity: 0.8 }}>
+                Gérer l'inventaire →
+              </Link>
+            </motion.div>
+          )}
+
+          <motion.div
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.4 }}
+            className="card"
+            style={{ padding: '18px 20px' }}
+          >
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14 }}>Répartition statuts</h2>
+            {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+              const count = allOrders.filter(o => o.status === key).length;
+              const total = allOrders.length || 1;
+              const pct = Math.round((count / total) * 100);
+              return (
+                <div key={key} style={{ marginBottom: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>{cfg.label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{count}</span>
+                  </div>
+                  <div style={{ height: 5, background: 'var(--bg-surface)', borderRadius: 999, overflow: 'hidden' }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ delay: 0.4, duration: 0.6, ease: 'easeOut' }}
+                      style={{ height: '100%', background: cfg.dot, borderRadius: 999 }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </motion.div>
         </div>
       </div>
+
+      <Modal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        title={selectedOrder ? `Commande #${selectedOrder.orderReference}` : 'Détails'}
+        size="lg"
+      >
+        {selectedOrder && (
+          <OrderDetailsContent
+            order={selectedOrder}
+            onStatusUpdate={(id, newStatus) => {
+              setAllOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+              setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+            }}
+          />
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={isProductModalOpen}
+        onClose={() => setIsProductModalOpen(false)}
+        title={selectedProduct ? "Détails du produit" : "Nouveau produit"}
+        size="lg"
+      >
+        <ProductDetailsContent
+          product={selectedProduct}
+          onSaveSuccess={(p) => {
+            setIsProductModalOpen(false);
+            setAllProducts(prev => {
+              const exists = prev.find(item => item.id === p.id);
+              if (exists) return prev.map(item => item.id === p.id ? p : item);
+              return [p, ...prev];
+            });
+          }}
+          onCancel={() => setIsProductModalOpen(false)}
+        />
+      </Modal>
+
+      <style>{`
+          .quick-action-card:hover {
+            border-color: var(--accent) !important;
+            background: var(--accent-subtle) !important;
+          }
+        `}</style>
+
+      {showResults && (
+        <div
+          onClick={() => setShowResults(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+        />
+      )}
     </div>
   );
 }

@@ -5,7 +5,6 @@ import { Order, OrderFilters, OrderStatus } from '@/types/order';
 const ORDER_API_BASE = '/orders';
 
 export const OrderService = {
-  // Récupérer les commandes (Toutes ou filtrées par statut)
   getAll: async (filters: OrderFilters = {}): Promise<PagedResponse<Order>> => {
     try {
       const params = new URLSearchParams();
@@ -18,6 +17,8 @@ export const OrderService = {
         url = `${ORDER_API_BASE}/filter`;
         params.append('status', filters.status);
       }
+      if (filters.reference) params.append('reference', filters.reference);
+      if (filters.search) params.append('reference', filters.search);
 
       const response = await api.get<PagedResponse<Order>>(url, { params });
       return response.data;
@@ -27,7 +28,6 @@ export const OrderService = {
     }
   },
 
-  // Récupérer une commande par ID
   getById: async (id: string): Promise<Order> => {
     try {
       const response = await api.get<Order>(`${ORDER_API_BASE}/${id}`);
@@ -38,7 +38,6 @@ export const OrderService = {
     }
   },
 
-  // Mettre à jour le statut d'une commande
   updateStatus: async (id: string, status: OrderStatus): Promise<Order> => {
     try {
       const params = new URLSearchParams();

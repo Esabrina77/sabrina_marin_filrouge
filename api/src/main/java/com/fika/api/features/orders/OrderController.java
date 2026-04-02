@@ -32,8 +32,10 @@ public class OrderController {
     @GetMapping()
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Lister toutes les commandes (Admin ONLY)", description = "Récupère l'intégralité des commandes passées sur la plateforme.")
-    public PagedResponse<OrderResponse> getAllOrders(@ParameterObject @PageableDefault(size = 12) Pageable pageable) {
-        return orderService.getAllOrders(pageable);
+    public PagedResponse<OrderResponse> getAllOrders(
+            @RequestParam(required = false) String reference,
+            @ParameterObject @PageableDefault(size = 12) Pageable pageable) {
+        return orderService.getAllOrders(reference, pageable);
     }
 
     @GetMapping("/filter")

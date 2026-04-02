@@ -4,6 +4,7 @@ import com.fika.api.features.orders.model.Order;
 import com.fika.api.features.orders.model.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,14 +14,20 @@ import java.util.UUID;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, UUID> {
+    Page<Order> findByOrderReferenceContainingIgnoreCase(String orderReference, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"user"})
     Page<Order> findByUserEmailOrderByCreatedAtDesc(String email, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"user"})
     Page<Order> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
     boolean existsByOrderReference(String orderReference);
 
+    @EntityGraph(attributePaths = {"user"})
     Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
+    @EntityGraph(attributePaths = {"user"})
     Page<Order> findAllByStatusOrderByCreatedAtAsc(OrderStatus status, Pageable pageable);
 
     Optional<Order> findFirstByUserEmailAndStatusInOrderByCreatedAtDesc(
