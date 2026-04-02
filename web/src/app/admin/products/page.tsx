@@ -1,24 +1,24 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  Edit, 
-  Trash2, 
-  ChevronLeft, 
-  ChevronRight,
+import { motion } from 'framer-motion';
+import {
   Package,
-  AlertCircle
+  Search,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Edit,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
 import ProductService from '@/lib/api/products';
-import { Product, Category, Allergen, CreateProductRequest, UpdateProductRequest, PagedResponse } from '@/types/product';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Product, Category, Allergen, CreateProductRequest, UpdateProductRequest } from '@/types/product';
+
+function formatCurrency(val: number) {
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
+}
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -29,16 +29,14 @@ export default function ProductsPage() {
   const [filters, setFilters] = useState({
     name: '',
     category: '' as Category | '',
-    minPrice: '',
-    maxPrice: '',
   });
 
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Form State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+
   const [formData, setFormData] = useState<CreateProductRequest>({
     name: '',
     description: '',
@@ -50,7 +48,6 @@ export default function ProductsPage() {
     available: true
   });
 
-  // Fetch Products
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -59,7 +56,6 @@ export default function ProductsPage() {
         size: 10,
         name: filters.name || undefined,
         category: filters.category || undefined,
-        // Add other filters as needed
       });
       setProducts(response.content);
       setTotalPages(response.totalPages);
@@ -73,41 +69,37 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [currentPage, filters]); // Re-fetch when page or comparison filters change
+  }, [currentPage, filters]);
 
-  // Auto-correct inconsistent data: If stock is 0 but available is true, switch available to false
   useEffect(() => {
     if (products.length > 0) {
       products.forEach(async (product) => {
         if (product.quantity === 0 && product.available) {
-           console.log(`Auto-correcting availability for ${product.name} (Stock: 0)`);
-           try {
-             // We need to send the full object as per ProductRequest requirements
-             const updateRequest: UpdateProductRequest = {
-               name: product.name,
-               description: product.description,
-               price: product.price,
-               category: product.category,
-               allergen: product.allergen,
-               imgUrl: product.imgUrl,
-               quantity: product.quantity,
-               available: false // Force available to false
-             };
-             await ProductService.update(product.id, updateRequest);
-             // Verify or refresh logic could be added here, but avoiding loops
-           } catch (err) {
-             console.error(`Failed to auto-correct product ${product.id}`, err);
-           }
+          try {
+            const updateRequest: UpdateProductRequest = {
+              name: product.name,
+              description: product.description,
+              price: product.price,
+              category: product.category,
+              allergen: product.allergen,
+              imgUrl: product.imgUrl,
+              quantity: product.quantity,
+              available: false
+            };
+            await ProductService.update(product.id, updateRequest);
+          } catch (err) {
+            console.error(`Failed to auto-correct product ${product.id}`, err);
+          }
         }
       });
     }
   }, [products]);
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilters({ ...filters, name: e.target.value });
-    setCurrentPage(0); // Reset to first page on search
+    setCurrentPage(0);
   };
 
-  // Handle Modal Open/Close
   const openModal = (product?: Product) => {
     if (product) {
       setSelectedProduct(product);
@@ -124,14 +116,7 @@ export default function ProductsPage() {
     } else {
       setSelectedProduct(null);
       setFormData({
-        name: '',
-        description: '',
-        price: 0,
-        category: Category.PLAT,
-        allergen: Allergen.AUCUN,
-        imgUrl: '',
-        quantity: 0,
-        available: true
+        name: '', description: '', price: 0, category: Category.PLAT, allergen: Allergen.AUCUN, imgUrl: '', quantity: 0, available: true
       });
     }
     setIsModalOpen(true);
@@ -142,7 +127,6 @@ export default function ProductsPage() {
     setSelectedProduct(null);
   };
 
-  // Handle Form Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -155,15 +139,20 @@ export default function ProductsPage() {
       fetchProducts();
     } catch (error) {
       console.error('Failed to save product', error);
-      // Show error message (could use toast)
     }
   };
 
-  // Handle Delete
-  const handleDelete = async (id: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
+  const handleDelete = (product: Product) => {
+    setProductToDelete(product);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (productToDelete) {
       try {
-        await ProductService.delete(id);
+        await ProductService.delete(productToDelete.id);
+        setIsDeleteModalOpen(false);
+        setProductToDelete(null);
         fetchProducts();
       } catch (error) {
         console.error('Failed to delete product', error);
@@ -172,34 +161,47 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+      {/* ── Top Bar ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}
+      >
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestion des Produits</h1>
-          <p className="text-sm text-gray-500">Gérez votre catalogue, stock et prix.</p>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+            Produits
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 3 }}>
+            Gérez votre catalogue, stock et prix.
+          </p>
         </div>
-        <Button onClick={() => openModal()} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Ajouter un produit
-        </Button>
-      </div>
 
-      {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Rechercher un produit..."
-            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder:text-gray-500 text-gray-900 shadow-sm"
-            value={filters.name}
-            onChange={handleSearch}
-          />
-        </div>
-        <div className="w-full md:w-48">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ position: 'relative' }}>
+            <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+            <input
+              type="text"
+              placeholder="Rechercher un produit..."
+              value={filters.name}
+              onChange={handleSearch}
+              style={{
+                width: 220, padding: '9px 12px 9px 36px',
+                background: '#fff', border: '1px solid var(--border)',
+                borderRadius: 12, fontSize: 13, color: 'var(--text-primary)',
+                outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s',
+              }}
+              onFocus={e => { e.target.style.borderColor = 'var(--accent)'; e.target.style.boxShadow = '0 0 0 3px var(--accent-glow)'; }}
+              onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+            />
+          </div>
+
           <select
-            className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white"
+            style={{
+              padding: '9px 16px', background: '#fff', border: '1px solid var(--border)', cursor: 'pointer',
+              borderRadius: 12, fontSize: 13, color: 'var(--text-primary)', outline: 'none'
+            }}
             value={filters.category}
             onChange={(e) => setFilters({ ...filters, category: e.target.value as Category | '' })}
           >
@@ -208,265 +210,275 @@ export default function ProductsPage() {
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
-        </div>
-      </div>
 
-      {/* Product List */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-gray-500">Chargement...</div>
-        ) : products.length === 0 ? (
-          <div className="p-12 text-center flex flex-col items-center gap-3">
-             <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center">
-                <Package className="h-6 w-6 text-gray-500" />
-             </div>
-             <p className="text-gray-500 font-medium">Aucun produit trouvé.</p>
-             <Button variant="outline" onClick={() => setFilters({name: '', category: '', minPrice: '', maxPrice: ''})}>
-               Réinitialiser les filtres
-             </Button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-gray-50 text-xs uppercase text-gray-500 font-bold border-b border-gray-200">
-                  <th className="px-6 py-4">Produit</th>
-                  <th className="px-6 py-4">Catégorie</th>
-                  <th className="px-6 py-4">Prix</th>
-                  <th className="px-6 py-4">Stock</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-gray-100 overflow-hidden">
-                          {product.imgUrl ? (
-                            <img src={product.imgUrl} alt={product.name} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center text-gray-500">
-                              <Package className="h-5 w-5" />
-                            </div>
-                          )}
+          <button className="btn-primary" onClick={() => openModal()}>
+            <Plus size={15} strokeWidth={2.5} /> Nouveau produit
+          </button>
+        </div>
+      </motion.div>
+
+      {/* ── Table Container ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+        className="card"
+        style={{ overflow: 'hidden' }}
+      >
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: 'var(--bg-surface)' }}>
+              {['Produit', 'Catégorie', 'Prix', 'Stock', 'Status', 'Actions'].map((h, index) => (
+                <th key={h} style={{ padding: '12px 22px', textAlign: index === 5 ? 'right' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={6} style={{ padding: '40px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
+                  Chargement...
+                </td>
+              </tr>
+            ) : products.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ padding: '60px', textAlign: 'center' }}>
+                  <div style={{ display: 'inline-flex', padding: 16, background: 'var(--bg-surface)', borderRadius: '50%', marginBottom: 12 }}>
+                    <Package size={24} color="var(--text-tertiary)" />
+                  </div>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Aucun produit</p>
+                  <button onClick={() => setFilters({name: '', category: ''})} className="btn-outline" style={{ marginTop: 12 }}>Réinitialiser filtres</button>
+                </td>
+              </tr>
+            ) : (
+              products.map((product, i) => {
+                const isOutOfStock = product.quantity === 0;
+                return (
+                  <motion.tr
+                    key={product.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.03 }}
+                    className="table-row-hover"
+                    style={{ borderTop: '1px solid var(--border-subtle)', transition: 'background 0.15s' }}
+                  >
+                    <td style={{ padding: '14px 22px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, overflow: 'hidden', background: 'var(--bg-surface)', flexShrink: 0 }}>
+                           {product.imgUrl ? (
+                              <img src={product.imgUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                           ) : (
+                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                               <Package size={20} color="var(--border)" />
+                             </div>
+                           )}
                         </div>
                         <div>
-                          <p className="font-bold text-gray-900 text-sm">{product.name}</p>
-                          <p className="text-xs text-gray-500 truncate max-w-[150px]">{product.description}</p>
+                          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                            {product.name}
+                          </p>
+                          <p style={{ fontSize: 11, color: 'var(--text-tertiary)', maxWidth: 180, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.description}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-bold uppercase tracking-wider">
+                    <td style={{ padding: '14px 22px' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', background: 'var(--bg-surface)', padding: '4px 8px', borderRadius: 6, color: 'var(--text-secondary)' }}>
                         {product.category}
                       </span>
                     </td>
-                    <td className="px-6 py-4 font-bold text-gray-900">
-                      {product.price.toFixed(2)} €
+                    <td style={{ padding: '14px 22px', fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>
+                      {formatCurrency(product.price)}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-sm font-bold ${
-                        product.quantity === 0 ? 'text-red-500' : 
-                        product.quantity < 5 ? 'text-amber-500' : 'text-green-500'
-                      }`}>
-                        {product.quantity}
-                      </span>
+                    <td style={{ padding: '14px 22px' }}>
+                       <span style={{ fontSize: 13, fontWeight: 800, color: isOutOfStock ? '#DC2626' : (product.quantity < 5 ? '#EA580C' : '#16A34A') }}>
+                          {product.quantity}
+                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      {/* Logic for Status Badge: Strictly based on Stock as per user request */}
-                      {product.quantity > 0 ? (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1 bg-green-100 text-green-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                          En stock
-                        </span>
-                      ) : (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1 bg-red-100 text-red-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                          Rupture de stock
-                        </span>
-                      )}
+                    <td style={{ padding: '14px 22px' }}>
+                        {isOutOfStock ? (
+                           <span className="badge badge-cancelled">
+                             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#DC2626' }} /> Rupture
+                           </span>
+                        ) : (
+                           <span className="badge badge-completed">
+                             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#16A34A' }} /> En stock
+                           </span>
+                        )}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => openModal(product)}
-                          className="p-2 hover:bg-amber-50 text-gray-500 hover:text-amber-500 rounded-lg transition-colors"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(product.id)}
-                          className="p-2 hover:bg-red-50 text-gray-500 hover:text-red-500 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                    <td style={{ padding: '14px 22px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                          <button
+                            className="btn-outline"
+                            style={{ padding: '6px', borderRadius: 8, borderColor: 'transparent' }}
+                            onClick={() => openModal(product)}
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            className="btn-outline"
+                            style={{ padding: '6px', borderRadius: 8, color: '#DC2626', borderColor: 'transparent' }}
+                            onClick={() => handleDelete(product)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
                       </div>
                     </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  </motion.tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
 
-        {/* Pagination */}
+        {/* ── Pagination ── */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/50">
-            <p className="text-xs text-gray-500">
-              Affichage de {products.length} sur {totalElements} produits
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 22px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-base)' }}>
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+              Affichage de {products.length} sur {totalElements}
             </p>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                className="btn-outline"
                 disabled={currentPage === 0}
                 onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                className="h-8 px-3 text-xs"
+                style={{ padding: '6px 12px', opacity: currentPage === 0 ? 0.5 : 1, cursor: currentPage === 0 ? 'not-allowed' : 'pointer' }}
               >
-                <ChevronLeft className="h-3 w-3 mr-1" /> Précédent
-              </Button>
-              <Button 
-                variant="outline" 
+                <ChevronLeft size={14} /> Précédent
+              </button>
+              <button
+                className="btn-outline"
                 disabled={currentPage >= totalPages - 1}
                 onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
-                className="h-8 px-3 text-xs"
+                style={{ padding: '6px 12px', opacity: currentPage >= totalPages - 1 ? 0.5 : 1, cursor: currentPage >= totalPages - 1 ? 'not-allowed' : 'pointer' }}
               >
-                Suivant <ChevronRight className="h-3 w-3 ml-1" />
-              </Button>
+                Suivant <ChevronRight size={14} />
+              </button>
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
 
-      {/* Create/Edit Modal */}
+      {/* ── Modal ── */}
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
         title={selectedProduct ? "Modifier le produit" : "Nouveau produit"}
         size="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700 mb-1 block">Nom du produit</label>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--text-primary)' }}>Nom du produit</label>
               <input
-                required
-                type="text"
-                maxLength={255}
-                className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                required type="text" maxLength={255}
+                value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', fontSize: 13, outlineColor: 'var(--accent)' }}
               />
             </div>
             
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700 mb-1 block">Description</label>
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--text-primary)' }}>Description</label>
               <textarea
-                required
-                maxLength={1000}
-                className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm min-h-[80px]"
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-              />
-              <p className="text-xs text-gray-500 text-right mt-1">{formData.description.length}/1000</p>
-            </div>
-
-            <div>
-              <label className="text-sm font-bold text-gray-700 mb-1 block">Prix (€)</label>
-              <input
-                required
-                type="number"
-                step="0.01"
-                min="0"
-                className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-                value={formData.price}
-                onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value)})}
+                required maxLength={1000}
+                value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', fontSize: 13, outlineColor: 'var(--accent)', minHeight: 80 }}
               />
             </div>
 
             <div>
-              <label className="text-sm font-bold text-gray-700 mb-1 block">Quantité (Stock)</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--text-primary)' }}>Prix (€)</label>
               <input
-                required
-                type="number"
-                min="0"
-                className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-                value={formData.quantity}
-                onChange={(e) => {
+                required type="number" step="0.01" min="0"
+                value={formData.price} onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value)})}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', fontSize: 13, outlineColor: 'var(--accent)' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--text-primary)' }}>Quantité (Stock)</label>
+              <input
+                required type="number" min="0"
+                value={formData.quantity} onChange={(e) => {
                   const qty = parseInt(e.target.value);
-                  setFormData({
-                    ...formData, 
-                    quantity: qty,
-                    available: qty > 0 // Automatically set to true if stock > 0, false if 0
-                  });
+                  setFormData({ ...formData, quantity: qty, available: qty > 0 });
                 }}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', fontSize: 13, outlineColor: 'var(--accent)' }}
               />
             </div>
 
             <div>
-              <label className="text-sm font-bold text-gray-700 mb-1 block">Catégorie</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--text-primary)' }}>Catégorie</label>
               <select
-                className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white"
-                value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value as Category})}
+                value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value as Category})}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', fontSize: 13, outlineColor: 'var(--accent)', background: '#fff' }}
               >
-                {Object.values(Category).map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
+                {Object.values(Category).map((cat) => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
 
             <div>
-              <label className="text-sm font-bold text-gray-700 mb-1 block">Allergène</label>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--text-primary)' }}>Allergène</label>
               <select
-                className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white"
-                value={formData.allergen}
-                onChange={(e) => setFormData({...formData, allergen: e.target.value as Allergen})}
+                value={formData.allergen} onChange={(e) => setFormData({...formData, allergen: e.target.value as Allergen})}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', fontSize: 13, outlineColor: 'var(--accent)', background: '#fff' }}
               >
-                {Object.values(Allergen).map((all) => (
-                  <option key={all} value={all}>{all}</option>
-                ))}
+                {Object.values(Allergen).map((all) => <option key={all} value={all}>{all}</option>)}
               </select>
             </div>
 
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700 mb-1 block">Image URL</label>
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--text-primary)' }}>Image URL</label>
               <input
-                required
-                type="url"
-                maxLength={255}
-                placeholder="https://example.com/image.jpg"
-                className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-                value={formData.imgUrl}
-                onChange={(e) => setFormData({...formData, imgUrl: e.target.value})}
+                required type="url" maxLength={255}
+                value={formData.imgUrl} onChange={(e) => setFormData({...formData, imgUrl: e.target.value})}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', fontSize: 13, outlineColor: 'var(--accent)' }}
               />
-              <p className="text-xs text-red-500 mt-1">
-                L'URL ne doit pas dépasser 255 caractères.
-              </p>
-            </div>
-
-            <div className="col-span-2 flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="available"
-                className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                checked={formData.quantity > 0}
-                readOnly
-                disabled={true}
-              />
-              <div>
-                <label htmlFor="available" className="text-sm font-medium text-gray-700 block">Produit disponible à la vente</label>
-                <p className="text-xs text-gray-500">Le statut est géré automatiquement selon le stock.</p>
-              </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-            <Button type="button" variant="ghost" onClick={closeModal}>Annuler</Button>
-            <Button type="submit">Enregistrer</Button>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
+            <button type="button" className="btn-outline" onClick={closeModal}>Annuler</button>
+            <button type="submit" className="btn-primary">Enregistrer</button>
           </div>
         </form>
+      </Modal>
+
+      {/* ── Delete Confirmation Modal ── */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Confirmer la suppression"
+        size="sm"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px 0 8px' }}>
+          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(220, 38, 38, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#DC2626', marginBottom: 16 }}>
+            <AlertTriangle size={24} />
+          </div>
+          <h4 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
+            Supprimer ce produit ?
+          </h4>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.5 }}>
+            Êtes-vous sûr de vouloir supprimer le produit <strong style={{ color: 'var(--text-primary)' }}>{productToDelete?.name}</strong> ? Cette action est irréversible et retirera immédiatement le produit du catalogue.
+          </p>
+          <div style={{ display: 'flex', width: '100%', gap: 12 }}>
+            <button 
+              className="btn-outline" 
+              onClick={() => setIsDeleteModalOpen(false)}
+              style={{ flex: 1, padding: '10px', justifyContent: 'center' }}
+            >
+              Annuler
+            </button>
+            <button 
+              className="btn-primary" 
+              onClick={confirmDelete}
+              style={{ flex: 1, padding: '10px', justifyContent: 'center', background: '#DC2626', boxShadow: '0 4px 14px rgba(220, 38, 38, 0.25)' }}
+            >
+              Supprimer
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

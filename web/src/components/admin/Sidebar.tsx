@@ -3,95 +3,137 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  ShoppingBag, 
-  Coffee as CoffeeIcon, 
-  Users, 
-  Settings, 
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  LayoutDashboard,
+  ShoppingBag,
+  Package,
+  Users,
   LogOut,
-  ChevronRight,
-  Package
+  UtensilsCrossed,
 } from 'lucide-react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import AuthService from '@/lib/api/auth';
 
-function cn(...inputs: any[]) {
-  return twMerge(clsx(inputs));
-}
-
 const menuItems = [
-  { icon: LayoutDashboard, label: 'Tableau de bord', href: '/admin/dashboard' },
-  { icon: ShoppingBag, label: 'Commandes', href: '/admin/orders' },
-  { icon: Package, label: 'Produits', href: '/admin/products' },
-  { icon: Users, label: 'Clients', href: '/admin/clients' },
-  { icon: Settings, label: 'Paramètres', href: '/admin/settings' },
+  { icon: LayoutDashboard, label: 'Dashboard',  href: '/admin/dashboard', section: 'main' },
+  { icon: ShoppingBag,    label: 'Commandes',   href: '/admin/orders',    section: 'main' },
+  { icon: Package,        label: 'Produits',    href: '/admin/products',  section: 'main' },
+  { icon: Users,          label: 'Clients',     href: '/admin/clients',   section: 'main' },
 ];
 
 export const Sidebar = () => {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-50 flex flex-col">
-      {/* Brand Header */}
-      <div className="p-8 flex items-center gap-2">
-        <div className="h-8 w-8 bg-amber-500 rounded-lg flex items-center justify-center">
-            <CoffeeIcon className="text-white h-5 w-5" />
-        </div>
-        <span className="text-xl font-bold text-gray-900 tracking-tight">
-          Fika<span className="text-amber-500">Admin</span>
-        </span>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-2 space-y-1">
-        {menuItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link key={item.href} href={item.href}>
-              <motion.div
-                whileHover={{ x: 4 }}
-                whileTap={{ scale: 0.98 }}
-                className={cn(
-                  "flex items-center gap-4 px-6 py-3 rounded-xl transition-all duration-200 group",
-                  isActive 
-                    ? "bg-amber-500 text-white shadow-lg shadow-amber-200" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                )}
-              >
-                <item.icon className={cn("h-5 w-5", isActive ? "text-white" : "text-gray-500 group-hover:text-amber-500")} />
-                <span className="font-semibold text-sm">{item.label}</span>
-              </motion.div>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Info Card Footer */}
-      <div className="p-6">
-        <div className="bg-gray-900 p-5 rounded-2xl relative overflow-hidden group">
-          <div className="relative z-10">
-            <p className="text-white font-bold text-xs mb-1">Portail Gestion</p>
-            <p className="text-gray-400 text-[10px] leading-relaxed">
-                Connecté en tant que Manager.<br/>Accès total au catalogue.
+    <aside
+      style={{
+        position: 'fixed',
+        top: 0, left: 0,
+        height: '100vh',
+        width: 'var(--sidebar-width)',
+        background: '#fff',
+        borderRight: '1px solid var(--border)',
+        display: 'flex',
+        flexDirection: 'column',
+        zIndex: 50,
+      }}
+    >
+      {/* ── Brand ── */}
+      <div style={{ padding: '28px 20px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 34, height: 34,
+            background: 'var(--accent)',
+            borderRadius: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: 'var(--shadow-accent)',
+            flexShrink: 0,
+          }}>
+            <UtensilsCrossed size={17} color="#fff" strokeWidth={2.2} />
+          </div>
+          <div>
+            <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+              Fika
+            </p>
+            <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', marginTop: 2, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              Admin Portal
             </p>
           </div>
-          <div className="absolute -right-4 -bottom-4 h-16 w-16 bg-white/5 rounded-full" />
         </div>
       </div>
 
-      {/* Logout */}
-      <div className="p-4 border-t border-gray-200">
-        <button 
+      {/* ── Navigation ── */}
+      <nav style={{ flex: 1, padding: '12px 12px', overflowY: 'auto' }}>
+        <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 8px 6px' }}>
+          Menu
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {menuItems.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+            return (
+              <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
+                <motion.div
+                  whileHover={{ x: isActive ? 0 : 3 }}
+                  whileTap={{ scale: 0.97 }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '10px 12px',
+                    borderRadius: 12,
+                    cursor: 'pointer',
+                    transition: 'background 0.15s, color 0.15s',
+                    background: isActive ? 'var(--accent)' : 'transparent',
+                    color: isActive ? '#fff' : 'var(--text-secondary)',
+                    boxShadow: isActive ? 'var(--shadow-accent)' : 'none',
+                    position: 'relative',
+                  }}
+                  className={isActive ? '' : 'sidebar-nav-item'}
+                >
+                  <item.icon
+                    size={17}
+                    strokeWidth={isActive ? 2.5 : 2}
+                    style={{ color: isActive ? '#fff' : 'currentColor', flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: 13.5, fontWeight: isActive ? 700 : 500 }}>
+                    {item.label}
+                  </span>
+                </motion.div>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* ── User Footer ── */}
+      <div style={{ padding: '12px', borderTop: '1px solid var(--border-subtle)' }}>
+        <button
           onClick={() => AuthService.logout()}
-          className="flex items-center gap-4 px-6 py-3 w-full text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all group cursor-pointer"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            width: '100%', padding: '10px 12px',
+            borderRadius: 12, border: 'none', background: 'transparent',
+            color: 'var(--text-secondary)', cursor: 'pointer',
+            fontSize: 13.5, fontWeight: 500,
+            transition: 'background 0.15s, color 0.15s',
+          }}
+          className="sidebar-logout-btn"
         >
-          <LogOut className="h-5 w-5 group-hover:rotate-6 transition-transform text-gray-500 group-hover:text-red-500" />
-          <span className="font-semibold text-sm">Déconnexion</span>
+          <LogOut size={17} strokeWidth={2} style={{ flexShrink: 0 }} />
+          <span>Déconnexion</span>
         </button>
       </div>
+
+      <style>{`
+        .sidebar-nav-item:hover {
+          background: var(--accent-subtle) !important;
+          color: var(--accent) !important;
+        }
+        .sidebar-logout-btn:hover {
+          background: #FEF2F2 !important;
+          color: #DC2626 !important;
+        }
+      `}</style>
     </aside>
   );
 };

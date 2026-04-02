@@ -1,26 +1,45 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  ShoppingBag, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  AlertCircle, 
-  ChevronLeft, 
-  ChevronRight, 
-  Eye, 
+import { motion } from 'framer-motion';
+import {
+  ShoppingBag,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
   Calendar,
   User,
-  MoreVertical,
-  Search
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  ArrowUpRight
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import OrderService from '@/lib/api/orders';
-import { Order, OrderStatus, OrderFilters } from '@/types/order';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { Order, OrderStatus } from '@/types/order';
+
+function formatCurrency(val: number) {
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
+}
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+const STATUS_CONFIG: Record<string, { label: string; className: string; dot: string }> = {
+  PENDING:   { label: 'En attente', className: 'badge badge-pending',   dot: '#EA580C' },
+  READY:     { label: 'Prête',      className: 'badge badge-ready',     dot: '#2563EB' },
+  COMPLETED: { label: 'Livrée',     className: 'badge badge-completed', dot: '#16A34A' },
+  CANCELLED: { label: 'Annulée',    className: 'badge badge-cancelled', dot: '#DC2626' },
+};
 
 export default function OrdersPage() {
   const [allOrders, setAllOrders] = useState<Order[]>([]);
@@ -36,15 +55,10 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch Orders
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      // Fetch all orders for client-side filtering
-      const response = await OrderService.getAll({
-        size: 1000,
-        sort: 'createdAt,desc'
-      });
+      const response = await OrderService.getAll({ size: 1000, sort: 'createdAt,desc' });
       setAllOrders(response.content);
       setFilteredOrders(response.content);
     } catch (error) {
@@ -58,31 +72,24 @@ export default function OrdersPage() {
     fetchOrders();
   }, []);
 
-  // Filter & Search Logic
   useEffect(() => {
     let result = allOrders;
-
-    // 1. Filter by Status
     if (currentStatus !== 'ALL') {
       result = result.filter(order => order.status === currentStatus);
     }
-
-    // 2. Filter by Search Query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(order => 
+      result = result.filter(order =>
         order.orderReference.toLowerCase().includes(query) ||
         order.userFirstName?.toLowerCase().includes(query) ||
         order.userLastName?.toLowerCase().includes(query) ||
         order.userEmail?.toLowerCase().includes(query)
       );
     }
-
     setFilteredOrders(result);
-    setCurrentPage(0); // Reset to first page
+    setCurrentPage(0);
   }, [allOrders, currentStatus, searchQuery]);
 
-  // Pagination Logic
   useEffect(() => {
     const start = currentPage * itemsPerPage;
     const end = start + itemsPerPage;
@@ -91,258 +98,319 @@ export default function OrdersPage() {
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
-  // Handle Status Update
   const handleStatusUpdate = async (id: string, newStatus: OrderStatus) => {
     try {
       await OrderService.updateStatus(id, newStatus);
-      // Update local state without refetching everything for speed
       setAllOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
-      
       if (selectedOrder && selectedOrder.id === id) {
-         setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+        setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
       }
     } catch (error) {
       console.error('Failed to update status', error);
     }
   };
 
-  // Status Badge Logic
-  const getStatusBadge = (status: OrderStatus) => {
-    switch (status) {
-      case OrderStatus.PENDING:
-        return <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-600 text-xs font-bold uppercase flex items-center gap-1"><Clock className="h-3 w-3" /> En attente</span>;
-      case OrderStatus.READY:
-        return <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-xs font-bold uppercase flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Prêt</span>;
-      case OrderStatus.COMPLETED:
-        return <span className="px-3 py-1 rounded-full bg-green-100 text-green-600 text-xs font-bold uppercase flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Terminé</span>;
-      case OrderStatus.CANCELLED:
-        return <span className="px-3 py-1 rounded-full bg-red-100 text-red-600 text-xs font-bold uppercase flex items-center gap-1"><XCircle className="h-3 w-3" /> Annulé</span>;
-      default:
-        return <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-bold uppercase">{status}</span>;
-    }
-  };
-
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+      {/* ── Top Bar ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}
+      >
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestion des Commandes</h1>
-          <p className="text-sm text-gray-500">Suivez et gérez les commandes clients en temps réel.</p>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+            Commandes
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 3 }}>
+            Gestion et suivi des commandes en temps réel.
+          </p>
         </div>
-        
-        {/* Search Bar */}
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-          <input 
+
+        <div style={{ position: 'relative' }}>
+          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+          <input
             type="text"
-            placeholder="Rechercher une commande, un client..."
-            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder:text-gray-500 text-gray-900 shadow-sm"
+            placeholder="Référence, client..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: 260, padding: '9px 12px 9px 36px',
+              background: '#fff', border: '1px solid var(--border)',
+              borderRadius: 12, fontSize: 13, color: 'var(--text-primary)',
+              outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s',
+            }}
+            onFocus={e => { e.target.style.borderColor = 'var(--accent)'; e.target.style.boxShadow = '0 0 0 3px var(--accent-glow)'; }}
+            onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
           />
         </div>
-      </div>
+      </motion.div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        <Button 
-          variant={currentStatus === 'ALL' ? 'primary' : 'ghost'} 
+      {/* ── Tabs ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
+        style={{ display: 'flex', gap: 8, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}
+      >
+        <button
           onClick={() => setCurrentStatus('ALL')}
-          className="rounded-full px-4 h-9 text-xs"
+          style={{
+            padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            transition: 'all 0.2s', border: 'none',
+            background: currentStatus === 'ALL' ? 'var(--text-primary)' : 'transparent',
+            color: currentStatus === 'ALL' ? '#fff' : 'var(--text-secondary)'
+          }}
         >
           Toutes
-        </Button>
-        {Object.values(OrderStatus).map((status) => (
-          <Button 
-            key={status}
-            variant={currentStatus === status ? 'primary' : 'ghost'} 
-            onClick={() => setCurrentStatus(status)}
-            className="rounded-full px-4 h-9 text-xs"
-          >
-            {status}
-          </Button>
-        ))}
-      </div>
+        </button>
+        {Object.values(OrderStatus).map((status) => {
+          const isActive = currentStatus === status;
+          const cfg = STATUS_CONFIG[status] || { label: status, dot: '#9CA3AF' };
+          return (
+            <button
+              key={status}
+              onClick={() => setCurrentStatus(status)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                transition: 'all 0.2s', border: 'none',
+                background: isActive ? 'var(--bg-card)' : 'transparent',
+                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                boxShadow: isActive ? 'var(--shadow-card)' : 'none',
+              }}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dot }} />
+              {cfg.label}
+            </button>
+          );
+        })}
+      </motion.div>
 
-      {/* Orders List */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-gray-500">Chargement...</div>
-        ) : filteredOrders.length === 0 ? (
-          <div className="p-12 text-center flex flex-col items-center gap-3">
-             <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center">
-                <ShoppingBag className="h-6 w-6 text-gray-500" />
-             </div>
-             <p className="text-gray-500 font-medium">Aucune commande trouvée.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-gray-50 text-xs uppercase text-gray-600 font-bold border-b border-gray-200">
-                  <th className="px-6 py-4">Référence</th>
-                  <th className="px-6 py-4">Client</th>
-                  <th className="px-6 py-4">Date</th>
-                  <th className="px-6 py-4">Total</th>
-                  <th className="px-6 py-4 w-[1%] whitespace-nowrap">Status</th>
-                  <th className="px-6 py-4 text-right w-[1%] whitespace-nowrap">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {displayedOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => { setSelectedOrder(order); setIsModalOpen(true); }}>
-                    <td className="px-6 py-4 font-bold text-gray-900">
-                      {order.orderReference}
+      {/* ── Table Container ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+        className="card"
+        style={{ overflow: 'hidden' }}
+      >
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: 'var(--bg-surface)' }}>
+              {['Référence', 'Client', 'Date', 'Statut', 'Total', 'Actions'].map(h => (
+                <th key={h} style={{ padding: '12px 22px', textAlign: h === 'Actions' ? 'right' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={6} style={{ padding: '40px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
+                  Chargement...
+                </td>
+              </tr>
+            ) : displayedOrders.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ padding: '60px', textAlign: 'center' }}>
+                  <div style={{ display: 'inline-flex', padding: 16, background: 'var(--bg-surface)', borderRadius: '50%', marginBottom: 12 }}>
+                    <ShoppingBag size={24} color="var(--text-tertiary)" />
+                  </div>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Aucune commande</p>
+                  <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 4 }}>Essayez de modifier vos filtres.</p>
+                </td>
+              </tr>
+            ) : (
+              displayedOrders.map((order, i) => {
+                const sc = STATUS_CONFIG[order.status] ?? STATUS_CONFIG['PENDING'];
+                return (
+                  <motion.tr
+                    key={order.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.03 }}
+                    className="table-row-hover"
+                    style={{ borderTop: '1px solid var(--border-subtle)', transition: 'background 0.15s', cursor: 'pointer' }}
+                    onClick={() => { setSelectedOrder(order); setIsModalOpen(true); }}
+                  >
+                    <td style={{ padding: '14px 22px' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                        #{order.orderReference}
+                      </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs font-bold">
-                          {order.userFirstName?.[0]}{order.userLastName?.[0]}
+                    <td style={{ padding: '14px 22px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                          {order.userFirstName?.charAt(0)}{order.userLastName?.charAt(0)}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{order.userFirstName} {order.userLastName}</p>
-                          <p className="text-xs text-gray-500">{order.userEmail}</p>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                            {order.userFirstName} {order.userLastName}
+                          </p>
+                          <p style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{order.userEmail}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {format(new Date(order.createdAt), 'dd MMM yyyy HH:mm', { locale: fr })}
+                    <td style={{ padding: '14px 22px' }}>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                        {formatDate(order.createdAt)}
+                        <br />
+                        <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>{formatTime(order.createdAt)}</span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 font-bold text-gray-900">
-                      {order.total?.toFixed(2)} €
+                    <td style={{ padding: '14px 22px' }}>
+                      <span className={sc.className}>
+                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot, display: 'inline-block' }} />
+                        {sc.label}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(order.status)}
+                    <td style={{ padding: '14px 22px' }}>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                        {formatCurrency(order.total)}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <Button className="h-8 w-8 p-0 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-blue-600" onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); setIsModalOpen(true); }}>
-                         <Eye className="h-4 w-4" />
-                      </Button>
+                    <td style={{ padding: '14px 22px', textAlign: 'right' }}>
+                      <button
+                        className="btn-outline"
+                        style={{ padding: '6px', borderRadius: 8 }}
+                        onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); setIsModalOpen(true); }}
+                      >
+                        <Eye size={14} />
+                      </button>
                     </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  </motion.tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
 
-        {/* Pagination */}
+        {/* ── Pagination ── */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50/50">
-            <p className="text-xs text-gray-500">
-              Affichage de {displayedOrders.length} sur {filteredOrders.length} commandes
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 22px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-base)' }}>
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+              Affichage de {displayedOrders.length} sur {filteredOrders.length}
             </p>
-            <div className="flex gap-2">
-               <Button 
-                variant="outline" 
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                className="btn-outline"
                 disabled={currentPage === 0}
                 onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                className="h-8 px-3 text-xs"
+                style={{ padding: '6px 12px', opacity: currentPage === 0 ? 0.5 : 1, cursor: currentPage === 0 ? 'not-allowed' : 'pointer' }}
               >
-                <ChevronLeft className="h-3 w-3 mr-1" /> Précédent
-              </Button>
-              <Button 
-                variant="outline" 
+                <ChevronLeft size={14} /> Précédent
+              </button>
+              <button
+                className="btn-outline"
                 disabled={currentPage >= totalPages - 1}
                 onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
-                className="h-8 px-3 text-xs"
+                style={{ padding: '6px 12px', opacity: currentPage >= totalPages - 1 ? 0.5 : 1, cursor: currentPage >= totalPages - 1 ? 'not-allowed' : 'pointer' }}
               >
-                Suivant <ChevronRight className="h-3 w-3 ml-1" />
-              </Button>
+                Suivant <ChevronRight size={14} />
+              </button>
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
 
-      {/* Order Details Modal */}
+      {/* ── Modal ── */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={`Commande ${selectedOrder?.orderReference}`}
+        title={selectedOrder ? `Commande #${selectedOrder.orderReference}` : 'Détails'}
         size="lg"
       >
-        {selectedOrder && (
-          <div className="space-y-6">
-            {/* Status Bar */}
-            <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
-               <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-500 font-medium">Statut actuel:</span>
-                  {getStatusBadge(selectedOrder.status)}
-               </div>
-               
-               {/* Quick Actions */}
-               <div className="flex gap-2">
+        {selectedOrder && (() => {
+          const sc = STATUS_CONFIG[selectedOrder.status] ?? STATUS_CONFIG['PENDING'];
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '10px 0' }}>
+              
+              {/* Status & Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'var(--bg-surface)', borderRadius: 12, border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)' }}>Statut</span>
+                  <span className={sc.className}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot, display: 'inline-block' }} />
+                    {sc.label}
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', gap: 8 }}>
                   {selectedOrder.status === OrderStatus.PENDING && (
-                    <Button onClick={() => handleStatusUpdate(selectedOrder.id, OrderStatus.READY)} className="bg-blue-600 hover:bg-blue-700 h-8 text-xs px-3">
-                       Marquer comme Prêt
-                    </Button>
+                    <button onClick={() => handleStatusUpdate(selectedOrder.id, OrderStatus.READY)} className="btn-outline" style={{ borderColor: '#2563EB', color: '#2563EB', padding: '6px 14px' }}>
+                       Marquer 'Prête'
+                    </button>
                   )}
                   {selectedOrder.status === OrderStatus.READY && (
-                    <Button onClick={() => handleStatusUpdate(selectedOrder.id, OrderStatus.COMPLETED)} className="bg-green-600 hover:bg-green-700 h-8 text-xs px-3">
-                       Terminer la commande
-                    </Button>
+                    <button onClick={() => handleStatusUpdate(selectedOrder.id, OrderStatus.COMPLETED)} className="btn-outline" style={{ borderColor: '#16A34A', color: '#16A34A', padding: '6px 14px' }}>
+                       Livrer
+                    </button>
                   )}
                   {(selectedOrder.status === OrderStatus.PENDING || selectedOrder.status === OrderStatus.READY) && (
-                    <Button variant="outline" onClick={() => handleStatusUpdate(selectedOrder.id, OrderStatus.CANCELLED)} className="text-red-600 border-red-200 hover:bg-red-50 h-8 text-xs px-3">
+                    <button onClick={() => handleStatusUpdate(selectedOrder.id, OrderStatus.CANCELLED)} className="btn-outline" style={{ borderColor: '#DC2626', color: '#DC2626', padding: '6px 14px' }}>
                        Annuler
-                    </Button>
+                    </button>
                   )}
-               </div>
-            </div>
+                </div>
+              </div>
 
-            {/* Customer Info */}
-            <div className="grid grid-cols-2 gap-4">
-               <div className="p-4 border border-gray-100 rounded-xl space-y-2">
-                  <h4 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                     <User className="h-4 w-4 text-amber-500" /> Client
+              {/* Info Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div style={{ padding: 16, border: '1px solid var(--border)', borderRadius: 12 }}>
+                  <h4 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <User size={14} color="var(--text-tertiary)" /> Client
                   </h4>
-                  <p className="text-sm text-gray-600">{selectedOrder.userFirstName} {selectedOrder.userLastName}</p>
-                  <p className="text-xs text-gray-400">{selectedOrder.userEmail}</p>
-               </div>
-               <div className="p-4 border border-gray-100 rounded-xl space-y-2">
-                  <h4 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                     <Calendar className="h-4 w-4 text-amber-500" /> Date
+                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{selectedOrder.userFirstName} {selectedOrder.userLastName}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{selectedOrder.userEmail}</p>
+                </div>
+                <div style={{ padding: 16, border: '1px solid var(--border)', borderRadius: 12 }}>
+                  <h4 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <Calendar size={14} color="var(--text-tertiary)" /> Commande
                   </h4>
-                  <p className="text-sm text-gray-600">{format(new Date(selectedOrder.createdAt), 'dd MMMM yyyy', { locale: fr })}</p>
-                  <p className="text-xs text-gray-400">{format(new Date(selectedOrder.createdAt), 'HH:mm', { locale: fr })}</p>
-               </div>
-            </div>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{formatDate(selectedOrder.createdAt)}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{formatTime(selectedOrder.createdAt)}</p>
+                </div>
+              </div>
 
-            {/* Items List */}
-            <div>
-               <h4 className="text-sm font-bold text-gray-900 mb-3">Détails de la commande</h4>
-               <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-100">
-                  <table className="w-full text-left">
-                     <thead className="bg-gray-100 text-xs font-bold text-gray-500 uppercase">
-                        <tr>
-                           <th className="px-4 py-3">Produit</th>
-                           <th className="px-4 py-3 text-center">Qté</th>
-                           <th className="px-4 py-3 text-right">Prix Unit.</th>
-                           <th className="px-4 py-3 text-right">Total</th>
+              {/* Items */}
+              <div>
+                <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>Contenu de la commande</h4>
+                <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 12, overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead style={{ background: 'var(--bg-surface)' }}>
+                      <tr>
+                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Produit</th>
+                        <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Qté</th>
+                        <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>P.U.</th>
+                        <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedOrder.items.map((item) => (
+                        <tr key={item.id} style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                          <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.productName}</td>
+                          <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center' }}>x{item.quantity}</td>
+                          <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)', textAlign: 'right' }}>{formatCurrency(item.priceAtReservation)}</td>
+                          <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', textAlign: 'right' }}>{formatCurrency(item.priceAtReservation * item.quantity)}</td>
                         </tr>
-                     </thead>
-                     <tbody className="divide-y divide-gray-200">
-                        {selectedOrder.items.map((item) => (
-                           <tr key={item.id}>
-                              <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.productName}</td>
-                              <td className="px-4 py-3 text-sm text-center text-gray-600">x{item.quantity}</td>
-                              <td className="px-4 py-3 text-sm text-right text-gray-600">{item.priceAtReservation.toFixed(2)}€</td>
-                              <td className="px-4 py-3 text-sm text-right font-bold text-gray-900">{(item.priceAtReservation * item.quantity).toFixed(2)}€</td>
-                           </tr>
-                        ))}
-                     </tbody>
-                     <tfoot className="bg-white border-t border-gray-200">
-                        <tr>
-                           <td colSpan={3} className="px-4 py-3 text-right text-sm font-medium text-gray-500">Total Commande</td>
-                           <td className="px-4 py-3 text-right text-lg font-black text-amber-600">{selectedOrder.total.toFixed(2)}€</td>
-                        </tr>
-                     </tfoot>
+                      ))}
+                    </tbody>
+                    <tfoot style={{ background: 'var(--bg-base)', borderTop: '1px solid var(--border)' }}>
+                      <tr>
+                        <td colSpan={3} style={{ padding: '14px 16px', textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Payé</td>
+                        <td style={{ padding: '14px 16px', textAlign: 'right', fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>{formatCurrency(selectedOrder.total)}</td>
+                      </tr>
+                    </tfoot>
                   </table>
-               </div>
+                </div>
+              </div>
+
             </div>
-          </div>
-        )}
+          );
+        })()}
       </Modal>
     </div>
   );

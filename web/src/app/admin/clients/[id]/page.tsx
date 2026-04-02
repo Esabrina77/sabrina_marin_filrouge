@@ -3,22 +3,43 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  ChevronLeft, 
-  User, 
-  Mail, 
-  ShoppingBag, 
+import { motion } from 'framer-motion';
+import {
+  ChevronLeft,
+  User,
+  Mail,
+  ShoppingBag,
   Calendar,
+  CheckCircle2,
   Clock,
-  CheckCircle,
-  XCircle,
-  AlertCircle
+  AlertTriangle,
+  XCircle
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import UserService from '@/lib/api/users';
 import OrderService from '@/lib/api/orders';
 import { User as UserType } from '@/types/user';
 import { Order, OrderStatus } from '@/types/order';
+
+function formatCurrency(val: number) {
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
+}
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+const STATUS_CONFIG: Record<string, { label: string; className: string; dot: string }> = {
+  PENDING:   { label: 'En attente', className: 'badge badge-pending',   dot: '#EA580C' },
+  READY:     { label: 'Prête',      className: 'badge badge-ready',     dot: '#2563EB' },
+  COMPLETED: { label: 'Livrée',     className: 'badge badge-completed', dot: '#16A34A' },
+  CANCELLED: { label: 'Annulée',    className: 'badge badge-cancelled', dot: '#DC2626' },
+};
 
 export default function ClientDetailsPage() {
   const params = useParams();
@@ -33,23 +54,17 @@ export default function ClientDetailsPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // 1. Fetch Client Details
         const user = await UserService.getById(userId);
         setClient(user);
-
-        // 2. Fetch All Orders (to filter by email)
-        // Since we can't filter by userId in backend, we match by email
         const allOrders = await OrderService.getAll({ size: 1000, sort: 'createdAt,desc' });
         const clientOrders = allOrders.content.filter(o => o.userEmail === user.email);
         setOrders(clientOrders);
-
       } catch (error) {
         console.error('Failed to fetch client details', error);
       } finally {
         setLoading(false);
       }
     };
-
     if (userId) {
       fetchData();
     }
@@ -57,171 +72,166 @@ export default function ClientDetailsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-500">Chargement des détails du client...</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400, fontSize: 14, fontWeight: 500, color: 'var(--text-tertiary)' }}>
+        Chargement des détails du client...
       </div>
     );
   }
 
   if (!client) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <p className="text-gray-500">Client introuvable.</p>
-        <Button variant="outline" onClick={() => router.back()}>Retour</Button>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
+        <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Client introuvable.</p>
+        <button className="btn-outline" onClick={() => router.back()}>Retour</button>
       </div>
     );
   }
 
   const totalSpent = orders.reduce((acc, order) => acc + order.total, 0);
 
-  const getStatusColor = (status: OrderStatus) => {
-    switch (status) {
-      case OrderStatus.COMPLETED: return 'bg-green-100 text-green-700';
-      case OrderStatus.READY: return 'bg-blue-100 text-blue-700';
-      case OrderStatus.PENDING: return 'bg-amber-100 text-amber-700';
-      case OrderStatus.CANCELLED: return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getStatusIcon = (status: OrderStatus) => {
-    switch (status) {
-      case OrderStatus.COMPLETED: return <CheckCircle className="h-4 w-4" />;
-      case OrderStatus.READY: return <Clock className="h-4 w-4" />;
-      case OrderStatus.PENDING: return <AlertCircle className="h-4 w-4" />;
-      case OrderStatus.CANCELLED: return <XCircle className="h-4 w-4" />;
-      default: return null;
-    }
-  };
-
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/admin/clients">
-          <Button variant="ghost" className="h-10 w-10 p-0 rounded-xl border border-gray-200 hover:bg-white hover:border-amber-500 hover:text-amber-500 transition-all">
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-        </Link>
+    <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+      {/* ── Header ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}
+      >
+        <button
+          onClick={() => router.back()}
+          className="btn-outline"
+          style={{ width: 36, height: 36, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10 }}
+        >
+          <ChevronLeft size={16} />
+        </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Détails Client</h1>
-          <p className="text-sm text-gray-500">Informations et historique des commandes.</p>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+            Détails Client
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 3 }}>
+            Informations et historique des commandes.
+          </p>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Client Info Card */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="flex flex-col items-center text-center mb-6">
-              <div className="h-24 w-24 bg-gradient-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center text-amber-600 font-bold text-3xl mb-4">
-                {client.firstName[0]}{client.lastName[0]}
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">{client.firstName} {client.lastName}</h2>
-              <span className="mt-2 px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold uppercase rounded-full tracking-wider">
-                {client.role}
-              </span>
-            </div>
-
-            <div className="space-y-4 pt-6 border-t border-gray-100">
-              <div className="flex items-center gap-3 text-sm">
-                <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500">
-                  <Mail className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Email</p>
-                  <p className="text-gray-900 font-medium truncate">{client.email}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3 text-sm">
-                <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500">
-                  <User className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">ID Client</p>
-                  <p className="text-gray-900 font-medium truncate max-w-[200px]" title={client.id}>{client.id}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-gray-100">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-amber-50 rounded-xl">
-                  <p className="text-amber-600 text-xs font-bold uppercase mb-1">Commandes</p>
-                  <p className="text-2xl font-bold text-gray-900">{orders.length}</p>
-                </div>
-                <div className="text-center p-3 bg-green-50 rounded-xl">
-                  <p className="text-green-600 text-xs font-bold uppercase mb-1">Total</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalSpent.toFixed(2)}€</p>
-                </div>
-              </div>
-            </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 2fr', gap: 24 }}>
+        {/* ── Client Profile Card ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.4 }}
+          className="card"
+          style={{ padding: 24, alignSelf: 'start' }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', paddingBottom: 24 }}>
+             <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--accent-subtle)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 800, marginBottom: 16 }}>
+               {client.firstName.charAt(0)}{client.lastName.charAt(0)}
+             </div>
+             <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+               {client.firstName} {client.lastName}
+             </h2>
+             <span style={{ marginTop: 8, padding: '4px 10px', background: 'var(--bg-surface)', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+               {client.role}
+             </span>
           </div>
-        </div>
 
-        {/* Orders History */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                <ShoppingBag className="h-5 w-5 text-amber-500" />
-                Historique des commandes
-              </h3>
-            </div>
-            
-            {orders.length === 0 ? (
-              <div className="p-12 text-center text-gray-500">
-                Aucune commande passée par ce client.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-gray-50 text-xs uppercase text-gray-600 font-bold border-b border-gray-200">
-                      <th className="px-6 py-4">Référence</th>
-                      <th className="px-6 py-4">Date</th>
-                      <th className="px-6 py-4">Total</th>
-                      <th className="px-6 py-4">Statut</th>
-                      <th className="px-6 py-4 text-right">Détails</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {orders.map((order) => (
-                      <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-6 py-4 font-mono text-sm font-bold text-gray-900">
-                          #{order.orderReference}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-3 w-3 text-gray-400" />
-                            {new Date(order.createdAt).toLocaleDateString()}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                          {order.total.toFixed(2)} €
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusColor(order.status)}`}>
-                            {getStatusIcon(order.status)}
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          {/* Note: This assumes /admin/orders has a way to view details, typically via modal or page. 
-                              Since OrdersPage is modal-based or list-based, linking to it might not highlight the specific order.
-                              However, for now, we just list them. Detailed view is usually on Orders page. 
-                           */}
-                           <span className="text-xs text-gray-400">ID: {order.id.slice(0,6)}...</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingTop: 24, paddingBottom: 24, borderTop: '1px solid var(--border-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Mail size={14} color="var(--text-secondary)" />
+                </div>
+                <div style={{ overflow: 'hidden' }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{client.email}</p>
+                </div>
+             </div>
+             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <User size={14} color="var(--text-secondary)" />
+                </div>
+                <div style={{ overflow: 'hidden' }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ID Client</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{client.id.split('-')[0]}</p>
+                </div>
+             </div>
           </div>
-        </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, paddingTop: 24 }}>
+             <div style={{ padding: 12, background: 'rgba(255,107,0,0.08)', borderRadius: 12, textAlign: 'center' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Commandes</p>
+                <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--accent)' }}>{orders.length}</p>
+             </div>
+             <div style={{ padding: 12, background: 'rgba(22,163,74,0.08)', borderRadius: 12, textAlign: 'center' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: '#16A34A', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Total</p>
+                <p style={{ fontSize: 20, fontWeight: 800, color: '#16A34A' }}>{formatCurrency(totalSpent)}</p>
+             </div>
+          </div>
+        </motion.div>
+
+        {/* ── Orders History ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          className="card"
+          style={{ overflow: 'hidden', alignSelf: 'start' }}
+        >
+          <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 10 }}>
+             <ShoppingBag size={18} color="var(--accent)" />
+             <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Historique des commandes</h3>
+          </div>
+          
+          {orders.length === 0 ? (
+            <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+               <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Aucune commande pour le moment.</p>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+               <thead>
+                 <tr style={{ background: 'var(--bg-surface)' }}>
+                   {['Référence', 'Date', 'Statut', 'Total'].map((h, i) => (
+                     <th key={h} style={{ padding: '12px 24px', textAlign: i === 3 ? 'right' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                       {h}
+                     </th>
+                   ))}
+                 </tr>
+               </thead>
+               <tbody>
+                  {orders.map((order, i) => {
+                     const sc = STATUS_CONFIG[order.status] ?? STATUS_CONFIG['PENDING'];
+                     return (
+                       <motion.tr
+                         key={order.id}
+                         initial={{ opacity: 0 }}
+                         animate={{ opacity: 1 }}
+                         transition={{ delay: 0.1 + i * 0.03 }}
+                         style={{ borderTop: '1px solid var(--border-subtle)' }}
+                         className="table-row-hover"
+                       >
+                          <td style={{ padding: '14px 24px', fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                             #{order.orderReference}
+                          </td>
+                          <td style={{ padding: '14px 24px' }}>
+                             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{formatDate(order.createdAt)}</div>
+                             <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{formatTime(order.createdAt)}</div>
+                          </td>
+                          <td style={{ padding: '14px 24px' }}>
+                             <span className={sc.className}>
+                               <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot, display: 'inline-block' }} />
+                               {sc.label}
+                             </span>
+                          </td>
+                          <td style={{ padding: '14px 24px', textAlign: 'right', fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>
+                             {formatCurrency(order.total)}
+                          </td>
+                       </motion.tr>
+                     );
+                  })}
+               </tbody>
+            </table>
+          )}
+        </motion.div>
       </div>
     </div>
   );
