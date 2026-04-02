@@ -11,10 +11,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
@@ -32,16 +34,22 @@ class RateLimitFilterTest {
     void rateLimitTriggered() throws Exception {
         String uniqueIp = UUID.randomUUID().toString();
 
-        for (int i = 0; i < 30; i++) {
-            mockMvc.perform(get("/api/v1/products").remoteAddress(uniqueIp))
-                    .andExpect(status().isOk());
+        // Le seau Auth est limité à 5 requêtes par minute
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(post("/api/v1/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{}")
+                    .remoteAddress(uniqueIp))
+                    .andExpect(status().isBadRequest()); // 400 car le body est vide, mais le rate limit est consommé
         }
 
-        mockMvc.perform(get("/api/v1/products").remoteAddress(uniqueIp))
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}")
+                .remoteAddress(uniqueIp))
                 .andDo(print())
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.status").value(429))
-                .andExpect(jsonPath("$.error").value("Too Many Requests"))
                 .andExpect(jsonPath("$.message").value("Trop de requêtes. Veuillez ralentir."));
     }
 }

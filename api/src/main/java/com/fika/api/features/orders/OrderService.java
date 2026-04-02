@@ -57,7 +57,7 @@ public PagedResponse<OrderResponse> getAllOrders(String reference, Pageable page
     if (reference != null && !reference.isBlank()) {
         orderPage = orderRepository.findByOrderReferenceContainingIgnoreCase(reference, pageable);
     } else {
-        orderPage = orderRepository.findAll(pageable);
+        orderPage = orderRepository.findAllByOrderByCreatedAtDesc(pageable);
     }
     return PagedResponse.of(orderPage.map(orderMapper::toResponse));
 }
