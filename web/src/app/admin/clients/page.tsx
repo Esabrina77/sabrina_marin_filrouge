@@ -12,6 +12,7 @@ import {
   User as UserIcon
 } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import UserService from '@/lib/api/users';
 import OrderService from '@/lib/api/orders';
 import { User, Role } from '@/types/user';
@@ -55,9 +56,18 @@ export default function ClientsPage() {
     }
   };
 
+  const searchParams = useSearchParams();
+  const searchParam = searchParams.get('search');
+
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (searchParam) {
+      setSearchQuery(searchParam);
+    }
+  }, [searchParam]);
 
   const filteredAndSortedClients = React.useMemo(() => {
     let result = [...clients];

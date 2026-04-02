@@ -55,7 +55,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalPr
     <AnimatePresence>
       {isOpen && (
         <div style={{
-          position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+          position: 'fixed', inset: 0, zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
         }}>
           {/* Backdrop */}
           <motion.div
@@ -63,7 +63,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalPr
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{ position: 'absolute', inset: 0, background: 'rgba(17, 24, 39, 0.4)', backdropFilter: 'blur(4px)' }}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(4px)', zIndex: -1 }}
           />
           
           {/* Modal Card */}

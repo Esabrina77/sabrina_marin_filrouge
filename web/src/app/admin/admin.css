@@ -153,7 +153,7 @@
     width: 100% !important;
   }
 
-  .top-bar-admin > div {
+  .top-bar-admin>div {
     width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
@@ -162,7 +162,7 @@
   }
 
   .top-bar-admin .actions,
-  .top-bar-admin > div:last-child {
+  .top-bar-admin>div:last-child {
     flex-direction: column !important;
     align-items: stretch !important;
   }
@@ -176,7 +176,7 @@
     width: 100% !important;
   }
 
-  .top-bar-admin a, 
+  .top-bar-admin a,
   .top-bar-admin button {
     width: 100% !important;
   }
@@ -205,14 +205,15 @@
   }
 
   /* Compact Tables */
-  table th, table td {
+  table th,
+  table td {
     padding: 10px 12px !important;
     font-size: 12px !important;
   }
 
   .badge {
-     padding: 2px 8px !important;
-     font-size: 10px !important;
+    padding: 2px 8px !important;
+    font-size: 10px !important;
   }
 
   .filter-container {
@@ -254,6 +255,73 @@
   .modal-content-inner {
     padding-bottom: 120px !important;
   }
+}
+
+.search-results-overlay {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-result-category {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  padding: 12px 16px 6px;
+  background: var(--bg-surface);
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background: var(--bg-surface);
+}
+
+.search-result-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.search-result-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.search-result-subtitle {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
 }
 
 .filter-btn {

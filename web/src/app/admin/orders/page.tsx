@@ -8,17 +8,19 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  Calendar,
-  User,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  ArrowUpRight
 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import OrderService from '@/lib/api/orders';
 import { Order, OrderStatus } from '@/types/order';
+import { useSearchParams } from 'next/navigation';
+import { OrderDetailsContent } from '@/components/admin/OrderDetailsContent';
+
+const STATUS_CONFIG: Record<string, { label: string; className: string; dot: string }> = {
+  PENDING:   { label: 'En attente', className: 'badge badge-pending',   dot: '#EA580C' },
+  READY:     { label: 'Prête',      className: 'badge badge-ready',     dot: '#2563EB' },
+  COMPLETED: { label: 'Livrée',     className: 'badge badge-completed', dot: '#16A34A' },
+  CANCELLED: { label: 'Annulée',    className: 'badge badge-cancelled', dot: '#DC2626' },
+};
 
 function formatCurrency(val: number) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
@@ -33,13 +35,6 @@ function formatTime(iso: string) {
   const d = new Date(iso);
   return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
-
-const STATUS_CONFIG: Record<string, { label: string; className: string; dot: string }> = {
-  PENDING:   { label: 'En attente', className: 'badge badge-pending',   dot: '#EA580C' },
-  READY:     { label: 'Prête',      className: 'badge badge-ready',     dot: '#2563EB' },
-  COMPLETED: { label: 'Livrée',     className: 'badge badge-completed', dot: '#16A34A' },
-  CANCELLED: { label: 'Annulée',    className: 'badge badge-cancelled', dot: '#DC2626' },
-};
 
 export default function OrdersPage() {
   const [allOrders, setAllOrders] = useState<Order[]>([]);
@@ -68,9 +63,24 @@ export default function OrdersPage() {
     }
   };
 
+  const searchParams = useSearchParams();
+  const refParam = searchParams.get('ref');
+
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  // Handle incoming search parameters (from Omnisearch)
+  useEffect(() => {
+    if (refParam && allOrders.length > 0) {
+      setSearchQuery(refParam);
+      const matched = allOrders.find(o => o.orderReference === refParam);
+      if (matched) {
+        setSelectedOrder(matched);
+        setIsModalOpen(true);
+      }
+    }
+  }, [allOrders, refParam]);
 
   useEffect(() => {
     let result = allOrders;
@@ -97,18 +107,6 @@ export default function OrdersPage() {
   }, [filteredOrders, currentPage, itemsPerPage]);
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-
-  const handleStatusUpdate = async (id: string, newStatus: OrderStatus) => {
-    try {
-      await OrderService.updateStatus(id, newStatus);
-      setAllOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
-      if (selectedOrder && selectedOrder.id === id) {
-        setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
-      }
-    } catch (error) {
-      console.error('Failed to update status', error);
-    }
-  };
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto' }}>
@@ -367,117 +365,15 @@ export default function OrdersPage() {
         title={selectedOrder ? `Commande #${selectedOrder.orderReference}` : 'Détails'}
         size="lg"
       >
-        {selectedOrder && (() => {
-          const sc = STATUS_CONFIG[selectedOrder.status] ?? STATUS_CONFIG['PENDING'];
-          return (
-            <div className="modal-content-inner">
-              
-              {/* Status & Actions */}
-              <div className="top-bar-admin" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'var(--bg-surface)', borderRadius: 12, border: '1px solid var(--border-subtle)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)' }}>Statut</span>
-                  <span className={sc.className}>
-                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot, display: 'inline-block' }} />
-                    {sc.label}
-                  </span>
-                </div>
-                
-                <div className="actions" style={{ display: 'flex', gap: 8 }}>
-                  {selectedOrder.status === OrderStatus.PENDING && (
-                    <button onClick={() => handleStatusUpdate(selectedOrder.id, OrderStatus.READY)} className="btn-outline" style={{ borderColor: '#2563EB', color: '#2563EB', padding: '6px 14px' }}>
-                       Prête
-                    </button>
-                  )}
-                  {selectedOrder.status === OrderStatus.READY && (
-                    <button onClick={() => handleStatusUpdate(selectedOrder.id, OrderStatus.COMPLETED)} className="btn-outline" style={{ borderColor: '#16A34A', color: '#16A34A', padding: '6px 14px' }}>
-                       Livrer
-                    </button>
-                  )}
-                  {(selectedOrder.status === OrderStatus.PENDING || selectedOrder.status === OrderStatus.READY) && (
-                    <button onClick={() => handleStatusUpdate(selectedOrder.id, OrderStatus.CANCELLED)} className="btn-outline" style={{ borderColor: '#DC2626', color: '#DC2626', padding: '6px 14px' }}>
-                       Annuler
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Info Grid */}
-              <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div style={{ padding: 16, border: '1px solid var(--border)', borderRadius: 12 }}>
-                  <h4 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    <User size={14} color="var(--text-tertiary)" /> Client
-                  </h4>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{selectedOrder.userFirstName} {selectedOrder.userLastName}</p>
-                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{selectedOrder.userEmail}</p>
-                </div>
-                <div style={{ padding: 16, border: '1px solid var(--border)', borderRadius: 12 }}>
-                  <h4 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    <Calendar size={14} color="var(--text-tertiary)" /> Commande
-                  </h4>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{formatDate(selectedOrder.createdAt)}</p>
-                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{formatTime(selectedOrder.createdAt)}</p>
-                </div>
-              </div>
-
-              {/* Items */}
-              <div>
-                <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>Contenu de la commande</h4>
-                
-                {/* Desktop View */}
-                <div className="desktop-only">
-                  <div className="table-container" style={{ border: '1px solid var(--border-subtle)', borderRadius: 12, overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                      <thead style={{ background: 'var(--bg-surface)' }}>
-                        <tr>
-                          <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Produit</th>
-                          <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Qté</th>
-                          <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>P.U.</th>
-                          <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedOrder.items.map((item) => (
-                          <tr key={item.id} style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                            <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.productName}</td>
-                            <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center' }}>x{item.quantity}</td>
-                            <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)', textAlign: 'right' }}>{formatCurrency(item.priceAtReservation)}</td>
-                            <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', textAlign: 'right' }}>{formatCurrency(item.priceAtReservation * item.quantity)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot style={{ background: 'var(--bg-base)', borderTop: '1px solid var(--border)' }}>
-                        <tr>
-                          <td colSpan={3} style={{ padding: '14px 16px', textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Payé</td>
-                          <td style={{ padding: '14px 16px', textAlign: 'right', fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>{formatCurrency(selectedOrder.total)}</td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Mobile View */}
-                <div className="mobile-only">
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {selectedOrder.items.map((item) => (
-                      <div key={item.id} style={{ padding: 12, border: '1px solid var(--border-subtle)', borderRadius: 12, background: 'var(--bg-card)' }}>
-                        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>{item.productName}</p>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{item.quantity} x {formatCurrency(item.priceAtReservation)}</span>
-                          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>{formatCurrency(item.priceAtReservation * item.quantity)}</span>
-                        </div>
-                      </div>
-                    ))}
-                    <div style={{ marginTop: 8, padding: '16px 12px', background: 'var(--accent-subtle)', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                       <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase' }}>Total Payé</span>
-                       <span style={{ fontSize: 20, fontWeight: 900, color: 'var(--accent)' }}>{formatCurrency(selectedOrder.total)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          );
-        })()}
+        {selectedOrder && (
+          <OrderDetailsContent 
+            order={selectedOrder} 
+            onStatusUpdate={(id, newStatus) => {
+              setAllOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+              setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+            }} 
+          />
+        )}
       </Modal>
     </div>
   );
