@@ -19,9 +19,9 @@ export default function HomePage() {
   return (
     <div className="home-container">
       {/* ── Decorative Background ── */}
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-        <div style={{ position: 'absolute', top: '-10%', left: '-5%', width: '40%', height: '40%', background: 'rgba(255,107,0,0.04)', filter: 'blur(100px)', borderRadius: '50%' }} />
-        <div style={{ position: 'absolute', bottom: '-10%', right: '-5%', width: '40%', height: '40%', background: 'rgba(37,99,235,0.04)', filter: 'blur(100px)', borderRadius: '50%' }} />
+      <div className="home-bg-decorative">
+        <div className="home-bg-blob-1" />
+        <div className="home-bg-blob-2" />
       </div>
 
       <motion.div 

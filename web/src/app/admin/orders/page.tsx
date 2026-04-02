@@ -117,6 +117,7 @@ export default function OrdersPage() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
+        className="top-bar-admin"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}
       >
         <div>
@@ -128,7 +129,7 @@ export default function OrdersPage() {
           </p>
         </div>
 
-        <div style={{ position: 'relative' }}>
+        <div className="search-container" style={{ position: 'relative' }}>
           <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
           <input
             type="text"
@@ -196,7 +197,8 @@ export default function OrdersPage() {
         className="card"
         style={{ overflow: 'hidden' }}
       >
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="table-container">
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--bg-surface)' }}>
               {['Référence', 'Client', 'Date', 'Statut', 'Total', 'Actions'].map(h => (
@@ -287,6 +289,7 @@ export default function OrdersPage() {
             )}
           </tbody>
         </table>
+        </div>
 
         {/* ── Pagination ── */}
         {totalPages > 1 && (
@@ -329,7 +332,7 @@ export default function OrdersPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '10px 0' }}>
               
               {/* Status & Actions */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'var(--bg-surface)', borderRadius: 12, border: '1px solid var(--border-subtle)' }}>
+              <div className="top-bar-admin" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'var(--bg-surface)', borderRadius: 12, border: '1px solid var(--border-subtle)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)' }}>Statut</span>
                   <span className={sc.className}>
@@ -338,10 +341,10 @@ export default function OrdersPage() {
                   </span>
                 </div>
                 
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="actions" style={{ display: 'flex', gap: 8 }}>
                   {selectedOrder.status === OrderStatus.PENDING && (
                     <button onClick={() => handleStatusUpdate(selectedOrder.id, OrderStatus.READY)} className="btn-outline" style={{ borderColor: '#2563EB', color: '#2563EB', padding: '6px 14px' }}>
-                       Marquer 'Prête'
+                       Prête
                     </button>
                   )}
                   {selectedOrder.status === OrderStatus.READY && (
@@ -358,7 +361,7 @@ export default function OrdersPage() {
               </div>
 
               {/* Info Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div style={{ padding: 16, border: '1px solid var(--border)', borderRadius: 12 }}>
                   <h4 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     <User size={14} color="var(--text-tertiary)" /> Client
@@ -378,7 +381,7 @@ export default function OrdersPage() {
               {/* Items */}
               <div>
                 <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>Contenu de la commande</h4>
-                <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 12, overflow: 'hidden' }}>
+                <div className="table-container" style={{ border: '1px solid var(--border-subtle)', borderRadius: 12, overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead style={{ background: 'var(--bg-surface)' }}>
                       <tr>

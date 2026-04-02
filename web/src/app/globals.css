@@ -58,6 +58,9 @@ body {
   background-color: var(--bg-base);
   color: var(--text-primary);
   font-family: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
 }
 
 /* ─── Utility Classes ─────────────────────────────────────── */

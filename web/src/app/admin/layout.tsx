@@ -4,10 +4,14 @@ import React, { useLayoutEffect, useState } from 'react';
 import { Sidebar } from '@/components/admin/Sidebar';
 import { useRouter } from 'next/navigation';
 import AuthService from '@/lib/api/auth';
+import { Menu, UtensilsCrossed } from 'lucide-react';
+import { BottomNav } from '@/components/admin/BottomNav';
+import './admin.css';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useLayoutEffect(() => {
     if (!AuthService.isAuthenticated()) {
@@ -32,17 +36,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-base)', display: 'flex' }}>
-      <Sidebar />
-      <main style={{
-        flex: 1,
-        marginLeft: 'var(--sidebar-width)',
-        padding: '32px 36px',
-        minHeight: '100vh',
-        overflowY: 'auto',
-      }}>
-        {children}
-      </main>
+    <div className="admin-layout">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {/* Mobile Header */}
+        <header className="mobile-header">
+          <button className="menu-toggle" onClick={() => setSidebarOpen(true)}>
+            <Menu size={20} />
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 32, height: 32, background: 'var(--accent)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <UtensilsCrossed size={16} color="#fff" />
+            </div>
+            <span style={{ fontWeight: 800, fontSize: 16 }}>Fika</span>
+          </div>
+        </header>
+
+        <main className="admin-main">
+          {children}
+        </main>
+
+        <BottomNav />
+      </div>
     </div>
   );
 }

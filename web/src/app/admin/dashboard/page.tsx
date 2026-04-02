@@ -133,8 +133,6 @@ export default function DashboardPage() {
   const [topSelling, setTopSelling] = useState<any[]>([]);
   const [outOfStockProducts, setOutOfStockProducts] = useState<Product[]>([]);
   const now = new Date();
-  const hour = now.getHours();
-  const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -211,20 +209,18 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
+        className="top-bar-admin"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}
       >
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-            {greeting}
-          </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 3 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', textTransform: 'capitalize' }}>
             {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </p>
+          </h1>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* Search */}
-          <div style={{ position: 'relative' }}>
+          <div className="search-container" style={{ position: 'relative' }}>
             <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
             <input
               type="text"
@@ -253,13 +249,13 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* ── Main Grid ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20 }}>
+      <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20 }}>
 
         {/* ═══ LEFT COLUMN ═══ */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
           {/* KPI Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+          <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
             <KPICard
               label="Revenu total" value={formatCurrency(stats.totalRevenue)}
               icon={DollarSign} iconColor="#FF6B00" iconBg="rgba(255,107,0,0.1)"
@@ -291,7 +287,7 @@ export default function DashboardPage() {
             className="card"
             style={{ overflow: 'hidden' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid var(--border-subtle)' }}>
+            <div className="top-bar-admin" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid var(--border-subtle)' }}>
               <div>
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Dernières commandes</h2>
                 <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>{filteredOrders.length} commande{filteredOrders.length > 1 ? 's' : ''} affichée{filteredOrders.length > 1 ? 's' : ''}</p>
@@ -302,8 +298,9 @@ export default function DashboardPage() {
                 </button>
               </Link>
             </div>
-
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            
+            <div className="table-container">
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'var(--bg-surface)' }}>
                   {['Référence', 'Client', 'Date', 'Statut', 'Total'].map(h => (
@@ -366,6 +363,7 @@ export default function DashboardPage() {
                 )}
               </tbody>
             </table>
+            </div>
           </motion.div>
 
           {/* Top Sellers */}
@@ -378,7 +376,7 @@ export default function DashboardPage() {
               <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: 'var(--text-primary)' }}>
                 Meilleures ventes
               </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+              <div className="top-selling-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
                 {topSelling.map((item, i) => (
                   <motion.div
                     key={i}

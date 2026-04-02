@@ -154,6 +154,7 @@ export default function ProductsPage() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
+        className="top-bar-admin"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}
       >
         <div>
@@ -166,7 +167,7 @@ export default function ProductsPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ position: 'relative' }}>
+          <div className="search-container" style={{ position: 'relative' }}>
             <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
             <input
               type="text"
@@ -237,7 +238,8 @@ export default function ProductsPage() {
         className="card"
         style={{ overflow: 'hidden' }}
       >
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="table-container">
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--bg-surface)' }}>
               {['Produit', 'Catégorie', 'Prix', 'Stock', 'Status', 'Actions'].map((h, index) => (
@@ -343,6 +345,7 @@ export default function ProductsPage() {
             )}
           </tbody>
         </table>
+        </div>
 
         {/* ── Pagination ── */}
         {totalPages > 1 && (
@@ -380,7 +383,7 @@ export default function ProductsPage() {
         size="lg"
       >
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div style={{ gridColumn: 'span 2' }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--text-primary)' }}>Nom du produit</label>
               <input
