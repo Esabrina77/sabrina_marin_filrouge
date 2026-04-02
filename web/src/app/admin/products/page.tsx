@@ -17,6 +17,7 @@ import ProductService from '@/lib/api/products';
 import { Product, Category, Allergen, CreateProductRequest, UpdateProductRequest } from '@/types/product';
 import { useSearchParams } from 'next/navigation';
 import { ProductDetailsContent } from '@/components/admin/ProductDetailsContent';
+import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
 
 function formatCurrency(val: number) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
@@ -45,7 +46,7 @@ export default function ProductsPage() {
     try {
       const response = await ProductService.getAll({
         page: currentPage,
-        size: 10,
+        size: 20,
         name: filters.name || undefined,
         category: filters.category || undefined,
       });
@@ -59,6 +60,50 @@ export default function ProductsPage() {
     }
   };
 
+  const searchParams = useSearchParams();
+  const idParam = searchParams.get('id');
+  const queryParam = searchParams.get('search');
+
+  // Initial load and parameter handling
+  useEffect(() => {
+    let isMounted = true;
+    
+    const initialize = async () => {
+      // 1. Set initial search from URL if present
+      if (queryParam && queryParam !== searchTerm) {
+        setSearchTerm(queryParam);
+        setFilters(prev => ({ ...prev, name: queryParam }));
+      }
+
+      // 2. Fetch products (this will also be triggered by the main effect below, 
+      // but we ensure it runs once correctly on mount)
+      await fetchProducts();
+
+      // 3. Load specific product if ID is in URL
+      if (idParam && isMounted) {
+        try {
+          const p = await ProductService.getById(idParam);
+          openModal(p);
+        } catch (e) {
+          console.error("Failed to load product from URL", e);
+        }
+      }
+    };
+
+    initialize();
+    return () => { isMounted = false; };
+  }, []); // Only on mount
+
+  // Main fetch effect for filter changes
+  useEffect(() => {
+    // Skip initial fetch as it's handled by initialize
+    const isInitial = products.length === 0 && loading;
+    if (!isInitial) {
+      fetchProducts();
+    }
+  }, [currentPage, filters.name, filters.category]);
+
+  // Search debounce logic
   useEffect(() => {
     const handler = setTimeout(() => {
       setFilters(prev => {
@@ -70,34 +115,6 @@ export default function ProductsPage() {
 
     return () => clearTimeout(handler);
   }, [searchTerm]);
-
-  const searchParams = useSearchParams();
-  const idParam = searchParams.get('id');
-  const queryParam = searchParams.get('search');
-
-  useEffect(() => {
-    fetchProducts();
-  }, [currentPage, filters.name, filters.category]);
-
-  // Handle incoming search parameters (from Omnisearch)
-  useEffect(() => {
-    if (queryParam) {
-      setSearchTerm(queryParam);
-    }
-    if (idParam) {
-      const loadSpecific = async () => {
-        try {
-          const p = await ProductService.getById(idParam);
-          openModal(p);
-        } catch (e) {
-          console.error("Failed to load product from URL", e);
-        }
-      };
-      loadSpecific();
-    }
-  }, [idParam, queryParam]);
-
-
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -112,7 +129,6 @@ export default function ProductsPage() {
     setIsModalOpen(false);
     setSelectedProduct(null);
   };
-
 
   const handleDelete = (product: Product) => {
     setProductToDelete(product);
@@ -134,7 +150,6 @@ export default function ProductsPage() {
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-      {/* ── Top Bar ── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -176,7 +191,6 @@ export default function ProductsPage() {
         </div>
       </motion.div>
 
-      {/* ── Tabs ── */}
       <motion.nav
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -206,7 +220,6 @@ export default function ProductsPage() {
         })}
       </motion.nav>
 
-      {/* ── Table Container ── */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -229,8 +242,8 @@ export default function ProductsPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: '40px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
-                      Chargement...
+                    <td colSpan={6} style={{ padding: 0 }}>
+                      <TableSkeleton rows={8} cols={6} />
                     </td>
                   </tr>
                 ) : products.length === 0 ? (
@@ -251,7 +264,7 @@ export default function ProductsPage() {
                         key={product.id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: i * 0.03 }}
+                        transition={{ delay: i * 0.01 }}
                         className="table-row-hover"
                         style={{ borderTop: '1px solid var(--border-subtle)', transition: 'background 0.15s' }}
                       >
@@ -327,7 +340,17 @@ export default function ProductsPage() {
 
         <div className="mobile-only" style={{ paddingBottom: 16, marginTop: 12 }}>
           {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>Chargement...</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 12px' }}>
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="card" style={{ padding: 16, height: 120, display: 'flex', gap: 12 }}>
+                  <Skeleton width={48} height={48} borderRadius={10} />
+                  <div style={{ flex: 1 }}>
+                    <Skeleton width="60%" height={16} style={{ marginBottom: 8 }} />
+                    <Skeleton width="40%" height={12} />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : products.length === 0 ? (
             <div style={{ padding: '40px', textAlign: 'center' }}>
               <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Aucun produit</p>
@@ -382,7 +405,6 @@ export default function ProductsPage() {
           )}
         </div>
 
-        {/* ── Pagination ── */}
         {totalPages > 1 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 22px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-base)' }}>
             <p style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
@@ -426,7 +448,6 @@ export default function ProductsPage() {
         />
       </Modal>
 
-      {/* ── Delete Confirmation Modal ── */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}

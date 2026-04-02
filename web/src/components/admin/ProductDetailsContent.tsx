@@ -94,7 +94,10 @@ export const ProductDetailsContent = ({ product, onSaveSuccess, onCancel }: Prod
             <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>€</span>
             <input
               required type="number" step="0.01" min="0"
-              value={formData.price} onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+              value={formData.price} onChange={(e) => {
+                const val = parseFloat(e.target.value);
+                setFormData({ ...formData, price: isNaN(val) ? 0 : val });
+              }}
               style={{ width: '100%', border: 'none', background: 'transparent', fontSize: 24, fontWeight: 900, color: 'var(--accent)', outline: 'none', padding: 0 }}
             />
           </div>
@@ -107,7 +110,8 @@ export const ProductDetailsContent = ({ product, onSaveSuccess, onCancel }: Prod
               required type="number" min="0"
               value={formData.quantity} onChange={(e) => {
                 const qty = parseInt(e.target.value);
-                setFormData({ ...formData, quantity: qty, available: qty > 0 });
+                const safeQty = isNaN(qty) ? 0 : qty;
+                setFormData({ ...formData, quantity: safeQty, available: safeQty > 0 });
               }}
               style={{ width: '100%', border: 'none', background: 'transparent', fontSize: 24, fontWeight: 900, color: formData.quantity > 0 ? '#16A34A' : '#DC2626', outline: 'none', padding: 0 }}
             />

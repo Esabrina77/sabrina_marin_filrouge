@@ -26,29 +26,44 @@ interface ClientWithStats extends User {
   totalSpent: number;
 }
 
-type SortOption = 'name-asc' | 'name-desc' | 'orders-desc' | 'orders-asc';
-
 export default function ClientsPage() {
   const [clients, setClients] = useState<ClientWithStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<SortOption>('name-asc');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchData = async () => {
+  const fetchClients = async () => {
     setLoading(true);
     try {
-      const usersResponse = await UserService.getAll({ size: 1000 });
-      const ordersResponse = await OrderService.getAll({ size: 1000 });
-      const clientUsers = usersResponse.content.filter(u => u.role === Role.CLIENT);
-
-      const clientsWithStats = clientUsers.map(client => {
-        const clientOrders = ordersResponse.content.filter(o => o.userEmail === client.email);
-        const orderCount = clientOrders.length;
-        const totalSpent = clientOrders.reduce((acc, order) => acc + order.total, 0);
-        return { ...client, orderCount, totalSpent };
+      const usersResponse = await UserService.getAll({
+        page: currentPage,
+        size: 20,
+        role: Role.CLIENT,
+        name: searchTerm || undefined
       });
 
+      const clientUsers = usersResponse.content;
+      
+      const clientsWithStats = await Promise.all(clientUsers.map(async (client) => {
+        try {
+          const ordersResponse = await OrderService.getAll({ size: 1000 });
+          const clientOrders = ordersResponse.content.filter(o => o.userEmail === client.email);
+          return {
+            ...client,
+            orderCount: clientOrders.length,
+            totalSpent: clientOrders.reduce((acc, order) => acc + order.total, 0)
+          };
+        } catch (e) {
+          return { ...client, orderCount: 0, totalSpent: 0 };
+        }
+      }));
+
       setClients(clientsWithStats);
+      setTotalPages(usersResponse.totalPages);
+      setTotalElements(usersResponse.totalElements);
     } catch (error) {
       console.error('Failed to fetch clients data', error);
     } finally {
@@ -56,12 +71,20 @@ export default function ClientsPage() {
     }
   };
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchTerm(searchQuery);
+      setCurrentPage(0);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   const searchParams = useSearchParams();
   const searchParam = searchParams.get('search');
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchClients();
+  }, [currentPage, searchTerm]);
 
   useEffect(() => {
     if (searchParam) {
@@ -69,31 +92,8 @@ export default function ClientsPage() {
     }
   }, [searchParam]);
 
-  const filteredAndSortedClients = React.useMemo(() => {
-    let result = [...clients];
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(c =>
-        c.firstName.toLowerCase().includes(q) ||
-        c.lastName.toLowerCase().includes(q) ||
-        c.email.toLowerCase().includes(q)
-      );
-    }
-    result.sort((a, b) => {
-      switch (sortBy) {
-        case 'name-asc': return a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName);
-        case 'name-desc': return b.lastName.localeCompare(a.lastName) || b.firstName.localeCompare(a.firstName);
-        case 'orders-desc': return b.orderCount - a.orderCount;
-        case 'orders-asc': return a.orderCount - b.orderCount;
-        default: return 0;
-      }
-    });
-    return result;
-  }, [clients, sortBy, searchQuery]);
-
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-      {/* ── Top Bar ── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -106,7 +106,7 @@ export default function ClientsPage() {
             Clients
           </h1>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 3 }}>
-            {clients.length} clients enregistrés.
+            Gestion de vos clients et fidélité.
           </p>
         </div>
 
@@ -131,33 +131,6 @@ export default function ClientsPage() {
         </div>
       </motion.div>
 
-      {/* ── Tabs (Sorting) ── */}
-      <motion.nav
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.4 }}
-        className="filter-container"
-      >
-        {[
-          { id: 'name-asc', label: 'Nom (A-Z)' },
-          { id: 'name-desc', label: 'Nom (Z-A)' },
-          { id: 'orders-desc', label: 'Meilleurs Clients' },
-          { id: 'orders-asc', label: 'Moins de Commandes' }
-        ].map((sortOption) => {
-          const isActive = sortBy === sortOption.id;
-          return (
-            <button
-              key={sortOption.id}
-              onClick={() => setSortBy(sortOption.id as SortOption)}
-              className={`filter-btn ${isActive ? 'active' : ''}`}
-            >
-              {sortOption.label}
-            </button>
-          );
-        })}
-      </motion.nav>
-
-      {/* ── Table Container ── */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -183,7 +156,7 @@ export default function ClientsPage() {
                     Chargement...
                   </td>
                 </tr>
-              ) : filteredAndSortedClients.length === 0 ? (
+              ) : clients.length === 0 ? (
                 <tr>
                   <td colSpan={5} style={{ padding: '60px', textAlign: 'center' }}>
                     <div style={{ display: 'inline-flex', padding: 16, background: 'var(--bg-surface)', borderRadius: '50%', marginBottom: 12 }}>
@@ -193,7 +166,7 @@ export default function ClientsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredAndSortedClients.map((client, i) => (
+                clients.map((client, i) => (
                   <motion.tr
                     key={client.id}
                     initial={{ opacity: 0 }}
@@ -251,13 +224,13 @@ export default function ClientsPage() {
         <div className="mobile-only" style={{ paddingBottom: 16, marginTop: 12 }}>
           {loading ? (
              <div style={{ padding: '40px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>Chargement...</div>
-          ) : filteredAndSortedClients.length === 0 ? (
+          ) : clients.length === 0 ? (
             <div style={{ padding: '40px', textAlign: 'center' }}>
                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Aucun client</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 12px' }}>
-              {filteredAndSortedClients.map((client, i) => (
+              {clients.map((client, i) => (
                 <motion.div
                   key={client.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -297,12 +270,29 @@ export default function ClientsPage() {
           )}
         </div>
 
-         {/* ── Pagination / Footer Note ── */}
-        {!loading && filteredAndSortedClients.length > 0 && (
-          <div style={{ padding: '14px 22px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-base)', textAlign: 'center' }}>
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 22px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-base)' }}>
             <p style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-              Affichage de {filteredAndSortedClients.length} clients
+              Affichage de {clients.length} sur {totalElements}
             </p>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                className="btn-outline"
+                disabled={currentPage === 0}
+                onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                style={{ padding: '6px 12px', opacity: currentPage === 0 ? 0.5 : 1, cursor: currentPage === 0 ? 'not-allowed' : 'pointer' }}
+              >
+                <ChevronLeft size={14} /> Précédent
+              </button>
+              <button
+                className="btn-outline"
+                disabled={currentPage >= totalPages - 1}
+                onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                style={{ padding: '6px 12px', opacity: currentPage >= totalPages - 1 ? 0.5 : 1, cursor: currentPage >= totalPages - 1 ? 'not-allowed' : 'pointer' }}
+              >
+                Suivant <ChevronRight size={14} />
+              </button>
+            </div>
           </div>
         )}
       </motion.div>

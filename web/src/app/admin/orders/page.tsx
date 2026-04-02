@@ -37,25 +37,31 @@ function formatTime(iso: string) {
 }
 
 export default function OrdersPage() {
-  const [allOrders, setAllOrders] = useState<Order[]>([]);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
-  const [displayedOrders, setDisplayedOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [currentStatus, setCurrentStatus] = useState<OrderStatus | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Modal State
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const response = await OrderService.getAll({ size: 1000, sort: 'createdAt,desc' });
-      setAllOrders(response.content);
-      setFilteredOrders(response.content);
+      const response = await OrderService.getAll({
+        page: currentPage,
+        size: 20,
+        sort: 'createdAt,desc',
+        status: currentStatus === 'ALL' ? undefined : (currentStatus as OrderStatus),
+        reference: searchTerm || undefined
+      });
+      setOrders(response.content);
+      setTotalPages(response.totalPages);
+      setTotalElements(response.totalElements);
     } catch (error) {
       console.error('Failed to fetch orders', error);
     } finally {
@@ -63,54 +69,41 @@ export default function OrdersPage() {
     }
   };
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchTerm(searchQuery);
+      setCurrentPage(0);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   const searchParams = useSearchParams();
   const refParam = searchParams.get('ref');
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [currentPage, currentStatus, searchTerm]);
 
-  // Handle incoming search parameters (from Omnisearch)
   useEffect(() => {
-    if (refParam && allOrders.length > 0) {
+    if (refParam) {
       setSearchQuery(refParam);
-      const matched = allOrders.find(o => o.orderReference === refParam);
-      if (matched) {
-        setSelectedOrder(matched);
-        setIsModalOpen(true);
-      }
+      const loadSpecific = async () => {
+        try {
+          const response = await OrderService.getAll({ reference: refParam, size: 1 });
+          if (response.content.length > 0) {
+            setSelectedOrder(response.content[0]);
+            setIsModalOpen(true);
+          }
+        } catch (e) {
+          console.error("Failed to load order from URL", e);
+        }
+      };
+      loadSpecific();
     }
-  }, [allOrders, refParam]);
-
-  useEffect(() => {
-    let result = allOrders;
-    if (currentStatus !== 'ALL') {
-      result = result.filter(order => order.status === currentStatus);
-    }
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(order =>
-        order.orderReference.toLowerCase().includes(query) ||
-        order.userFirstName?.toLowerCase().includes(query) ||
-        order.userLastName?.toLowerCase().includes(query) ||
-        order.userEmail?.toLowerCase().includes(query)
-      );
-    }
-    setFilteredOrders(result);
-    setCurrentPage(0);
-  }, [allOrders, currentStatus, searchQuery]);
-
-  useEffect(() => {
-    const start = currentPage * itemsPerPage;
-    const end = start + itemsPerPage;
-    setDisplayedOrders(filteredOrders.slice(start, end));
-  }, [filteredOrders, currentPage, itemsPerPage]);
-
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  }, [refParam]);
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-      {/* ── Top Bar ── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -146,7 +139,6 @@ export default function OrdersPage() {
         </div>
       </motion.div>
 
-      {/* ── Tabs ── */}
       <motion.nav
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -165,7 +157,10 @@ export default function OrdersPage() {
           return (
             <button
               key={status}
-              onClick={() => setCurrentStatus(status)}
+              onClick={() => {
+                setCurrentStatus(status);
+                setCurrentPage(0);
+              }}
               className={`filter-btn ${isActive ? 'active' : ''}`}
             >
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: isActive ? '#fff' : cfg.dot }} />
@@ -175,7 +170,6 @@ export default function OrdersPage() {
         })}
       </motion.nav>
 
-      {/* ── Table Container ── */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -202,7 +196,7 @@ export default function OrdersPage() {
                     Chargement...
                   </td>
                 </tr>
-              ) : displayedOrders.length === 0 ? (
+              ) : orders.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: '60px', textAlign: 'center' }}>
                     <div style={{ display: 'inline-flex', padding: 16, background: 'var(--bg-surface)', borderRadius: '50%', marginBottom: 12 }}>
@@ -213,7 +207,7 @@ export default function OrdersPage() {
                   </td>
                 </tr>
               ) : (
-                displayedOrders.map((order, i) => {
+                orders.map((order, i) => {
                   const sc = STATUS_CONFIG[order.status] ?? STATUS_CONFIG['PENDING'];
                   return (
                     <motion.tr
@@ -275,20 +269,20 @@ export default function OrdersPage() {
                 })
               )}
             </tbody>
-          </table>
+            </table>
           </div>
         </div>
 
         <div className="mobile-only" style={{ paddingBottom: 16, marginTop: 12 }}>
           {loading ? (
              <div style={{ padding: '40px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>Chargement...</div>
-          ) : displayedOrders.length === 0 ? (
+          ) : orders.length === 0 ? (
             <div style={{ padding: '40px', textAlign: 'center' }}>
                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Aucune commande</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 12px' }}>
-              {displayedOrders.map((order, i) => {
+              {orders.map((order, i) => {
                 const sc = STATUS_CONFIG[order.status] ?? STATUS_CONFIG['PENDING'];
                 return (
                   <motion.div
@@ -330,11 +324,10 @@ export default function OrdersPage() {
           )}
         </div>
 
-        {/* ── Pagination ── */}
         {totalPages > 1 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 22px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-base)' }}>
             <p style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-              Affichage de {displayedOrders.length} sur {filteredOrders.length}
+              Affichage de {orders.length} sur {totalElements}
             </p>
             <div style={{ display: 'flex', gap: 6 }}>
               <button
@@ -358,7 +351,6 @@ export default function OrdersPage() {
         )}
       </motion.div>
 
-      {/* ── Modal ── */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -369,7 +361,7 @@ export default function OrdersPage() {
           <OrderDetailsContent 
             order={selectedOrder} 
             onStatusUpdate={(id, newStatus) => {
-              setAllOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+              setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
               setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
             }} 
           />

@@ -46,16 +46,21 @@ public class OrderService {
     private static final Random RANDOM = new Random();
 
     /**
-     * Récupère toutes les commandes enregistrées (réservé aux admins).
-     * 
-     * @param pageable Pagination et tri.
-     * @return PagedResponse de toutes les commandes.
-     */
-    public PagedResponse<OrderResponse> getAllOrders(Pageable pageable) {
-        Page<OrderResponse> orderPage = orderRepository.findAllByOrderByCreatedAtDesc(pageable)
-                .map(orderMapper::toResponse);
-        return PagedResponse.of(orderPage);
+ * Récupère toutes les commandes enregistrées (réservé aux admins).
+ * 
+ * @param reference Référence de commande optionnelle pour filtrage.
+ * @param pageable  Pagination et tri.
+ * @return PagedResponse de toutes les commandes.
+ */
+public PagedResponse<OrderResponse> getAllOrders(String reference, Pageable pageable) {
+    Page<Order> orderPage;
+    if (reference != null && !reference.isBlank()) {
+        orderPage = orderRepository.findByOrderReferenceContainingIgnoreCase(reference, pageable);
+    } else {
+        orderPage = orderRepository.findAll(pageable);
     }
+    return PagedResponse.of(orderPage.map(orderMapper::toResponse));
+}
 
     /**
      * Récupère les commandes filtrées par statut, triées de la plus ancienne à la

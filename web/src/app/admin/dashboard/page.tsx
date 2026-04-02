@@ -31,7 +31,6 @@ import { Modal } from '@/components/ui/modal';
 import { OrderDetailsContent } from '@/components/admin/OrderDetailsContent';
 import { ProductDetailsContent } from '@/components/admin/ProductDetailsContent';
 
-/* ─── Helpers ────────────────────────────────────────────── */
 function formatCurrency(val: number) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
 }
@@ -47,13 +46,12 @@ function formatTime(iso: string) {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; className: string; dot: string }> = {
-  PENDING:   { label: 'En attente', className: 'badge badge-pending',   dot: '#EA580C' },
-  READY:     { label: 'Prête',      className: 'badge badge-ready',     dot: '#2563EB' },
-  COMPLETED: { label: 'Livrée',     className: 'badge badge-completed', dot: '#16A34A' },
-  CANCELLED: { label: 'Annulée',    className: 'badge badge-cancelled', dot: '#DC2626' },
+  PENDING: { label: 'En attente', className: 'badge badge-pending', dot: '#EA580C' },
+  READY: { label: 'Prête', className: 'badge badge-ready', dot: '#2563EB' },
+  COMPLETED: { label: 'Livrée', className: 'badge badge-completed', dot: '#16A34A' },
+  CANCELLED: { label: 'Annulée', className: 'badge badge-cancelled', dot: '#DC2626' },
 };
 
-/* ─── Sparkline SVG ──────────────────────────────────────── */
 function Sparkline({ data, color = '#FF6B00' }: { data: number[]; color?: string }) {
   const max = Math.max(...data, 1);
   const min = Math.min(...data);
@@ -68,18 +66,17 @@ function Sparkline({ data, color = '#FF6B00' }: { data: number[]; color?: string
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} fill="none">
       <defs>
-        <linearGradient id={`grad-${color.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`grad-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.18" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <polygon points={area} fill={`url(#grad-${color.replace('#','')})`} />
+      <polygon points={area} fill={`url(#grad-${color.replace('#', '')})`} />
       <polyline points={polyline} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-/* ─── KPI Card ───────────────────────────────────────────── */
 function KPICard({
   label, value, icon: Icon, iconColor, iconBg, trend, sparkData, delay = 0
 }: {
@@ -129,25 +126,25 @@ function KPICard({
   );
 }
 
-/* ─── Main Component ─────────────────────────────────────── */
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [stats, setStats] = useState({ totalRevenue: 0, totalOrders: 0, totalClients: 0, outOfStockItems: 0 });
-  
+
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
-  
+
   const [topSelling, setTopSelling] = useState<any[]>([]);
   const [outOfStockProducts, setOutOfStockProducts] = useState<Product[]>([]);
-  
-  // Modal states
+
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<{ orders: any[]; products: any[]; clients: any[] }>({ orders: [], products: [], clients: [] });
+  const [isSearching, setIsSearching] = useState(false);
 
   const now = new Date();
 
@@ -156,10 +153,11 @@ export default function DashboardPage() {
       try {
         setLoading(true);
         const [ordersRes, productsRes, usersRes] = await Promise.all([
-          OrderService.getAll({ size: 1000, sort: 'createdAt,desc' }),
-          ProductService.getAll({ size: 1000 }),
-          UserService.getAll({ size: 1000 }),
+          OrderService.getAll({ size: 100, sort: 'createdAt,desc' }),
+          ProductService.getAll({ size: 20 }),
+          UserService.getAll({ size: 20 }),
         ]);
+
         const orders = ordersRes.content;
         const products = productsRes.content;
         const users = usersRes.content;
@@ -169,8 +167,8 @@ export default function DashboardPage() {
 
         setStats({
           totalRevenue,
-          totalOrders: orders.length,
-          totalClients: users.filter((u: User) => u.role === Role.CLIENT).length,
+          totalOrders: ordersRes.totalElements,
+          totalClients: usersRes.totalElements,
           outOfStockItems: outOfStock.length,
         });
 
@@ -180,7 +178,7 @@ export default function DashboardPage() {
         setOutOfStockProducts(outOfStock.slice(0, 5));
 
         const productSales: Record<string, { name: string; quantity: number; revenue: number }> = {};
-        orders.forEach(order => {
+        orders.slice(0, 50).forEach(order => {
           if (order.status !== OrderStatus.CANCELLED) {
             order.items.forEach((item: any) => {
               if (!productSales[item.productName]) {
@@ -201,6 +199,36 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (search.length <= 1) {
+      setSearchResults({ orders: [], products: [], clients: [] });
+      return;
+    }
+
+    const handler = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const [ordersRes, productsRes, usersRes] = await Promise.all([
+          OrderService.getAll({ search: search, size: 2 }),
+          ProductService.getAll({ name: search, size: 2 }),
+          UserService.getAll({ name: search, size: 2 }),
+        ]);
+
+        setSearchResults({
+          orders: ordersRes.content.slice(0, 3),
+          products: productsRes.content.slice(0, 3),
+          clients: usersRes.content.slice(0, 3)
+        });
+      } catch (e) {
+        console.error("Search failed", e);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [search]);
+
   const recentOrders = allOrders.slice(0, 8);
 
   const filteredOrdersTable = recentOrders.filter(o =>
@@ -209,33 +237,10 @@ export default function DashboardPage() {
     `${o.userFirstName} ${o.userLastName}`.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Omnisearch filtering - Memoized for performance
-  const searchResults = React.useMemo(() => {
-    if (search.length <= 1) return { orders: [], products: [], clients: [] };
-    
-    const query = search.toLowerCase();
-    return {
-      orders: allOrders.filter(o => 
-        o.orderReference.toLowerCase().includes(query) ||
-        o.userEmail.toLowerCase().includes(query) ||
-        `${o.userFirstName} ${o.userLastName}`.toLowerCase().includes(query)
-      ).slice(0, 3), // Limited to 3 for performance and brevity
-      products: allProducts.filter(p => 
-        p.name.toLowerCase().includes(query) ||
-        p.category.toLowerCase().includes(query)
-      ).slice(0, 3),
-      clients: allUsers.filter(u => 
-        `${u.firstName} ${u.lastName}`.toLowerCase().includes(query) ||
-        u.email.toLowerCase().includes(query)
-      ).slice(0, 3)
-    };
-  }, [search, allOrders, allProducts, allUsers]);
-
   const hasAnyResult = searchResults.orders.length > 0 || searchResults.products.length > 0 || searchResults.clients.length > 0;
 
-  /* Mock sparkline data */
   const revenueSpark = [40, 55, 48, 70, 62, 85, 78, 92, 88, stats.totalRevenue > 0 ? 100 : 60];
-  const orderSpark   = [3, 5, 4, 8, 6, 10, 9, 12, 11, stats.totalOrders % 15 || 8];
+  const orderSpark = [3, 5, 4, 8, 6, 10, 9, 12, 11, stats.totalOrders % 15 || 8];
 
   if (loading) {
     return (
@@ -249,8 +254,6 @@ export default function DashboardPage() {
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-
-      {/* ── Top Bar ── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -265,7 +268,6 @@ export default function DashboardPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Search */}
           <div className="search-container" style={{ position: 'relative' }}>
             <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
             <input
@@ -287,7 +289,6 @@ export default function DashboardPage() {
               onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
             />
 
-            {/* Results Overlay */}
             {search.length > 1 && showResults && (
               <div className="search-results-overlay">
                 {!hasAnyResult && (
@@ -295,13 +296,13 @@ export default function DashboardPage() {
                     Aucun résultat pour "{search}"
                   </div>
                 )}
-                
+
                 {searchResults.orders.length > 0 && (
                   <>
                     <div className="search-result-category">Commandes</div>
                     {searchResults.orders.map(o => (
-                      <div 
-                        key={o.id} 
+                      <div
+                        key={o.id}
                         style={{ cursor: 'pointer' }}
                         onClick={() => {
                           setSelectedOrder(o);
@@ -327,8 +328,8 @@ export default function DashboardPage() {
                   <>
                     <div className="search-result-category">Produits</div>
                     {searchResults.products.map(p => (
-                      <div 
-                        key={p.id} 
+                      <div
+                        key={p.id}
                         style={{ cursor: 'pointer' }}
                         onClick={() => {
                           setSelectedProduct(p);
@@ -372,9 +373,8 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* CTA */}
-          <button 
-            className="btn-primary" 
+          <button
+            className="btn-primary"
             onClick={() => {
               setSelectedProduct(null);
               setIsProductModalOpen(true);
@@ -386,13 +386,8 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
-      {/* ── Main Grid ── */}
       <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20 }}>
-
-        {/* ═══ LEFT COLUMN ═══ */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-          {/* KPI Cards */}
           <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
             <KPICard
               label="Revenu total" value={formatCurrency(stats.totalRevenue)}
@@ -417,11 +412,10 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Orders Table */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.4, ease: [0.23,1,0.32,1] }}
+            transition={{ delay: 0.2, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
             className="card"
             style={{ overflow: 'hidden' }}
           >
@@ -436,76 +430,76 @@ export default function DashboardPage() {
                 </button>
               </Link>
             </div>
-            
+
             <div className="desktop-only">
               <div className="table-container">
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: 'var(--bg-surface)' }}>
-                    {['Référence', 'Client', 'Date', 'Statut', 'Total'].map(h => (
-                      <th key={h} style={{ padding: '10px 22px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredOrdersTable.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} style={{ padding: '32px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
-                        Aucune commande trouvée
-                      </td>
+                  <thead>
+                    <tr style={{ background: 'var(--bg-surface)' }}>
+                      {['Référence', 'Client', 'Date', 'Statut', 'Total'].map(h => (
+                        <th key={h} style={{ padding: '10px 22px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                          {h}
+                        </th>
+                      ))}
                     </tr>
-                  ) : (
-                    filteredOrdersTable.map((order, i) => {
-                      const sc = STATUS_CONFIG[order.status] ?? STATUS_CONFIG['PENDING'];
-                      return (
-                        <motion.tr
-                          key={order.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.25 + i * 0.03 }}
-                          className="table-row-hover"
-                          style={{ borderTop: '1px solid var(--border-subtle)', transition: 'background 0.15s', cursor: 'pointer' }}
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setIsOrderModalOpen(true);
-                          }}
-                        >
-                          <td style={{ padding: '13px 22px' }}>
-                            <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-                              #{order.orderReference}
-                            </span>
-                          </td>
-                          <td style={{ padding: '13px 22px' }}>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                              {order.userFirstName} {order.userLastName}
-                            </div>
-                          </td>
-                          <td style={{ padding: '13px 22px' }}>
-                            <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                              {formatDate(order.createdAt)}
-                              <br />
-                              <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>{formatTime(order.createdAt)}</span>
-                            </div>
-                          </td>
-                          <td style={{ padding: '13px 22px' }}>
-                            <span className={sc.className}>
-                              <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot, display: 'inline-block' }} />
-                              {sc.label}
-                            </span>
-                          </td>
-                          <td style={{ padding: '13px 22px' }}>
-                            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                              {formatCurrency(order.total)}
-                            </span>
-                          </td>
-                        </motion.tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredOrdersTable.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ padding: '32px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
+                          Aucune commande trouvée
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredOrdersTable.map((order, i) => {
+                        const sc = STATUS_CONFIG[order.status] ?? STATUS_CONFIG['PENDING'];
+                        return (
+                          <motion.tr
+                            key={order.id}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.25 + i * 0.03 }}
+                            className="table-row-hover"
+                            style={{ borderTop: '1px solid var(--border-subtle)', transition: 'background 0.15s', cursor: 'pointer' }}
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setIsOrderModalOpen(true);
+                            }}
+                          >
+                            <td style={{ padding: '13px 22px' }}>
+                              <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                                #{order.orderReference}
+                              </span>
+                            </td>
+                            <td style={{ padding: '13px 22px' }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                                {order.userFirstName} {order.userLastName}
+                              </div>
+                            </td>
+                            <td style={{ padding: '13px 22px' }}>
+                              <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                                {formatDate(order.createdAt)}
+                                <br />
+                                <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>{formatTime(order.createdAt)}</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '13px 22px' }}>
+                              <span className={sc.className}>
+                                <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot, display: 'inline-block' }} />
+                                {sc.label}
+                              </span>
+                            </td>
+                            <td style={{ padding: '13px 22px' }}>
+                              <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                                {formatCurrency(order.total)}
+                              </span>
+                            </td>
+                          </motion.tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -553,7 +547,7 @@ export default function DashboardPage() {
                             </div>
                           </div>
                           <div style={{ textAlign: 'right' }}>
-                             <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>
                               {formatCurrency(order.total)}
                             </div>
                           </div>
@@ -566,7 +560,6 @@ export default function DashboardPage() {
             </div>
           </motion.div>
 
-          {/* Top Sellers */}
           {topSelling.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -620,10 +613,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* ═══ RIGHT COLUMN ═══ */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-          {/* Quick Actions */}
           <motion.div
             initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
@@ -635,8 +625,8 @@ export default function DashboardPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
                 { href: '/admin/products', icon: Package, label: 'Gérer les produits', color: '#FF6B00', bg: 'rgba(255,107,0,0.08)' },
-                { href: '/admin/orders',   icon: ShoppingBag, label: 'Voir les commandes', color: '#2563EB', bg: 'rgba(37,99,235,0.08)' },
-                { href: '/admin/clients',  icon: Users, label: 'Gérer les clients', color: '#16A34A', bg: 'rgba(22,163,74,0.08)' },
+                { href: '/admin/orders', icon: ShoppingBag, label: 'Voir les commandes', color: '#2563EB', bg: 'rgba(37,99,235,0.08)' },
+                { href: '/admin/clients', icon: Users, label: 'Gérer les clients', color: '#16A34A', bg: 'rgba(22,163,74,0.08)' },
               ].map(action => (
                 <Link key={action.href} href={action.href} style={{ textDecoration: 'none' }}>
                   <motion.div
@@ -661,7 +651,6 @@ export default function DashboardPage() {
             </div>
           </motion.div>
 
-          {/* Stock Alerts */}
           {outOfStockProducts.length > 0 && (
             <motion.div
               initial={{ opacity: 0, x: 16 }}
@@ -682,8 +671,8 @@ export default function DashboardPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {outOfStockProducts.map(p => (
-                  <div 
-                    key={p.id} 
+                  <div
+                    key={p.id}
                     onClick={() => {
                       setSelectedProduct(p);
                       setIsProductModalOpen(true);
@@ -709,7 +698,6 @@ export default function DashboardPage() {
             </motion.div>
           )}
 
-          {/* Activity Summary */}
           <motion.div
             initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
@@ -743,7 +731,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Modals */}
       <Modal
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
@@ -751,12 +738,12 @@ export default function DashboardPage() {
         size="lg"
       >
         {selectedOrder && (
-          <OrderDetailsContent 
-            order={selectedOrder} 
+          <OrderDetailsContent
+            order={selectedOrder}
             onStatusUpdate={(id, newStatus) => {
               setAllOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
               setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
-            }} 
+            }}
           />
         )}
       </Modal>
@@ -767,31 +754,29 @@ export default function DashboardPage() {
         title={selectedProduct ? "Détails du produit" : "Nouveau produit"}
         size="lg"
       >
-        <ProductDetailsContent 
-          product={selectedProduct} 
+        <ProductDetailsContent
+          product={selectedProduct}
           onSaveSuccess={(p) => {
             setIsProductModalOpen(false);
-            // Dynamic update of dashboard data
             setAllProducts(prev => {
               const exists = prev.find(item => item.id === p.id);
               if (exists) return prev.map(item => item.id === p.id ? p : item);
               return [p, ...prev];
             });
-          }} 
-          onCancel={() => setIsProductModalOpen(false)} 
+          }}
+          onCancel={() => setIsProductModalOpen(false)}
         />
       </Modal>
 
       <style>{`
-        .quick-action-card:hover {
-          border-color: var(--accent) !important;
-          background: var(--accent-subtle) !important;
-        }
-      `}</style>
+          .quick-action-card:hover {
+            border-color: var(--accent) !important;
+            background: var(--accent-subtle) !important;
+          }
+        `}</style>
 
-      {/* Global Click Handler to close results */}
       {showResults && (
-        <div 
+        <div
           onClick={() => setShowResults(false)}
           style={{ position: 'fixed', inset: 0, zIndex: 999 }}
         />

@@ -32,4 +32,6 @@ export interface OrderFilters {
   page?: number;
   size?: number;
   sort?: string;
+  reference?: string;
+  search?: string;
 }

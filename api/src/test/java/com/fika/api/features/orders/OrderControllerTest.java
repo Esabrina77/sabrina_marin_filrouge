@@ -83,7 +83,7 @@ class OrderControllerTest {
         void getAllOrders() throws Exception {
                 Page<OrderResponse> page = new PageImpl<>(List.of(orderResponse));
                 PagedResponse<OrderResponse> pagedResponse = PagedResponse.of(page);
-                given(orderService.getAllOrders(any(Pageable.class))).willReturn(pagedResponse);
+                given(orderService.getAllOrders(any(), any(Pageable.class))).willReturn(pagedResponse);
 
                 mockMvc.perform(get("/api/v1/orders"))
                                 .andDo(print())

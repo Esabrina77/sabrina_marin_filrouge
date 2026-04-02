@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useLayoutEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Sidebar } from '@/components/admin/Sidebar';
 import { useRouter } from 'next/navigation';
 import AuthService from '@/lib/api/auth';
@@ -13,22 +14,41 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isReady, setIsReady] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Optimized auth check
   useLayoutEffect(() => {
-    if (!AuthService.isAuthenticated()) {
-      router.push('/login');
-    } else {
-      setIsReady(true);
-    }
+    const checkAuth = () => {
+      if (!AuthService.isAuthenticated()) {
+        router.push('/login');
+      } else {
+        setIsReady(true);
+      }
+    };
+    checkAuth();
   }, [router]);
 
   if (!isReady) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg-base)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ 
+        minHeight: '100vh', 
+        background: 'var(--bg-base)', 
+        display: 'flex', 
+        flexDirection: 'column',
+        alignItems: 'center', 
+        justifyContent: 'center',
+        gap: 20
+      }}>
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          style={{ width: 48, height: 48, background: 'var(--accent)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 30px var(--accent-glow)' }}
+        >
+          <UtensilsCrossed size={24} color="#fff" />
+        </motion.div>
         <div style={{
-          width: 32, height: 32, borderRadius: '50%',
-          border: '3px solid var(--border)',
+          width: 24, height: 24, borderRadius: '50%',
+          border: '2px solid var(--border)',
           borderTopColor: 'var(--accent)',
-          animation: 'spin 0.8s linear infinite',
+          animation: 'spin 0.6s linear infinite',
         }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
