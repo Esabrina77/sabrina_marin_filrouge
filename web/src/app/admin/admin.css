@@ -49,7 +49,7 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(6px);
-  z-index: 199;
+  z-index: 1099;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -62,10 +62,26 @@
   }
 }
 
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
 @media screen and (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block !important;
+  }
+
   .admin-main {
     margin-left: 0 !important;
-    padding: 16px 12px;
+    padding: 16px 12px 100px 12px;
     width: 100% !important;
     max-width: 100vw !important;
     overflow-x: hidden !important;
@@ -198,6 +214,73 @@
      padding: 2px 8px !important;
      font-size: 10px !important;
   }
+
+  .filter-container {
+    flex-wrap: wrap !important;
+    overflow-x: visible !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 16px !important;
+    gap: 6px !important;
+  }
+
+  .filter-container button {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
+    white-space: nowrap;
+  }
+}
+
+.filter-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.filter-container::-webkit-scrollbar {
+  display: none;
+}
+
+.modal-content-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 10px 0;
+}
+
+@media screen and (max-width: 768px) {
+  .modal-content-inner {
+    padding-bottom: 120px !important;
+  }
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.filter-btn:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.filter-btn.active {
+  background: var(--text-primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 @media screen and (max-width: 600px) {
@@ -210,12 +293,12 @@
   }
 
   .admin-main {
-    padding: 12px 10px;
+    padding: 12px 10px 100px 10px !important;
   }
 }
 
 .mobile-bottom-nav {
-  display: none;
+  display: flex !important;
   position: fixed;
   bottom: 0;
   left: 0;
@@ -225,10 +308,9 @@
   border-top: 1px solid var(--border);
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
   padding: 0 16px;
-  display: flex;
   align-items: center;
   justify-content: space-around;
-  z-index: 150;
+  z-index: 140;
 }
 
 @media screen and (min-width: 769px) {

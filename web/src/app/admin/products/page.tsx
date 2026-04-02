@@ -157,7 +157,7 @@ export default function ProductsPage() {
         className="top-bar-admin"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}
       >
-        <div>
+        <div className="top-bar-title">
           <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
             Produits
           </h1>
@@ -192,20 +192,15 @@ export default function ProductsPage() {
       </motion.div>
 
       {/* ── Tabs ── */}
-      <motion.div
+      <motion.nav
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4 }}
-        style={{ display: 'flex', gap: 8, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}
+        className="filter-container"
       >
         <button
           onClick={() => setFilters({ ...filters, category: '' })}
-          style={{
-            padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            transition: 'all 0.2s', border: 'none',
-            background: filters.category === '' ? 'var(--text-primary)' : 'transparent',
-            color: filters.category === '' ? '#fff' : 'var(--text-secondary)'
-          }}
+          className={`filter-btn ${filters.category === '' ? 'active' : ''}`}
         >
           Tous
         </button>
@@ -228,7 +223,7 @@ export default function ProductsPage() {
             </button>
           );
         })}
-      </motion.div>
+      </motion.nav>
 
       {/* ── Table Container ── */}
       <motion.div
@@ -238,113 +233,172 @@ export default function ProductsPage() {
         className="card"
         style={{ overflow: 'hidden' }}
       >
-        <div className="table-container">
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: 'var(--bg-surface)' }}>
-              {['Produit', 'Catégorie', 'Prix', 'Stock', 'Status', 'Actions'].map((h, index) => (
-                <th key={h} style={{ padding: '12px 22px', textAlign: index === 5 ? 'right' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} style={{ padding: '40px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
-                  Chargement...
-                </td>
+        <div className="desktop-only">
+          <div className="table-container">
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-surface)' }}>
+                {['Produit', 'Catégorie', 'Prix', 'Stock', 'Status', 'Actions'].map((h, index) => (
+                  <th key={h} style={{ padding: '12px 22px', textAlign: index === 5 ? 'right' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    {h}
+                  </th>
+                ))}
               </tr>
-            ) : products.length === 0 ? (
-              <tr>
-                <td colSpan={6} style={{ padding: '60px', textAlign: 'center' }}>
-                  <div style={{ display: 'inline-flex', padding: 16, background: 'var(--bg-surface)', borderRadius: '50%', marginBottom: 12 }}>
-                    <Package size={24} color="var(--text-tertiary)" />
-                  </div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Aucun produit</p>
-                  <button onClick={() => setFilters({name: '', category: ''})} className="btn-outline" style={{ marginTop: 12 }}>Réinitialiser filtres</button>
-                </td>
-              </tr>
-            ) : (
-              products.map((product, i) => {
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
+                    Chargement...
+                  </td>
+                </tr>
+              ) : products.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '60px', textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', padding: 16, background: 'var(--bg-surface)', borderRadius: '50%', marginBottom: 12 }}>
+                      <Package size={24} color="var(--text-tertiary)" />
+                    </div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Aucun produit</p>
+                    <button onClick={() => setFilters({name: '', category: ''})} className="btn-outline" style={{ marginTop: 12 }}>Réinitialiser filtres</button>
+                  </td>
+                </tr>
+              ) : (
+                products.map((product, i) => {
+                  const isOutOfStock = product.quantity === 0;
+                  return (
+                    <motion.tr
+                      key={product.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="table-row-hover"
+                      style={{ borderTop: '1px solid var(--border-subtle)', transition: 'background 0.15s' }}
+                    >
+                      <td style={{ padding: '14px 22px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: 10, overflow: 'hidden', background: 'var(--bg-surface)', flexShrink: 0 }}>
+                             {product.imgUrl ? (
+                                <img src={product.imgUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                             ) : (
+                               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                 <Package size={20} color="var(--border)" />
+                               </div>
+                             )}
+                          </div>
+                          <div>
+                            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                              {product.name}
+                            </p>
+                            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', maxWidth: 180, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.description}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '14px 22px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', background: 'var(--bg-surface)', padding: '4px 8px', borderRadius: 6, color: 'var(--text-secondary)' }}>
+                          {product.category}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 22px', fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>
+                        {formatCurrency(product.price)}
+                      </td>
+                      <td style={{ padding: '14px 22px' }}>
+                         <span style={{ fontSize: 13, fontWeight: 800, color: isOutOfStock ? '#DC2626' : (product.quantity < 5 ? '#EA580C' : '#16A34A') }}>
+                            {product.quantity}
+                         </span>
+                      </td>
+                      <td style={{ padding: '14px 22px' }}>
+                          {isOutOfStock ? (
+                             <span className="badge badge-cancelled">
+                               <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#DC2626' }} /> Rupture
+                             </span>
+                          ) : (
+                             <span className="badge badge-completed">
+                               <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#16A34A' }} /> En stock
+                             </span>
+                          )}
+                      </td>
+                      <td style={{ padding: '14px 22px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                            <button
+                              className="btn-outline"
+                              style={{ padding: '6px', borderRadius: 8, borderColor: 'transparent' }}
+                              onClick={() => openModal(product)}
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button
+                              className="btn-outline"
+                              style={{ padding: '6px', borderRadius: 8, color: '#DC2626', borderColor: 'transparent' }}
+                              onClick={() => handleDelete(product)}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+          </div>
+        </div>
+
+        <div className="mobile-only" style={{ paddingBottom: 16, marginTop: 12 }}>
+          {loading ? (
+             <div style={{ padding: '40px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>Chargement...</div>
+          ) : products.length === 0 ? (
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+               <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Aucun produit</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 12px' }}>
+              {products.map((product, i) => {
                 const isOutOfStock = product.quantity === 0;
                 return (
-                  <motion.tr
+                  <motion.div
                     key={product.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.03 }}
-                    className="table-row-hover"
-                    style={{ borderTop: '1px solid var(--border-subtle)', transition: 'background 0.15s' }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="card"
+                    style={{ padding: 16 }}
                   >
-                    <td style={{ padding: '14px 22px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ width: 40, height: 40, borderRadius: 10, overflow: 'hidden', background: 'var(--bg-surface)', flexShrink: 0 }}>
-                           {product.imgUrl ? (
-                              <img src={product.imgUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                           ) : (
-                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                               <Package size={20} color="var(--border)" />
-                             </div>
-                           )}
-                        </div>
-                        <div>
-                          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-                            {product.name}
-                          </p>
-                          <p style={{ fontSize: 11, color: 'var(--text-tertiary)', maxWidth: 180, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.description}</p>
-                        </div>
+                    <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+                      <div style={{ width: 48, height: 48, borderRadius: 10, overflow: 'hidden', background: 'var(--bg-surface)', flexShrink: 0 }}>
+                         {product.imgUrl ? (
+                            <img src={product.imgUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                         ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Package size={24} color="var(--border)" />
+                            </div>
+                         )}
                       </div>
-                    </td>
-                    <td style={{ padding: '14px 22px' }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', background: 'var(--bg-surface)', padding: '4px 8px', borderRadius: 6, color: 'var(--text-secondary)' }}>
-                        {product.category}
-                      </span>
-                    </td>
-                    <td style={{ padding: '14px 22px', fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>
-                      {formatCurrency(product.price)}
-                    </td>
-                    <td style={{ padding: '14px 22px' }}>
-                       <span style={{ fontSize: 13, fontWeight: 800, color: isOutOfStock ? '#DC2626' : (product.quantity < 5 ? '#EA580C' : '#16A34A') }}>
-                          {product.quantity}
-                       </span>
-                    </td>
-                    <td style={{ padding: '14px 22px' }}>
-                        {isOutOfStock ? (
-                           <span className="badge badge-cancelled">
-                             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#DC2626' }} /> Rupture
-                           </span>
-                        ) : (
-                           <span className="badge badge-completed">
-                             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#16A34A' }} /> En stock
-                           </span>
-                        )}
-                    </td>
-                    <td style={{ padding: '14px 22px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                          <button
-                            className="btn-outline"
-                            style={{ padding: '6px', borderRadius: 8, borderColor: 'transparent' }}
-                            onClick={() => openModal(product)}
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button
-                            className="btn-outline"
-                            style={{ padding: '6px', borderRadius: 8, color: '#DC2626', borderColor: 'transparent' }}
-                            onClick={() => handleDelete(product)}
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                           <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</p>
+                           <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent)', marginLeft: 8 }}>{formatCurrency(product.price)}</span>
+                        </div>
+                        <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', marginTop: 2, display: 'block' }}>{product.category}</span>
                       </div>
-                    </td>
-                  </motion.tr>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTop: '1px solid var(--border-subtle)' }}>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: isOutOfStock ? '#DC2626' : (product.quantity < 5 ? '#EA580C' : '#16A34A') }}>
+                             Stock: {product.quantity}
+                          </span>
+                       </div>
+                       <div style={{ display: 'flex', gap: 8 }}>
+                          <button className="btn-outline" style={{ padding: '8px', borderRadius: 10 }} onClick={() => openModal(product)}><Edit size={14} /></button>
+                          <button className="btn-outline" style={{ padding: '8px', borderRadius: 10, color: '#DC2626' }} onClick={() => handleDelete(product)}><Trash2 size={14} /></button>
+                       </div>
+                    </div>
+                  </motion.div>
                 );
-              })
-            )}
-          </tbody>
-        </table>
+              })}
+            </div>
+          )}
         </div>
 
         {/* ── Pagination ── */}

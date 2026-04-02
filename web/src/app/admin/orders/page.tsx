@@ -149,20 +149,15 @@ export default function OrdersPage() {
       </motion.div>
 
       {/* ── Tabs ── */}
-      <motion.div
+      <motion.nav
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4 }}
-        style={{ display: 'flex', gap: 8, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}
+        className="filter-container"
       >
         <button
           onClick={() => setCurrentStatus('ALL')}
-          style={{
-            padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            transition: 'all 0.2s', border: 'none',
-            background: currentStatus === 'ALL' ? 'var(--text-primary)' : 'transparent',
-            color: currentStatus === 'ALL' ? '#fff' : 'var(--text-secondary)'
-          }}
+          className={`filter-btn ${currentStatus === 'ALL' ? 'active' : ''}`}
         >
           Toutes
         </button>
@@ -173,21 +168,14 @@ export default function OrdersPage() {
             <button
               key={status}
               onClick={() => setCurrentStatus(status)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                transition: 'all 0.2s', border: 'none',
-                background: isActive ? 'var(--bg-card)' : 'transparent',
-                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                boxShadow: isActive ? 'var(--shadow-card)' : 'none',
-              }}
+              className={`filter-btn ${isActive ? 'active' : ''}`}
             >
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dot }} />
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: isActive ? '#fff' : cfg.dot }} />
               {cfg.label}
             </button>
           );
         })}
-      </motion.div>
+      </motion.nav>
 
       {/* ── Table Container ── */}
       <motion.div
@@ -197,98 +185,151 @@ export default function OrdersPage() {
         className="card"
         style={{ overflow: 'hidden' }}
       >
-        <div className="table-container">
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: 'var(--bg-surface)' }}>
-              {['Référence', 'Client', 'Date', 'Statut', 'Total', 'Actions'].map(h => (
-                <th key={h} style={{ padding: '12px 22px', textAlign: h === 'Actions' ? 'right' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} style={{ padding: '40px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
-                  Chargement...
-                </td>
+        <div className="desktop-only">
+          <div className="table-container">
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-surface)' }}>
+                {['Référence', 'Client', 'Date', 'Statut', 'Total', 'Actions'].map(h => (
+                  <th key={h} style={{ padding: '12px 22px', textAlign: h === 'Actions' ? 'right' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    {h}
+                  </th>
+                ))}
               </tr>
-            ) : displayedOrders.length === 0 ? (
-              <tr>
-                <td colSpan={6} style={{ padding: '60px', textAlign: 'center' }}>
-                  <div style={{ display: 'inline-flex', padding: 16, background: 'var(--bg-surface)', borderRadius: '50%', marginBottom: 12 }}>
-                    <ShoppingBag size={24} color="var(--text-tertiary)" />
-                  </div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Aucune commande</p>
-                  <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 4 }}>Essayez de modifier vos filtres.</p>
-                </td>
-              </tr>
-            ) : (
-              displayedOrders.map((order, i) => {
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
+                    Chargement...
+                  </td>
+                </tr>
+              ) : displayedOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '60px', textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', padding: 16, background: 'var(--bg-surface)', borderRadius: '50%', marginBottom: 12 }}>
+                      <ShoppingBag size={24} color="var(--text-tertiary)" />
+                    </div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Aucune commande</p>
+                    <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 4 }}>Essayez de modifier vos filtres.</p>
+                  </td>
+                </tr>
+              ) : (
+                displayedOrders.map((order, i) => {
+                  const sc = STATUS_CONFIG[order.status] ?? STATUS_CONFIG['PENDING'];
+                  return (
+                    <motion.tr
+                      key={order.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="table-row-hover"
+                      style={{ borderTop: '1px solid var(--border-subtle)', transition: 'background 0.15s', cursor: 'pointer' }}
+                      onClick={() => { setSelectedOrder(order); setIsModalOpen(true); }}
+                    >
+                      <td style={{ padding: '14px 22px' }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                          #{order.orderReference}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 22px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                            {order.userFirstName?.charAt(0)}{order.userLastName?.charAt(0)}
+                          </div>
+                          <div>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                              {order.userFirstName} {order.userLastName}
+                            </p>
+                            <p style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{order.userEmail}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '14px 22px' }}>
+                        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                          {formatDate(order.createdAt)}
+                          <br />
+                          <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>{formatTime(order.createdAt)}</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '14px 22px' }}>
+                        <span className={sc.className}>
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot, display: 'inline-block' }} />
+                          {sc.label}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 22px' }}>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                          {formatCurrency(order.total)}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 22px', textAlign: 'right' }}>
+                        <button
+                          className="btn-outline"
+                          style={{ padding: '6px', borderRadius: 8 }}
+                          onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); setIsModalOpen(true); }}
+                        >
+                          <Eye size={14} />
+                        </button>
+                      </td>
+                    </motion.tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+          </div>
+        </div>
+
+        <div className="mobile-only" style={{ paddingBottom: 16, marginTop: 12 }}>
+          {loading ? (
+             <div style={{ padding: '40px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>Chargement...</div>
+          ) : displayedOrders.length === 0 ? (
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+               <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Aucune commande</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 12px' }}>
+              {displayedOrders.map((order, i) => {
                 const sc = STATUS_CONFIG[order.status] ?? STATUS_CONFIG['PENDING'];
                 return (
-                  <motion.tr
+                  <motion.div
                     key={order.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.03 }}
-                    className="table-row-hover"
-                    style={{ borderTop: '1px solid var(--border-subtle)', transition: 'background 0.15s', cursor: 'pointer' }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="card"
+                    style={{ padding: 16 }}
                     onClick={() => { setSelectedOrder(order); setIsModalOpen(true); }}
                   >
-                    <td style={{ padding: '14px 22px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                       <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
                         #{order.orderReference}
                       </span>
-                    </td>
-                    <td style={{ padding: '14px 22px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>
-                          {order.userFirstName?.charAt(0)}{order.userLastName?.charAt(0)}
-                        </div>
-                        <div>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                            {order.userFirstName} {order.userLastName}
-                          </p>
-                          <p style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{order.userEmail}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '14px 22px' }}>
-                      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                        {formatDate(order.createdAt)}
-                        <br />
-                        <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>{formatTime(order.createdAt)}</span>
-                      </div>
-                    </td>
-                    <td style={{ padding: '14px 22px' }}>
                       <span className={sc.className}>
-                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot, display: 'inline-block' }} />
                         {sc.label}
                       </span>
-                    </td>
-                    <td style={{ padding: '14px 22px' }}>
-                      <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                        {formatCurrency(order.total)}
-                      </span>
-                    </td>
-                    <td style={{ padding: '14px 22px', textAlign: 'right' }}>
-                      <button
-                        className="btn-outline"
-                        style={{ padding: '6px', borderRadius: 8 }}
-                        onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); setIsModalOpen(true); }}
-                      >
-                        <Eye size={14} />
-                      </button>
-                    </td>
-                  </motion.tr>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {order.userFirstName} {order.userLastName}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>
+                          {formatDate(order.createdAt)} à {formatTime(order.createdAt)}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                         <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>
+                          {formatCurrency(order.total)}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
                 );
-              })
-            )}
-          </tbody>
-        </table>
+              })}
+            </div>
+          )}
         </div>
 
         {/* ── Pagination ── */}
@@ -329,7 +370,7 @@ export default function OrdersPage() {
         {selectedOrder && (() => {
           const sc = STATUS_CONFIG[selectedOrder.status] ?? STATUS_CONFIG['PENDING'];
           return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '10px 0' }}>
+            <div className="modal-content-inner">
               
               {/* Status & Actions */}
               <div className="top-bar-admin" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'var(--bg-surface)', borderRadius: 12, border: '1px solid var(--border-subtle)' }}>
@@ -381,33 +422,56 @@ export default function OrdersPage() {
               {/* Items */}
               <div>
                 <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>Contenu de la commande</h4>
-                <div className="table-container" style={{ border: '1px solid var(--border-subtle)', borderRadius: 12, overflow: 'hidden' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead style={{ background: 'var(--bg-surface)' }}>
-                      <tr>
-                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Produit</th>
-                        <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Qté</th>
-                        <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>P.U.</th>
-                        <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedOrder.items.map((item) => (
-                        <tr key={item.id} style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                          <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.productName}</td>
-                          <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center' }}>x{item.quantity}</td>
-                          <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)', textAlign: 'right' }}>{formatCurrency(item.priceAtReservation)}</td>
-                          <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', textAlign: 'right' }}>{formatCurrency(item.priceAtReservation * item.quantity)}</td>
+                
+                {/* Desktop View */}
+                <div className="desktop-only">
+                  <div className="table-container" style={{ border: '1px solid var(--border-subtle)', borderRadius: 12, overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead style={{ background: 'var(--bg-surface)' }}>
+                        <tr>
+                          <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Produit</th>
+                          <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Qté</th>
+                          <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>P.U.</th>
+                          <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</th>
                         </tr>
-                      ))}
-                    </tbody>
-                    <tfoot style={{ background: 'var(--bg-base)', borderTop: '1px solid var(--border)' }}>
-                      <tr>
-                        <td colSpan={3} style={{ padding: '14px 16px', textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Payé</td>
-                        <td style={{ padding: '14px 16px', textAlign: 'right', fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>{formatCurrency(selectedOrder.total)}</td>
-                      </tr>
-                    </tfoot>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {selectedOrder.items.map((item) => (
+                          <tr key={item.id} style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                            <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.productName}</td>
+                            <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center' }}>x{item.quantity}</td>
+                            <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)', textAlign: 'right' }}>{formatCurrency(item.priceAtReservation)}</td>
+                            <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', textAlign: 'right' }}>{formatCurrency(item.priceAtReservation * item.quantity)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot style={{ background: 'var(--bg-base)', borderTop: '1px solid var(--border)' }}>
+                        <tr>
+                          <td colSpan={3} style={{ padding: '14px 16px', textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Payé</td>
+                          <td style={{ padding: '14px 16px', textAlign: 'right', fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>{formatCurrency(selectedOrder.total)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Mobile View */}
+                <div className="mobile-only">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {selectedOrder.items.map((item) => (
+                      <div key={item.id} style={{ padding: 12, border: '1px solid var(--border-subtle)', borderRadius: 12, background: 'var(--bg-card)' }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>{item.productName}</p>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{item.quantity} x {formatCurrency(item.priceAtReservation)}</span>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>{formatCurrency(item.priceAtReservation * item.quantity)}</span>
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ marginTop: 8, padding: '16px 12px', background: 'var(--accent-subtle)', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                       <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase' }}>Total Payé</span>
+                       <span style={{ fontSize: 20, fontWeight: 900, color: 'var(--accent)' }}>{formatCurrency(selectedOrder.total)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 

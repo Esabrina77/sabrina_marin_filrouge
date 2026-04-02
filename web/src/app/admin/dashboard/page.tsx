@@ -299,70 +299,124 @@ export default function DashboardPage() {
               </Link>
             </div>
             
-            <div className="table-container">
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: 'var(--bg-surface)' }}>
-                  {['Référence', 'Client', 'Date', 'Statut', 'Total'].map(h => (
-                    <th key={h} style={{ padding: '10px 22px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} style={{ padding: '32px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
-                      Aucune commande trouvée
-                    </td>
+            <div className="desktop-only">
+              <div className="table-container">
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'var(--bg-surface)' }}>
+                    {['Référence', 'Client', 'Date', 'Statut', 'Total'].map(h => (
+                      <th key={h} style={{ padding: '10px 22px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                        {h}
+                      </th>
+                    ))}
                   </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ padding: '32px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
+                        Aucune commande trouvée
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredOrders.map((order, i) => {
+                      const sc = STATUS_CONFIG[order.status] ?? STATUS_CONFIG['PENDING'];
+                      return (
+                        <motion.tr
+                          key={order.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.25 + i * 0.03 }}
+                          className="table-row-hover"
+                          style={{ borderTop: '1px solid var(--border-subtle)', transition: 'background 0.15s' }}
+                        >
+                          <td style={{ padding: '13px 22px' }}>
+                            <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                              #{order.orderReference}
+                            </span>
+                          </td>
+                          <td style={{ padding: '13px 22px' }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                              {order.userFirstName} {order.userLastName}
+                            </div>
+                          </td>
+                          <td style={{ padding: '13px 22px' }}>
+                            <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                              {formatDate(order.createdAt)}
+                              <br />
+                              <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>{formatTime(order.createdAt)}</span>
+                            </div>
+                          </td>
+                          <td style={{ padding: '13px 22px' }}>
+                            <span className={sc.className}>
+                              <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot, display: 'inline-block' }} />
+                              {sc.label}
+                            </span>
+                          </td>
+                          <td style={{ padding: '13px 22px' }}>
+                            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                              {formatCurrency(order.total)}
+                            </span>
+                          </td>
+                        </motion.tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+              </div>
+            </div>
+
+            <div className="mobile-only" style={{ padding: '0 16px 16px', marginTop: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {filteredOrders.length === 0 ? (
+                  <div style={{ padding: '32px', textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary)' }}>
+                    Aucune commande trouvée
+                  </div>
                 ) : (
                   filteredOrders.map((order, i) => {
                     const sc = STATUS_CONFIG[order.status] ?? STATUS_CONFIG['PENDING'];
                     return (
-                      <motion.tr
+                      <motion.div
                         key={order.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.25 + i * 0.03 }}
-                        className="table-row-hover"
-                        style={{ borderTop: '1px solid var(--border-subtle)', transition: 'background 0.15s' }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 + i * 0.05 }}
+                        style={{
+                          padding: 16,
+                          background: 'var(--bg-surface)',
+                          borderRadius: 16,
+                          border: '1px solid var(--border-subtle)',
+                        }}
                       >
-                        <td style={{ padding: '13px 22px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                           <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
                             #{order.orderReference}
                           </span>
-                        </td>
-                        <td style={{ padding: '13px 22px' }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                            {order.userFirstName} {order.userLastName}
-                          </div>
-                        </td>
-                        <td style={{ padding: '13px 22px' }}>
-                          <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                            {formatDate(order.createdAt)}
-                            <br />
-                            <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>{formatTime(order.createdAt)}</span>
-                          </div>
-                        </td>
-                        <td style={{ padding: '13px 22px' }}>
                           <span className={sc.className}>
-                            <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot, display: 'inline-block' }} />
                             {sc.label}
                           </span>
-                        </td>
-                        <td style={{ padding: '13px 22px' }}>
-                          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                            {formatCurrency(order.total)}
-                          </span>
-                        </td>
-                      </motion.tr>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                              {order.userFirstName} {order.userLastName}
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>
+                              {formatDate(order.createdAt)} à {formatTime(order.createdAt)}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                             <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>
+                              {formatCurrency(order.total)}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
                     );
                   })
                 )}
-              </tbody>
-            </table>
+              </div>
             </div>
           </motion.div>
 
