@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import OrdersPage from './pages/OrdersPage';
 import AccountPage from './pages/AccountPage';
 import { useAuth } from './hooks/useAuth';
 
@@ -36,14 +35,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <HomePage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/orders" 
-            element={
-              <ProtectedRoute>
-                <OrdersPage />
               </ProtectedRoute>
             } 
           />

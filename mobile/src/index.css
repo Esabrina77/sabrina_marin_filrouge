@@ -61,3 +61,13 @@
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Scrollbar Management */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

@@ -8,8 +8,8 @@ export const useAuth = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const currentUser = AuthService.getCurrentUser();
+    const checkAuth = async () => {
+      const currentUser = await AuthService.getCurrentUser();
       if (currentUser) {
         setUser(currentUser);
       }

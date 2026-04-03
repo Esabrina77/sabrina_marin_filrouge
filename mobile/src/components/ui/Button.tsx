@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'link';
   isLoading?: boolean;
 }
 
@@ -12,12 +12,12 @@ export const Button: React.FC<ButtonProps> = ({
   className = '', 
   ...props 
 }) => {
-  const baseStyle = "fika-btn-primary";
   const variants = {
     primary: "fika-btn-primary",
     secondary: "fika-btn-secondary",
-    outline: "bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50",
+    outline: "bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 px-6 py-3 rounded-2xl font-bold",
     ghost: "bg-transparent text-slate-600 hover:bg-slate-50 border-none px-4",
+    link: "bg-transparent text-fika-primary hover:underline border-none p-0 h-auto font-bold underline-offset-4",
   };
 
   const currentVariant = variants[variant];

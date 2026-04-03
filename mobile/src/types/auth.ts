@@ -5,6 +5,7 @@ export interface User {
   email: string;
   role: 'USER' | 'ADMIN';
   avatarUrl?: string;
+  points?: number;
 }
 
 export interface AuthResponse {

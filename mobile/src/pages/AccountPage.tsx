@@ -1,21 +1,24 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAuth } from '../hooks/useAuth';
+import { useOrders } from '../hooks/useOrders';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { User, LogOut, Settings, CreditCard, Bell, MapPin, ChevronRight, Share2 } from 'lucide-react';
+import { OrderCard } from '../components/ui/OrderCard';
+import { User, LogOut, Settings, History, ChevronRight } from 'lucide-react';
 
 export const AccountPage: React.FC = () => {
     const { user, logout } = useAuth();
+    const { orders, fetchHistory, loading, error } = useOrders();
+    const [page, setPage] = useState(1);
+    const ordersPerPage = 5;
 
-    const menuItems = [
-        { icon: User, label: 'Informations personnelles', color: 'text-blue-500' },
-        { icon: CreditCard, label: 'Moyens de paiement', color: 'text-purple-500' },
-        { icon: MapPin, label: 'Mes adresses', color: 'text-red-500' },
-        { icon: Bell, label: 'Notifications', color: 'text-fika-primary' },
-        { icon: Shield, label: 'Sécurité & Confidentialité', color: 'text-slate-500' },
-        { icon: Share2, label: 'Parrainer un ami', color: 'text-orange-500' },
-    ];
+    useEffect(() => {
+        fetchHistory();
+    }, [fetchHistory]);
+
+    const paginatedOrders = orders.slice(0, page * ordersPerPage);
+    const hasMore = orders.length > paginatedOrders.length;
 
     return (
         <MainLayout>
@@ -44,33 +47,62 @@ export const AccountPage: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                     <Card className="flex flex-col gap-2 !bg-fika-primary text-white border-none shadow-md">
                         <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Commandes</span>
-                        <span className="text-2xl font-black">12</span>
+                        <span className="text-2xl font-black">{orders.length}</span>
                     </Card>
                     <Card className="flex flex-col gap-2 !bg-fika-light text-fika-primary border-none">
                         <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Points Fika</span>
-                        <span className="text-2xl font-black">450</span>
+                        <span className="text-2xl font-black">{user?.points || 0}</span>
                     </Card>
                 </div>
 
-                {/* Settings List */}
-                <div className="flex flex-col gap-3">
-                    {menuItems.map((item, idx) => {
-                        const Icon = item.icon;
-                        return (
-                            <button 
-                                key={idx}
-                                className="flex items-center justify-between bg-white px-5 py-4 rounded-3xl border border-slate-100 shadow-sm active:bg-slate-50 active:scale-[0.99] transition-all duration-200"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className={`p-2.5 rounded-2xl bg-opacity-10 ${item.color.replace('text-', 'bg-')} ${item.color}`}>
-                                        <Icon size={18} strokeWidth={2.5} />
-                                    </div>
-                                    <span className="text-sm font-bold text-slate-700">{item.label}</span>
-                                </div>
-                                <ChevronRight size={16} className="text-slate-300" />
-                            </button>
-                        );
-                    })}
+                {/* Order History Section */}
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between px-2">
+                        <h3 className="text-lg font-black text-slate-800 tracking-tight uppercase">Mes Commandes</h3>
+                        <div className="p-2 bg-slate-100 rounded-xl text-slate-400">
+                             <History size={16} />
+                        </div>
+                    </div>
+
+                    {loading && orders.length === 0 ? (
+                        <div className="flex flex-col gap-4">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 h-24 animate-pulse"></div>
+                            ))}
+                        </div>
+                    ) : orders.length > 0 ? (
+                        <>
+                            <div className="flex flex-col gap-4">
+                                {paginatedOrders.map((order) => (
+                                    <OrderCard 
+                                        key={order.id} 
+                                        order={order} 
+                                        onClick={(o) => console.log('Clicked order:', o.id)}
+                                    />
+                                ))}
+                            </div>
+                            
+                            {hasMore && (
+                                <Button 
+                                    variant="link" 
+                                    onClick={() => setPage(p => p + 1)}
+                                    className="text-fika-primary font-bold text-sm"
+                                >
+                                    Voir plus de commandes
+                                </Button>
+                            )}
+                        </>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-10 text-center gap-4 bg-white rounded-3xl border border-slate-100 shadow-sm border-dashed">
+                            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+                               <History size={24} />
+                            </div>
+                            <div className="flex flex-col gap-1 px-8">
+                                <p className="text-slate-800 text-xs font-bold uppercase tracking-wider">Aucune commande</p>
+                                <p className="text-slate-400 text-[10px] font-medium leading-tight">Votre historique est vide. Commandez dès maintenant !</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Logout Button */}
@@ -91,9 +123,5 @@ export const AccountPage: React.FC = () => {
     );
 };
 
-// Simple Mock Shield component as it was missing from original Imports
-const Shield: React.FC<any> = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
-);
-
 export default AccountPage;
+

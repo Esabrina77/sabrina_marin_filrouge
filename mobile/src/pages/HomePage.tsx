@@ -137,24 +137,39 @@ export const HomePage: React.FC = () => {
                     </div>
                 ) : (
                     <div key="loaded-content-wrapper" className="flex flex-col gap-8">
-                        {/* Categories Tab Bar */}
-                        <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 no-scrollbar">
-                            <button 
-                                key="cat-static-all"
-                                onClick={() => handleCategoryChange(null)}
-                                className={`px-6 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 border ${!activeCategory ? 'bg-fika-primary text-white border-fika-primary shadow-lg shadow-fika-primary/20' : 'bg-white text-slate-800 border-slate-100 hover:border-fika-primary/30'}`}
-                            >
-                                Tous
-                            </button>
-                            {sortedCategories.map((cat, idx) => (
-                                <button 
-                                    key={`cat-${cat.id || cat.slug}-${idx}`}
-                                    onClick={() => handleCategoryChange(cat.slug)}
-                                    className={`px-6 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 border ${activeCategory === cat.slug ? 'bg-fika-primary text-white border-fika-primary shadow-lg shadow-fika-primary/20' : 'bg-white text-slate-800 border-slate-100 hover:border-fika-primary/30'}`}
+                        {/* Categories Filter - Horizontal Scrollable */}
+                        <div className="mb-6 -mx-4 overflow-x-auto no-scrollbar scroll-smooth">
+                            <div className="flex gap-2 px-4 min-w-max pb-1">
+                                <button
+                                    onClick={() => {
+                                        setActiveCategory(null);
+                                        fetchProducts();
+                                    }}
+                                    className={`px-4 py-2 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all shadow-sm border ${
+                                        activeCategory === null
+                                            ? 'bg-fika-primary text-white border-fika-primary shadow-fika-primary/10'
+                                            : 'bg-white text-slate-400 border-slate-100'
+                                    }`}
                                 >
-                                    {cat.name === 'ENTREE' ? 'Entrées' : cat.name === 'PLAT' ? 'Plats' : cat.name === 'DESSERT' ? 'Desserts' : (cat.name || 'Filtre')}
+                                    Tout
                                 </button>
-                            ))}
+                                {categories.map((cat) => (
+                                    <button
+                                        key={cat.id}
+                                        onClick={() => {
+                                            setActiveCategory(cat.slug);
+                                            fetchProducts({ category: cat.slug });
+                                        }}
+                                        className={`px-4 py-2 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all shadow-sm border ${
+                                            activeCategory === cat.slug
+                                                ? 'bg-fika-primary text-white border-fika-primary shadow-fika-primary/10'
+                                                : 'bg-white text-slate-400 border-slate-100'
+                                        }`}
+                                    >
+                                        {cat.name}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {/* Grouped Products Grid with Subtitles */}

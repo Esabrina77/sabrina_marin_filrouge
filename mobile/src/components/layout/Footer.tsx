@@ -7,7 +7,6 @@ export const Footer: React.FC = () => {
 
     const tabs = [
         { icon: Home, label: 'Accueil', path: '/' },
-        { icon: ClipboardList, label: 'Commandes', path: '/orders' },
         { icon: User, label: 'Profil', path: '/profile' },
     ];
 
