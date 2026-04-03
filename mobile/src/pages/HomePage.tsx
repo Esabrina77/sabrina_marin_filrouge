@@ -4,9 +4,11 @@ import { ProductCard } from '../components/ui/ProductCard';
 import { useProducts } from '../hooks/useProducts';
 import { Badge } from '../components/ui/Badge';
 import { Search } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 export const HomePage: React.FC = () => {
     const { products, categories, fetchProducts, fetchCategories, fetchByCategory, loading } = useProducts();
+    const { user } = useAuth();
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
     useEffect(() => {
@@ -29,7 +31,7 @@ export const HomePage: React.FC = () => {
                 {/* Dashboard Stats / Welcome */}
                 <div className="flex flex-col gap-2 px-2">
                     <h2 className="text-3xl font-black text-slate-800 tracking-tighter">
-                        Bonjour, <span className="text-fika-primary">Fika-Lover</span> 👋
+                        Bonjour, <span className="text-fika-primary">{user?.firstName || 'Fika-Lover'}</span> 👋
                     </h2>
                     <p className="text-slate-400 text-sm font-medium">Découvrez nos délices du jour.</p>
                 </div>

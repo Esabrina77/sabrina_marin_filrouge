@@ -5,7 +5,8 @@ import { Button } from '../components/ui/Button';
 import { useAuth } from '../hooks/useAuth';
 
 export const RegisterPage: React.FC = () => {
-    const [name, setName] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -15,13 +16,20 @@ export const RegisterPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
+        // Validation mot de passe (8+ caractères, 1 Majuscule)
+        const passwordRegex = /^(?=.*[A-Z]).{8,}$/;
+        if (!passwordRegex.test(password)) {
+            alert("Le mot de passe doit contenir au moins 8 caractères et une majuscule.");
+            return;
+        }
+
         if (password !== confirmPassword) {
             alert("Les mots de passe ne correspondent pas");
             return;
         }
 
         try {
-            await register({ name, email, password });
+            await register({ firstName, lastName, email, password });
             navigate('/');
         } catch (err) {
             console.error(err);
@@ -46,13 +54,22 @@ export const RegisterPage: React.FC = () => {
                         </div>
                     )}
 
-                    <Input 
-                        label="Nom Complet" 
-                        placeholder="John Doe"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                    />
+                    <div className="grid grid-cols-2 gap-3">
+                        <Input 
+                            label="Prénom" 
+                            placeholder="Jean"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            required
+                        />
+                        <Input 
+                            label="Nom" 
+                            placeholder="Dupont"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            required
+                        />
+                    </div>
                     
                     <Input 
                         label="Email" 
@@ -71,6 +88,9 @@ export const RegisterPage: React.FC = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
+                    <p className="text-[10px] text-slate-400 font-medium -mt-2 ml-1">
+                        * Minimum 8 caractères et une majuscule
+                    </p>
 
                     <Input 
                         label="Confirmer le mot de passe" 

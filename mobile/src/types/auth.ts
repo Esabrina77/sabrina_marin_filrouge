@@ -1,6 +1,7 @@
 export interface User {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   role: 'USER' | 'ADMIN';
   avatarUrl?: string;
@@ -18,5 +19,6 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData extends LoginCredentials {
-  name: string;
+  firstName: string;
+  lastName: string;
 }

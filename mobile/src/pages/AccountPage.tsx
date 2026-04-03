@@ -25,7 +25,7 @@ export const AccountPage: React.FC = () => {
                     <div className="relative group">
                         <div className="w-24 h-24 bg-fika-light rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-transform duration-300 group-hover:scale-105 overflow-hidden">
                             {user?.avatarUrl ? (
-                                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                                <img src={user.avatarUrl} alt={`${user.firstName} ${user.lastName}`} className="w-full h-full object-cover" />
                             ) : (
                                 <User size={40} className="text-fika-primary" />
                             )}
@@ -35,7 +35,7 @@ export const AccountPage: React.FC = () => {
                         </div>
                     </div>
                     <div className="text-center">
-                        <h2 className="text-2xl font-black text-slate-800 tracking-tight">{user?.name || 'Fika Enthusiast'}</h2>
+                        <h2 className="text-2xl font-black text-slate-800 tracking-tight">{user ? `${user.firstName} ${user.lastName}` : 'Fika Enthusiast'}</h2>
                         <p className="text-slate-400 text-sm font-medium">{user?.email || 'fika@example.com'}</p>
                     </div>
                 </div>

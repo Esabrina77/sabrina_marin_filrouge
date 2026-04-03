@@ -12,7 +12,18 @@ export const AuthService = {
   },
 
   register: async (data: RegisterData): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/register', data);
+    const response = await api.post<AuthResponse>('/auth/register', {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      password: data.password
+    });
+    
+    if (response.data.token) {
+      localStorage.setItem('fika_token', response.data.token);
+      localStorage.setItem('fika_user', JSON.stringify(response.data.user));
+    }
+    
     return response.data;
   },
 
