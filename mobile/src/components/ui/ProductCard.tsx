@@ -13,7 +13,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 flex flex-col gap-3 group active:scale-[0.98] transition-all duration-200">
             <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-slate-50 border border-slate-50">
                 <img 
-                    src={product.imageUrl} 
+                    src={product.imgUrl?.startsWith('http') ? product.imgUrl : `http://localhost:8080${product.imgUrl}`} 
                     alt={product.name} 
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
@@ -39,7 +39,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAdd }) => {
                     </span>
                     <Button 
                         variant="ghost" 
-                        size={20}
                         onClick={() => onAdd?.(product)}
                         disabled={!product.available}
                         className="!p-1.5 !rounded-lg bg-fika-light text-fika-primary hover:bg-fika-primary hover:text-white transition-all duration-300"

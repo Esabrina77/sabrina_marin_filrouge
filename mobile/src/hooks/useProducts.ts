@@ -53,7 +53,34 @@ export const useProducts = () => {
         }
     }, []);
 
-    return { products, categories, loading, error, fetchProducts, fetchCategories, fetchByCategory };
+    const fetchAll = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const [productsResp, categoriesResp] = await Promise.all([
+                ProductService.getAll(0, 50), // Fetch a good amount for the home page
+                ProductService.getCategories()
+            ]);
+            setProducts(productsResp.content);
+            setCategories(categoriesResp);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Erreur lors du chargement des données.');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    return { 
+        products, 
+        categories, 
+        loading, 
+        error, 
+        fetchProducts, 
+        fetchCategories, 
+        fetchByCategory,
+        fetchAll 
+    };
 };
 
 export default useProducts;

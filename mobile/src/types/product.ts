@@ -3,10 +3,10 @@ export interface Product {
     name: string;
     description: string;
     price: number;
-    imageUrl: string;
+    imgUrl: string;
     category: string;
     available: boolean;
-    stock: number;
+    quantity: number;
 }
 
 export interface Category {
