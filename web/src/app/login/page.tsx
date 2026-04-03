@@ -24,8 +24,8 @@ export default function LoginPage() {
       if (response.user.role === 'ADMIN') {
         router.push('/admin/dashboard');
       } else {
+        await AuthService.logout(false);
         setError("Accès refusé. Cette interface est réservée aux administrateurs.");
-        AuthService.logout();
       }
     } catch (err: any) {
       setError(err.response?.data?.message || "Identifiants invalides. Veuillez réessayer.");

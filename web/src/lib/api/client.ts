@@ -37,12 +37,12 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        const isAuthRequest = originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/register');
+
+        if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
             originalRequest._retry = true;
 
             try {
-                // Appel à l'endpoint refresh-token
-                // Le cookie refreshToken est envoyé automatiquement grâce à withCredentials: true
                 const { data } = await axios.post<TokenRefreshResponse>(`${API_URL}/auth/refresh-token`, {}, { withCredentials: true });
                 
                 if (data.accessToken) {
@@ -51,9 +51,8 @@ api.interceptors.response.use(
                     return api(originalRequest);
                 }
             } catch (err) {
-                // Si le refresh échoue (expire lui aussi), on déconnecte
                 setAccessToken(null);
-                if (typeof window !== 'undefined') {
+                if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
                     window.location.href = '/login';
                 }
             }

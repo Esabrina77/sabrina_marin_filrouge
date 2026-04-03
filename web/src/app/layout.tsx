@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Fika Admin — Dashboard",
+  title: "Accès Administrateur — Fika Dashboard",
   description: "Tableau de bord de gestion Fika Restaurant",
 };
 

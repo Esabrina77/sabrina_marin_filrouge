@@ -20,13 +20,13 @@ const AuthService = {
         return data;
     },
 
-    logout: async () => {
+    logout: async (shouldRedirect: boolean = true) => {
         try {
             await api.post('/auth/logout');
         } finally {
             setAccessToken(null);
             localStorage.removeItem('user');
-            if (typeof window !== 'undefined') {
+            if (shouldRedirect && typeof window !== 'undefined') {
                 window.location.href = '/login';
             }
         }
