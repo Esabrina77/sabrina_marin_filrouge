@@ -64,7 +64,7 @@ class AuthControllerTest {
         @BeforeEach
         void setUp() {
                 loginRequest = new LoginRequest("test@example.com", "password123");
-                registerRequest = new RegisterRequest("John", "Doe", "test@example.com", "password123");
+                registerRequest = new RegisterRequest("John", "Doe", "test@example.com", "Password123");
                 UserResponse userResponse = new UserResponse(UUID.randomUUID(), "John", "Doe", "test@example.com",
                                 Role.CLIENT);
                 loginResponse = new LoginResponse(userResponse, "Fake-token", "Fake-refresh-token");
