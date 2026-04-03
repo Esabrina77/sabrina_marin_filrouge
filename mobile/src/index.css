@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-white text-slate-900 antialiased font-sans overflow-x-hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Optimized for Mobile-First (No scrollbars/scaling issues) */
+  html, body, #root {
+    @apply h-full w-full fixed overflow-hidden;
+  }
+
+  main {
+    @apply h-full overflow-y-auto pb-20 pt-16 px-4 bg-slate-50;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@layer components {
+  .fika-card {
+    @apply bg-white rounded-xl border border-slate-100 shadow-sm p-4;
+  }
+
+  .fika-input {
+    @apply w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 
+           focus:outline-none focus:ring-2 focus:ring-fika-primary/20 focus:border-fika-primary 
+           transition-all duration-200 text-sm;
+  }
+
+  .fika-btn-primary {
+    @apply bg-fika-primary text-white rounded-xl px-6 py-2.5 font-medium
+           hover:bg-fika-accent active:scale-95 transition-all duration-200 
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .fika-btn-secondary {
+    @apply bg-fika-light text-fika-primary rounded-xl px-6 py-2.5 font-medium
+           hover:bg-green-100 active:scale-95 transition-all duration-200;
+  }
+
+  .fika-badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-fika-light text-fika-primary;
+  }
+
+  /* Status Badges */
+  .badge-pending { @apply bg-amber-50 text-amber-700 border border-amber-100; }
+  .badge-preparing { @apply bg-blue-50 text-blue-700 border border-blue-100; }
+  .badge-ready { @apply bg-fika-light text-fika-primary border border-fika-primary/10; }
+  .badge-completed { @apply bg-slate-100 text-slate-700 border border-slate-200; }
+}
+
+/* Capacitor Padding Improvements */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
