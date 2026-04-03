@@ -12,9 +12,13 @@ const CATEGORY_ORDER: Record<string, number> = {
     'DESSERT': 3
 };
 
+import { useCart } from '../context/CartContext';
+
 export const HomePage: React.FC = () => {
     const { products, categories, fetchAll, fetchProducts, loading } = useProducts();
     const { user } = useAuth();
+    const { addToCart } = useCart();
+    
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [initialLoad, setInitialLoad] = useState(true);
@@ -138,7 +142,7 @@ export const HomePage: React.FC = () => {
                             <button 
                                 key="cat-static-all"
                                 onClick={() => handleCategoryChange(null)}
-                                className={`px-6 py-2.5 rounded-2xl text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 border ${!activeCategory ? 'bg-fika-primary text-white border-fika-primary shadow-lg shadow-fika-primary/20' : 'bg-white text-slate-600 border-slate-100 hover:border-fika-primary/30'}`}
+                                className={`px-6 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 border ${!activeCategory ? 'bg-fika-primary text-white border-fika-primary shadow-lg shadow-fika-primary/20' : 'bg-white text-slate-800 border-slate-100 hover:border-fika-primary/30'}`}
                             >
                                 Tous
                             </button>
@@ -169,7 +173,7 @@ export const HomePage: React.FC = () => {
                                                 <ProductCard 
                                                     key={`product-${product.id}`} 
                                                     product={product} 
-                                                    onAdd={(p) => console.log('Added:', p.name)}
+                                                    onAdd={addToCart}
                                                 />
                                             ))}
                                         </div>
