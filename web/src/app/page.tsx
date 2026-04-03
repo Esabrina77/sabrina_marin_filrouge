@@ -35,7 +35,7 @@ export default function HomePage() {
         </div>
 
         <h1 className="home-title">
-          Portail Administrateur<br /><span>Fika Restaurant</span>
+          Accès Administrateur<br /><span>Fika Restaurant</span>
         </h1>
         
         <p className="home-description">
@@ -46,9 +46,9 @@ export default function HomePage() {
         <div className="home-actions">
           {isAuthenticated ? (
             <Link href="/admin/dashboard" style={{ textDecoration: 'none' }}>
-              <button className="btn-primary" style={{ padding: '14px 28px', fontSize: 16, fontWeight: 700, borderRadius: 14 }}>
+              <button className="btn-primary" style={{ padding: '14px 32px', fontSize: 16, fontWeight: 700, borderRadius: 14 }}>
                 <User size={18} strokeWidth={2.5} />
-                Tableau de bord
+                Accès Administrateur
                 <ArrowRight size={18} strokeWidth={2.5} />
               </button>
             </Link>
@@ -60,13 +60,6 @@ export default function HomePage() {
               </button>
             </Link>
           )}
-          
-          <Link href="/admin/orders" style={{ textDecoration: 'none' }}>
-            <button className="btn-outline" style={{ padding: '14px 28px', fontSize: 16, borderStyle: 'dashed', borderRadius: 14 }}>
-               <ExternalLink size={18} />
-               Commandes Directes
-            </button>
-          </Link>
         </div>
       </motion.div>
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import AuthInitializer from "@/components/auth/AuthInitializer";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -9,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Fika Admin — Dashboard",
+  title: "Accès Administrateur — Fika Dashboard",
   description: "Tableau de bord de gestion Fika Restaurant",
 };
 
@@ -20,8 +21,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body className={`${inter.variable} antialiased`} suppressHydrationWarning>
-        {children}
+      <body className={`${inter.variable} antialiased font-sans flex flex-col min-h-screen bg-slate-50 text-slate-900 selection:bg-fika-primary/20 selection:text-fika-primary`} suppressHydrationWarning>
+        <AuthInitializer>
+          {children}
+        </AuthInitializer>
       </body>
     </html>
   );

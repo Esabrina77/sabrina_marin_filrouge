@@ -1,3 +1,24 @@
-/.idea
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+api/target/
+
+# Builds
+dist/
+.next/
+out/
+build/
+
+# Config & Docs
 .env
+.env.local
 trello.md
